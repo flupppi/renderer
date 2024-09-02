@@ -1,0 +1,90 @@
+<!--^ Anmerkung: Die folgenden Matrizen sind transponiert, d.h. 
+      der Translationsvektor steht in der untersten Zeile. Für 
+      die gewohnte Notation x = A b muß die Matrix daher 
+      transponiert werden. Sie müssen die Datei nicht einlesen, 
+      wenn sie nicht wollen. Da das Programm nur für dieses Skelett 
+      funktionieren soll, können Sie die Matrizen durchaus
+      auch hardcoden.-->
+
+    <JointSet>
+      <Joint name="NeckJoint">
+        <Matrix transposed="true" >
+           0   0.997385    0.0722743  0
+           0   0.0722743  -0.997385   0
+          -1   0           0          0
+           0  -13.942331  -1.898722   1
+        </Matrix>
+        <Children>
+          <Joint name="HeadJoint">
+            <Matrix transposed="true" >
+              0.982982   0.183701  0  0
+              0          0        -1  0
+              -0.183701  0.982982  0  0
+              3.529217   0         0  1
+            </Matrix>
+            <Children>
+              <Joint name="JawJoint">
+                <Matrix transposed="true" >
+                  -0.640359  0  -0.768076  0 
+                   0.768076  0  -0.640359  0 
+                   0        -1   0         0
+                   6.914116  0  -0.723195  1
+                </Matrix>
+              </Joint>
+
+              <Joint name="RtLowerLidJoint">
+                <Matrix transposed="true" >
+                  0.487324   0        0.873221 0 
+                 -0.873221   0        0.487324 0 
+                  0         -1        0        0
+                  10.252076 -3.27031 -4.268396 1
+                </Matrix>
+              </Joint>
+
+              <Joint name="LtLowerLidJoint">
+                <Matrix transposed="true" >
+                  -0.487324  0        -0.873221 0 
+                   0.873221  0        -0.487324 0 
+                   0        -1         0        0                   
+                  10.252075  3.270312 -4.268398 1
+                </Matrix>
+              </Joint>
+
+              <Joint name="RtUpperLidJoint">
+                <Matrix transposed="true" >
+                  -0.517129   0        0.855907 0 
+                  -0.855907   0       -0.517129 0 
+                   0         -1        0        0
+                   10.258537 -3.27144 -4.268522 1
+                </Matrix>
+              </Joint>
+              <Joint name="LtUpperLidJoint">
+                <Matrix transposed="true" >
+                  0.517129  0        -0.855907 0
+                  0.855907  0         0.517129 0
+                  0        -1         0        0
+                  10.258537 3.271436 -4.268526 1
+                </Matrix>
+              </Joint>
+
+              <Joint name="RtEyeJoint" omit="true">
+                <Matrix transposed="true" >
+                  -0.0874302 0       -0.996171  0 
+                   0.996171  0       -0.0874302 0 
+                   0        -1        0         0 
+                  10.258537 -3.27144 -4.268522  1
+                </Matrix>
+              </Joint>
+              <Joint name="LtEyeJoint" omit="true">
+                <Matrix transposed="true" >
+                  -0.0874302  0        -0.996171   0 
+                   0.996171   0        -0.0874302  0 
+                   0         -1         0          0 
+                   10.252075  3.270312 -4.268398   1
+                </Matrix>
+              </Joint>
+            </Children>
+          </Joint>
+        </Children>
+      </Joint>
+    </JointSet>
