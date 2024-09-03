@@ -54,7 +54,7 @@ GLFWwindow* InitializeSystem()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
-	GLFWwindow* window = glfwCreateWindow(1024, 768, "Animation", nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(1024, 768, "Billboard Clouds", nullptr, nullptr);
 
 	glfwMakeContextCurrent(window);
 	//glfwSwapInterval(1); // Enable vsync
@@ -212,6 +212,47 @@ void RunCoreloop(GLFWwindow* window)
 	}
 }
 
+void RunCoreloop2(GLFWwindow* window)
+{
+
+
+	double lastTime = glfwGetTime();
+	double timeDifference = 0.0f;
+	// Our state
+	bool edit_state = false;
+	bool show_demo_window = true;
+	bool show_another_window = false;
+	static bool show_mesh = false;
+
+	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+	while (!glfwWindowShouldClose(window))
+	{
+		glfwPollEvents();
+
+		gUsedInterface->Update(timeDifference);
+		int screenWidth, screenHeight;
+		glfwGetFramebufferSize(window, &screenWidth, &screenHeight);
+		float aspectRatio = (float)screenWidth / (float)screenHeight;
+		glViewport(0, 0, screenWidth, screenHeight);
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LEQUAL);
+		// Enable blending
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		gUsedInterface->Render(aspectRatio);
+
+		glfwSwapBuffers(window);
+
+		double currentTime = glfwGetTime();
+		timeDifference = currentTime - lastTime;
+		lastTime = currentTime;
+	}
+}
+
 
 //************************************
 // Unload all resources used by the System.
@@ -229,7 +270,8 @@ int main()
 {
 	gUsedInterface = &gApplication;
 	GLFWwindow* window = InitializeSystem();
-	RunCoreloop(window);
+	//RunCoreloop(window);
+	RunCoreloop2(window);
 	ShutdownSystem();
 }
 
