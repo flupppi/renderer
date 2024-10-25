@@ -24,7 +24,7 @@
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>RubiksCube</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>BillboardCloud</ProjectName>
+    <ProjectName>CPP OpenGL Projects</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -161,10 +161,10 @@
     <ClCompile Include="2DGame\Game.cpp" />
     <ClCompile Include="2DGame\GameRenderer.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="MeshSimplification\BillboardCloud.cpp" />
+    <ClCompile Include="MeshSimplification\BillboardRenderer.cpp" />
     <ClCompile Include="Raytracer\Raytracer.cpp" />
     <ClCompile Include="Raytracer\RaytracerRenderer.cpp" />
-    <ClCompile Include="src\BillboardCloud.cpp" />
-    <ClCompile Include="src\BillboardRenderer.cpp" />
     <ClCompile Include="Quad.cpp" />
     <ClCompile Include="SkinnedAnimation\Joint.cpp" />
     <ClCompile Include="SkinnedAnimation\Renderer.cpp" />
@@ -189,10 +189,10 @@
     <ClInclude Include="2DGame\Game.h" />
     <ClInclude Include="2DGame\GameRenderer.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="MeshSimplification\BillboardCloud.h" />
+    <ClInclude Include="MeshSimplification\BillboardRenderer.h" />
     <ClInclude Include="Raytracer\Raytracer.h" />
     <ClInclude Include="Raytracer\RaytracerRenderer.h" />
-    <ClInclude Include="src\BillboardCloud.h" />
-    <ClInclude Include="src\BillboardRenderer.h" />
     <ClInclude Include="Quad.h" />
     <ClInclude Include="SkinnedAnimation\Joint.h" />
     <ClInclude Include="SkinnedAnimation\Renderer.h" />

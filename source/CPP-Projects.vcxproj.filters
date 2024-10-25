@@ -27,25 +27,13 @@
     <ClCompile Include="ShaderUtil.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
     <ClCompile Include="KeyboardObserver.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="InputSystem.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="Application.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
     <ClCompile Include="vendor\stb_image\stb_image.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="Joint.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="Skeleton.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="vendor\imgui\imgui.cpp">
@@ -72,6 +60,48 @@
     <ClCompile Include="Quad.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="2DGame\Game.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="2DGame\GameRenderer.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="Raytracer\Raytracer.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="Raytracer\RaytracerRenderer.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\BillboardCloud.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\BillboardRenderer.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="SkinnedAnimation\Joint.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="SkinnedAnimation\Renderer.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="SkinnedAnimation\Application.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="SkinnedAnimation\Skeleton.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="SkinnedAnimation\SkinMesh.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshSimplification\BillboardCloud.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshSimplification\BillboardRenderer.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameInterface.h">
@@ -80,25 +110,13 @@
     <ClInclude Include="ShaderUtil.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
     <ClInclude Include="KeyboardObserver.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="InputSystem.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="Application.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
     <ClInclude Include="vendor\stb_image\stb_image.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="Joint.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="Skeleton.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="vendor\imgui\imconfig.h">
@@ -131,6 +149,48 @@
     <ClInclude Include="Quad.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="2DGame\Game.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="2DGame\GameRenderer.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="Raytracer\Raytracer.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="Raytracer\RaytracerRenderer.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="src\BillboardCloud.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="src\BillboardRenderer.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="SkinnedAnimation\Joint.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="SkinnedAnimation\Renderer.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="SkinnedAnimation\Application.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="SkinnedAnimation\Skeleton.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="SkinnedAnimation\SkinMesh.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshSimplification\BillboardCloud.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshSimplification\BillboardRenderer.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="shaders\VColor.glsl">
@@ -158,6 +218,14 @@
     <None Include="shaders\VJoint.glsl" />
     <None Include="shaders\FJoint.glsl" />
     <None Include="shaders\GHair.glsl" />
+    <None Include="shaders\FCollectible.glsl" />
+    <None Include="shaders\FFullScreenQuad.glsl" />
+    <None Include="shaders\FGizmo.glsl" />
+    <None Include="shaders\FPlayer.glsl" />
+    <None Include="shaders\VCollectible.glsl" />
+    <None Include="shaders\VFullScreenQuad.glsl" />
+    <None Include="shaders\VGizmo.glsl" />
+    <None Include="shaders\VPlayer.glsl" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="input\Transformationen.xml" />

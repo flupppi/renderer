@@ -11,7 +11,7 @@
 #include "vendor/imgui/imgui_impl_glfw.h"
 #include "vendor/imgui/imgui_impl_opengl3.h"
 #include "SkinnedAnimation/Application.h"
-#include "src/BillboardCloud.h"
+#include "MeshSimplification/BillboardCloud.h"
 #include "2DGame/Game.h"
 #include "Raytracer/Raytracer.h"
 
@@ -124,8 +124,7 @@ void ShutdownSystem()
 //************************************
 int main()
 {
-	gUsedInterface = &gRaytracer;
-	//gUsedInterface = &gApplication;
+	gUsedInterface = &gBillboardCloud;
 	GLFWwindow* window = InitializeSystem();
 	RunCoreloop(window);
 	ShutdownSystem();
