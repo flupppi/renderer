@@ -37,3 +37,13 @@ private:
 
 };
 
+struct Ray {
+	glm::vec3 origin;
+	glm::vec3 direction;
+};
+
+struct Sphere {
+	glm::vec3 center;
+	float radius;
+};
+
