@@ -161,6 +161,8 @@
     <ClCompile Include="2DGame\Game.cpp" />
     <ClCompile Include="2DGame\GameRenderer.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="Raytracer\Raytracer.cpp" />
+    <ClCompile Include="Raytracer\RaytracerRenderer.cpp" />
     <ClCompile Include="src\BillboardCloud.cpp" />
     <ClCompile Include="src\BillboardRenderer.cpp" />
     <ClCompile Include="Quad.cpp" />
@@ -187,6 +189,8 @@
     <ClInclude Include="2DGame\Game.h" />
     <ClInclude Include="2DGame\GameRenderer.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="Raytracer\Raytracer.h" />
+    <ClInclude Include="Raytracer\RaytracerRenderer.h" />
     <ClInclude Include="src\BillboardCloud.h" />
     <ClInclude Include="src\BillboardRenderer.h" />
     <ClInclude Include="Quad.h" />
@@ -228,6 +232,7 @@
     </None>
     <None Include="shaders\FEye.glsl" />
     <None Include="shaders\FEyeTransp.glsl" />
+    <None Include="shaders\FFullScreenQuad.glsl" />
     <None Include="shaders\FGizmo.glsl" />
     <None Include="shaders\FJoint.glsl" />
     <None Include="shaders\FPlayer.glsl">
@@ -240,6 +245,7 @@
     </None>
     <None Include="shaders\VEye.glsl" />
     <None Include="shaders\VEyeTransp.glsl" />
+    <None Include="shaders\VFullScreenQuad.glsl" />
     <None Include="shaders\VGizmo.glsl" />
     <None Include="shaders\VJoint.glsl" />
     <None Include="shaders\VPlayer.glsl" />

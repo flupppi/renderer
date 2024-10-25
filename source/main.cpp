@@ -13,11 +13,14 @@
 #include "SkinnedAnimation/Application.h"
 #include "src/BillboardCloud.h"
 #include "2DGame/Game.h"
+#include "Raytracer/Raytracer.h"
 
 BillboardCloud gBillboardCloud;
 Application gApplication;
 Game g2DGame;
+Raytracer gRaytracer;
 GameInterface* gUsedInterface;
+
 
 
 // Helper to display a little (?) mark which shows a tooltip when hovered.
@@ -121,7 +124,7 @@ void ShutdownSystem()
 //************************************
 int main()
 {
-	gUsedInterface = &gBillboardCloud;
+	gUsedInterface = &gRaytracer;
 	//gUsedInterface = &gApplication;
 	GLFWwindow* window = InitializeSystem();
 	RunCoreloop(window);
