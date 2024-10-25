@@ -30,8 +30,10 @@ void Game::Initialize(GLFWwindow* window)
 
 
 	m_renderer.Initialize();
-	Quad quad(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(3.0f, 0.0f, 0.0f), glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(0.0f, 2.0f, 0.0f));
-	m_renderer.InitQuad(quad);
+
+
+	Quad playerQuad(glm::vec3(m_playerPosition, 0.0f), glm::vec3(0.5f, 0.0f, 0.0f), glm::vec3(0.5f, 0.5f, 0.0f), glm::vec3(0.0f, 0.5f, 0.0f));
+	m_renderer.InitQuad(playerQuad);
 }
 //************************************
 // Calculate mvp matrix, calculate and render joint transforms and calculate and render skin using the boneModelMatrices.
@@ -39,17 +41,31 @@ void Game::Initialize(GLFWwindow* window)
 void Game::Render(float aspectRatio)
 {
 	glm::mat4 Projection = glm::perspective(glm::radians(45.0f), aspectRatio, 0.1f, 100.0f);
-	glm::mat4 View = glm::lookAt(glm::vec3(0.0f, 3.0f, 10.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	glm::quat transformOpertation = glm::angleAxis(0.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-	glm::quat model_quat = transformOpertation;
-	glm::mat4 Model = glm::mat4_cast(model_quat);
-	glm::mat4 mvp = Projection * View * Model;
+	glm::mat4 View = glm::lookAt(glm::vec3(0.0f, 0.0f, 10.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
+	// Render Player
+	glm::mat4 ModelPlayer = glm::translate(glm::mat4(1.0f), glm::vec3(m_playerPosition, 0.0f));
+	m_renderer.RenderQuad(Projection * View * ModelPlayer, 0);
 
+	// Render Collectible
+	glm::mat4 ModelColletible = glm::translate(glm::mat4(1.0f), glm::vec3(m_collectiblePosition, 0.0f));
+	m_renderer.RenderQuad(Projection * View * ModelColletible,1);
 
-	glm::mat4 quadTransform = mvp * glm::mat4(1.0f);
+	RenderIMGui();
 
-	m_renderer.RenderQuad(quadTransform);
+}
+
+void Game::RenderIMGui() {
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+	{
+		ImGui::Begin("Game HUD");
+		ImGui::Text("Score: %d", m_score);
+	}
+	ImGui::End();
+	ImGui::Render();
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
 //************************************
@@ -67,9 +83,22 @@ void Game::Update(double deltaTime)
 {
 	m_input.Update();
 
-	// Keyboard Rotation
-	float xVel = 0.0f;
+	glm::vec2 direction(0.0f);
 	if (m_input.IsKeyDown(GLFW_KEY_UP))
-		std::cout << "pushed a button" << std::endl;
+		direction.y += 1.0f;
+	if (m_input.IsKeyDown(GLFW_KEY_DOWN))
+		direction.y -= 1.0f;
+	if (m_input.IsKeyDown(GLFW_KEY_LEFT))
+		direction.x -= 1.0f;
+	if (m_input.IsKeyDown(GLFW_KEY_RIGHT))
+		direction.x += 1.0f;
+
+	m_playerPosition += direction * m_playerSpeed * static_cast<float>(deltaTime);
+
+	if (glm::length(m_playerPosition - m_collectiblePosition) < 0.5f) {
+		m_score++;
+		m_collectiblePosition = glm::vec2(rand() % 10 - 5, rand() % 10 - 5); // Randomize position
+		std::cout << "Score: " << m_score << std::endl;
+	}
 
 }

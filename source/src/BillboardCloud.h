@@ -9,6 +9,8 @@
 #include <iostream>
 #include "../InputSystem.h"
 #include "../Quad.h"
+#include "../Camera.h"
+
 class BillboardCloud : public GameInterface
 {
 public:
@@ -19,5 +21,7 @@ public:
 private:
 	BillboardRenderer m_renderer;
 	InputSystem m_input;
+	Camera m_camera;
+
 };
 

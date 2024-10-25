@@ -36,18 +36,15 @@ void BillboardCloud::Initialize(GLFWwindow* window)
 //************************************
 void BillboardCloud::Render(float aspectRatio)
 {
-	glm::mat4 Projection = glm::perspective(glm::radians(45.0f), aspectRatio, 0.1f, 100.0f);
-	glm::mat4 View = glm::lookAt(glm::vec3(0.0f, 3.0f, 10.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	glm::quat transformOpertation = glm::angleAxis(0.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-	glm::quat model_quat = transformOpertation;
-	glm::mat4 Model = glm::mat4_cast(model_quat);
+	glm::mat4 Projection = m_camera.GetProjectionMatrix(aspectRatio);
+	glm::mat4 View = m_camera.GetViewMatrix();
+	glm::mat4 Model = glm::mat4(1.0f);
 	glm::mat4 mvp = Projection * View * Model;
 
-
-
 	glm::mat4 quadTransform = mvp * glm::mat4(1.0f);
-
 	m_renderer.RenderQuad(quadTransform);
+	// Render the gizmo lines
+	m_renderer.RenderGizmo(mvp);
 }
 
 //************************************
@@ -64,10 +61,12 @@ void BillboardCloud::ClearResources()
 void BillboardCloud::Update(double deltaTime)
 {
 	m_input.Update();
+	bool rotateLeft = m_input.IsKeyDown(GLFW_KEY_LEFT);
+	bool rotateRight = m_input.IsKeyDown(GLFW_KEY_RIGHT);
+	bool zoomIn = m_input.IsKeyDown(GLFW_KEY_UP);
+	bool zoomOut = m_input.IsKeyDown(GLFW_KEY_DOWN);
 
-	// Keyboard Rotation
-	float xVel = 0.0f;
-	if (m_input.IsKeyDown(GLFW_KEY_UP))
-		std::cout << "pushed a button" << std::endl;
+	// Update the camera with input flags
+	m_camera.Update(deltaTime, rotateLeft, rotateRight, zoomIn, zoomOut);
 
 }

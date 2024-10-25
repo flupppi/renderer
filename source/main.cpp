@@ -121,7 +121,7 @@ void ShutdownSystem()
 //************************************
 int main()
 {
-	gUsedInterface = &g2DGame;
+	gUsedInterface = &gBillboardCloud;
 	//gUsedInterface = &gApplication;
 	GLFWwindow* window = InitializeSystem();
 	RunCoreloop(window);

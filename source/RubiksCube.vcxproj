@@ -160,6 +160,7 @@
   <ItemGroup>
     <ClCompile Include="2DGame\Game.cpp" />
     <ClCompile Include="2DGame\GameRenderer.cpp" />
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="src\BillboardCloud.cpp" />
     <ClCompile Include="src\BillboardRenderer.cpp" />
     <ClCompile Include="Quad.cpp" />
@@ -185,6 +186,7 @@
   <ItemGroup>
     <ClInclude Include="2DGame\Game.h" />
     <ClInclude Include="2DGame\GameRenderer.h" />
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="src\BillboardCloud.h" />
     <ClInclude Include="src\BillboardRenderer.h" />
     <ClInclude Include="Quad.h" />
@@ -221,14 +223,26 @@
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
+    <None Include="shaders\FCollectible.glsl">
+      <FileType>Document</FileType>
+    </None>
     <None Include="shaders\FEye.glsl" />
     <None Include="shaders\FEyeTransp.glsl" />
+    <None Include="shaders\FGizmo.glsl" />
     <None Include="shaders\FJoint.glsl" />
+    <None Include="shaders\FPlayer.glsl">
+      <FileType>Document</FileType>
+    </None>
     <None Include="shaders\FTeeth.glsl" />
     <None Include="shaders\GHair.glsl" />
+    <None Include="shaders\VCollectible.glsl">
+      <FileType>Document</FileType>
+    </None>
     <None Include="shaders\VEye.glsl" />
     <None Include="shaders\VEyeTransp.glsl" />
+    <None Include="shaders\VGizmo.glsl" />
     <None Include="shaders\VJoint.glsl" />
+    <None Include="shaders\VPlayer.glsl" />
     <None Include="shaders\VTeeth.glsl" />
   </ItemGroup>
   <ItemGroup>

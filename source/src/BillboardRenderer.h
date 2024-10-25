@@ -19,8 +19,10 @@ class BillboardRenderer
 
 public:
 	void Initialize();
+	void InitializeGizmo();
 	void InitQuad(const Quad& quad);
 	void RenderQuad(const glm::mat4& transformationMatrix);
+	void RenderGizmo(const glm::mat4& mvp);
 
 	void ClearResources();
 	float GetCubieExtension() const { return 2.0f * m_offset; }
@@ -36,6 +38,13 @@ private:
 	GLuint m_arrayBufferObjects[8] = { 0 };
 	GLuint m_skeletonVertexBufferObject = 0;
 	GLuint m_skeletonIndexBufferObject = 0;
+
+	// For world coordinate system gizmo
+	GLuint m_gizmoVAO = 0;
+	GLuint m_gizmoVBO = 0;
+	GLuint m_gizmoShaderProgram = 0;
+	GLuint m_gizmoMVPUniform = 0;
+
 
 	GLuint m_quadVertexBufferObject = 0;
 	GLuint m_quadIndexBufferObject = 0;

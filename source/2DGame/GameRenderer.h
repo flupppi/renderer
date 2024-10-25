@@ -20,7 +20,7 @@ class GameRenderer
 public:
 	void Initialize();
 	void InitQuad(const Quad& quad);
-	void RenderQuad(const glm::mat4& transformationMatrix);
+	void RenderQuad(const glm::mat4& transformationMatrix, int usedShader);
 
 	void ClearResources();
 	float GetCubieExtension() const { return 2.0f * m_offset; }
@@ -42,7 +42,7 @@ private:
 	GLuint m_vertexBufferObject = 0;
 	GLuint m_elementBufferObject = 0;
 	GLuint m_shaderProgram[5] = { 0 };
-	GLint  m_transformLocation = 0, m_eyeTransformLocation = 0, m_eyeTranspTransformLocation = 0, m_teethTransformLocation = 0, m_skeletonTransformLocation = 0;
+	GLint  m_transformLocation[5] = { 0 };
 	GLuint m_vertexArraySize = 0;
 	GLuint m_jointTransforms = 0;
 

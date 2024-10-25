@@ -54,10 +54,10 @@ void GameRenderer::InitQuad(const Quad& quad) {
 //************************************
 // Render one red square for each joint in the skeleton.
 //************************************
-void GameRenderer::RenderQuad(const glm::mat4& transformationMatrix)
+void GameRenderer::RenderQuad(const glm::mat4& transformationMatrix, int usedShader)
 {
-	glUseProgram(m_shaderProgram[0]);
-	glUniformMatrix4fv(m_skeletonTransformLocation, 1, GL_FALSE, glm::value_ptr(transformationMatrix));
+	glUseProgram(m_shaderProgram[usedShader]);
+	glUniformMatrix4fv(m_transformLocation[usedShader], 1, GL_FALSE, glm::value_ptr(transformationMatrix));
 	glBindVertexArray(m_arrayBufferObjects[0]);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
@@ -81,10 +81,13 @@ void GameRenderer::ClearResources()
 //************************************
 void GameRenderer::LoadShaders()
 {
+	m_shaderProgram[0] = ShaderUtil::CreateShaderProgram("shaders/VPlayer.glsl", "shaders/FPlayer.glsl", nullptr);
+	m_transformLocation[0] = glGetUniformLocation(m_shaderProgram[0], "transformation");
+	glUniform1f(glGetUniformLocation(m_shaderProgram[0], "time"), 0.05f);
 
+	m_shaderProgram[1] = ShaderUtil::CreateShaderProgram("shaders/VCollectible.glsl", "shaders/FCollectible.glsl", nullptr);
+	m_transformLocation[1] = glGetUniformLocation(m_shaderProgram[1], "transformation");
 
-	m_shaderProgram[0] = ShaderUtil::CreateShaderProgram("shaders/VJoint.glsl", "shaders/FJoint.glsl", nullptr);
-	m_skeletonTransformLocation = glGetUniformLocation(m_shaderProgram[0], "transformation");
 
 
 }
