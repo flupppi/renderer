@@ -270,6 +270,7 @@ void ShutdownSystem()
 int main()
 {
 	gUsedInterface = &gBillboardCloud;
+	//gUsedInterface = &gApplication;
 	GLFWwindow* window = InitializeSystem();
 	//RunCoreloop(window);
 	RunCoreloop2(window);

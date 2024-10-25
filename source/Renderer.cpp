@@ -5,6 +5,7 @@
 
 
 
+
 //************************************
 // Load and Initialize all Index and Vertex buffer Objects, Shaders, Vertex Array Objects and Textures that are needed for rendering the Model.
 //************************************
@@ -188,7 +189,18 @@ void Renderer::Initialize()
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
 	glEnableVertexAttribArray(2);
 
-
+	// LtEyeTransp
+	glBindVertexArray(m_arrayBufferObjects[6]);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObjects[5]);
+	glBufferData(GL_ARRAY_BUFFER, LtEyeTranspVertices.size() * sizeof(Vertex), &LtEyeTranspVertices[0], GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBufferObjects[5]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, LtEyeTranspIndices.size() * sizeof(unsigned int), &LtEyeTranspIndices[0], GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoord));
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+	glEnableVertexAttribArray(2);
 
 	// Unbind Buffers
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -228,14 +240,14 @@ void Renderer::Initialize()
 	};
 
 	unsigned int indices[] = {
-		0, 1, 2, // first Triangle
-		2, 3, 0	 // second Triangle
+		0, 1, 3, // first Triangle
+		1, 2, 3	 // second Triangle
 	};
 	glGenBuffers(1, &m_skeletonVertexBufferObject);
 	glGenBuffers(1, &m_skeletonIndexBufferObject);
 
 	// Joint
-	glBindVertexArray(m_arrayBufferObjects[6]);
+	glBindVertexArray(m_arrayBufferObjects[7]);
 	glBindBuffer(GL_ARRAY_BUFFER, m_skeletonVertexBufferObject);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_skeletonIndexBufferObject);
@@ -249,34 +261,10 @@ void Renderer::Initialize()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 }
-
-void Renderer::InitQuad(const Quad& quad) {
-	unsigned int indices[] = {
-	0, 1, 2, // first Triangle
-	2, 3, 0	 // second Triangle
-	};
-	glGenBuffers(1, &m_quadVertexBufferObject);
-	glGenBuffers(1, &m_quadIndexBufferObject);
-
-	// Joint
-	glBindVertexArray(m_arrayBufferObjects[7]);
-	glBindBuffer(GL_ARRAY_BUFFER, m_quadVertexBufferObject);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(quad.vertices), &quad.vertices, GL_STATIC_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_quadIndexBufferObject);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	// Unbind Buffers
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-}
-
 //************************************
 // Render one red square for each joint in the skeleton.
 //************************************
-void Renderer::RenderQuad(const glm::mat4& transformationMatrix)
+void Renderer::RenderSkeleton(const glm::mat4& transformationMatrix)
 {
 	glUseProgram(m_shaderProgram[4]);
 	glUniformMatrix4fv(m_skeletonTransformLocation, 1, GL_FALSE, glm::value_ptr(transformationMatrix));
@@ -309,8 +297,8 @@ void Renderer::RenderSkin(const glm::mat4& transformationMatrix, const std::vect
 	float blendWeight = 0.5f + 0.5f * glm::sin(elapsedTime);
 	glUniform1f(glGetUniformLocation(m_shaderProgram[0], "blendWeight"), expression);
 	glUniform1i(glGetUniformLocation(m_shaderProgram[0], "DecalTexture"), 0); // set texture uniform manually
-	glUniform1i(glGetUniformLocation(m_shaderProgram[0], "GlossTexture"), 1); 
-	glUniform1i(glGetUniformLocation(m_shaderProgram[0], "AOTexture"), 2); 
+	glUniform1i(glGetUniformLocation(m_shaderProgram[0], "GlossTexture"), 1);
+	glUniform1i(glGetUniformLocation(m_shaderProgram[0], "AOTexture"), 2);
 
 	// Draw Skin Mesh
 	glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
