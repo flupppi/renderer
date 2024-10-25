@@ -21,7 +21,6 @@ class BillboardRenderer
 public:
 	void Initialize();
 	void InitQuad(const Quad& quad);
-	void RenderSkin(const glm::mat4& transformationMatrix, const std::vector<glm::mat4>& boneModelMatrices, const float t, GLfloat lightColor[3], GLfloat lightPos[3]);
 	void RenderQuad(const glm::mat4& transformationMatrix);
 
 	void ClearResources();
