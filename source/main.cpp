@@ -12,8 +12,11 @@
 #include "vendor/imgui/imgui_impl_opengl3.h"
 #include "SkinnedAnimation/Application.h"
 #include "src/BillboardCloud.h"
+#include "2DGame/Game.h"
+
 BillboardCloud gBillboardCloud;
 Application gApplication;
+Game g2DGame;
 GameInterface* gUsedInterface;
 
 
@@ -118,7 +121,7 @@ void ShutdownSystem()
 //************************************
 int main()
 {
-	gUsedInterface = &gBillboardCloud;
+	gUsedInterface = &g2DGame;
 	//gUsedInterface = &gApplication;
 	GLFWwindow* window = InitializeSystem();
 	RunCoreloop(window);

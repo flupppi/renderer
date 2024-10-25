@@ -158,9 +158,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="2DGame\Game.cpp" />
+    <ClCompile Include="2DGame\GameRenderer.cpp" />
     <ClCompile Include="src\BillboardCloud.cpp" />
     <ClCompile Include="src\BillboardRenderer.cpp" />
-    <ClCompile Include="src\Quad.cpp" />
+    <ClCompile Include="Quad.cpp" />
     <ClCompile Include="SkinnedAnimation\Joint.cpp" />
     <ClCompile Include="SkinnedAnimation\Renderer.cpp" />
     <ClCompile Include="GameInterface.cpp" />
@@ -181,9 +183,11 @@
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="2DGame\Game.h" />
+    <ClInclude Include="2DGame\GameRenderer.h" />
     <ClInclude Include="src\BillboardCloud.h" />
     <ClInclude Include="src\BillboardRenderer.h" />
-    <ClInclude Include="src\Quad.h" />
+    <ClInclude Include="Quad.h" />
     <ClInclude Include="SkinnedAnimation\Joint.h" />
     <ClInclude Include="SkinnedAnimation\Renderer.h" />
     <ClInclude Include="GameInterface.h" />

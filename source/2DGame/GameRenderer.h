@@ -14,7 +14,7 @@
 #include <chrono>
 #include "../Quad.h"
 
-class BillboardRenderer
+class GameRenderer
 {
 
 public:

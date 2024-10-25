@@ -1,6 +1,6 @@
 #pragma once
 #include "../GameInterface.h"
-#include "BillboardRenderer.h"
+#include "GameRenderer.h"
 #include <glm/ext/quaternion_float.hpp>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -9,7 +9,7 @@
 #include <iostream>
 #include "../InputSystem.h"
 #include "../Quad.h"
-class BillboardCloud : public GameInterface
+class Game : public GameInterface
 {
 public:
 	void Initialize(GLFWwindow* window) override;
@@ -17,7 +17,7 @@ public:
 	void ClearResources() override;
 	void Update(double deltaTime) override;
 private:
-	BillboardRenderer m_renderer;
+	GameRenderer m_renderer;
 	InputSystem m_input;
 };
 
