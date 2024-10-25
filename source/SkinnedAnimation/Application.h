@@ -2,7 +2,7 @@
 
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 #pragma once
-#include "GameInterface.h"
+#include "../GameInterface.h"
 #include "Renderer.h"
 #include "Joint.h"
 #include "Skeleton.h"
@@ -12,11 +12,10 @@
 #include <glm/ext.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include <iostream>
-#include "InputSystem.h"
-#include "Quad.h"
-#include "vendor/imgui/imgui.h"
-#include "vendor/imgui/imgui_impl_glfw.h"
-#include "vendor/imgui/imgui_impl_opengl3.h"
+#include "../InputSystem.h"
+#include "../vendor/imgui/imgui.h"
+#include "../vendor/imgui/imgui_impl_glfw.h"
+#include "../vendor/imgui/imgui_impl_opengl3.h"
 
 
 

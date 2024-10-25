@@ -158,19 +158,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="BillboardCloud.cpp" />
-    <ClCompile Include="BillboardRenderer.cpp" />
-    <ClCompile Include="Quad.cpp" />
-    <ClCompile Include="Joint.cpp" />
-    <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="src\BillboardCloud.cpp" />
+    <ClCompile Include="src\BillboardRenderer.cpp" />
+    <ClCompile Include="src\Quad.cpp" />
+    <ClCompile Include="SkinnedAnimation\Joint.cpp" />
+    <ClCompile Include="SkinnedAnimation\Renderer.cpp" />
     <ClCompile Include="GameInterface.cpp" />
     <ClCompile Include="InputSystem.cpp" />
     <ClCompile Include="KeyboardObserver.cpp" />
-    <ClCompile Include="Application.cpp" />
+    <ClCompile Include="SkinnedAnimation\Application.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ShaderUtil.cpp" />
-    <ClCompile Include="Skeleton.cpp" />
-    <ClCompile Include="SkinMesh.cpp" />
+    <ClCompile Include="SkinnedAnimation\Skeleton.cpp" />
+    <ClCompile Include="SkinnedAnimation\SkinMesh.cpp" />
     <ClCompile Include="vendor\imgui\imgui.cpp" />
     <ClCompile Include="vendor\imgui\imgui_demo.cpp" />
     <ClCompile Include="vendor\imgui\imgui_draw.cpp" />
@@ -181,18 +181,18 @@
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BillboardCloud.h" />
-    <ClInclude Include="BillboardRenderer.h" />
-    <ClInclude Include="Quad.h" />
-    <ClInclude Include="Joint.h" />
-    <ClInclude Include="Renderer.h" />
+    <ClInclude Include="src\BillboardCloud.h" />
+    <ClInclude Include="src\BillboardRenderer.h" />
+    <ClInclude Include="src\Quad.h" />
+    <ClInclude Include="SkinnedAnimation\Joint.h" />
+    <ClInclude Include="SkinnedAnimation\Renderer.h" />
     <ClInclude Include="GameInterface.h" />
     <ClInclude Include="InputSystem.h" />
     <ClInclude Include="KeyboardObserver.h" />
-    <ClInclude Include="Application.h" />
+    <ClInclude Include="SkinnedAnimation\Application.h" />
     <ClInclude Include="ShaderUtil.h" />
-    <ClInclude Include="Skeleton.h" />
-    <ClInclude Include="SkinMesh.h" />
+    <ClInclude Include="SkinnedAnimation\Skeleton.h" />
+    <ClInclude Include="SkinnedAnimation\SkinMesh.h" />
     <ClInclude Include="vendor\imgui\imconfig.h" />
     <ClInclude Include="vendor\imgui\imgui.h" />
     <ClInclude Include="vendor\imgui\imgui_impl_glfw.h" />

@@ -10,8 +10,8 @@
 #include "vendor/imgui/imgui.h"
 #include "vendor/imgui/imgui_impl_glfw.h"
 #include "vendor/imgui/imgui_impl_opengl3.h"
-#include "Application.h"
-#include "BillboardCloud.h"
+#include "SkinnedAnimation/Application.h"
+#include "src/BillboardCloud.h"
 BillboardCloud gBillboardCloud;
 Application gApplication;
 GameInterface* gUsedInterface;
@@ -118,8 +118,8 @@ void ShutdownSystem()
 //************************************
 int main()
 {
-	//gUsedInterface = &gBillboardCloud;
-	gUsedInterface = &gApplication;
+	gUsedInterface = &gBillboardCloud;
+	//gUsedInterface = &gApplication;
 	GLFWwindow* window = InitializeSystem();
 	RunCoreloop(window);
 	ShutdownSystem();

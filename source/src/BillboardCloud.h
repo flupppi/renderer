@@ -1,15 +1,13 @@
 #pragma once
-#include "GameInterface.h"
+#include "../GameInterface.h"
 #include "BillboardRenderer.h"
-#include "Joint.h"
-#include "Skeleton.h"
 #include <glm/ext/quaternion_float.hpp>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include <iostream>
-#include "InputSystem.h"
+#include "../InputSystem.h"
 #include "Quad.h"
 class BillboardCloud : public GameInterface
 {
