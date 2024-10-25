@@ -11,7 +11,8 @@
 #include "vendor/imgui/imgui_impl_glfw.h"
 #include "vendor/imgui/imgui_impl_opengl3.h"
 #include "Application.h"
-
+#include "BillboardCloud.h"
+BillboardCloud gBillboardCloud;
 Application gApplication;
 GameInterface* gUsedInterface;
 
@@ -268,7 +269,7 @@ void ShutdownSystem()
 //************************************
 int main()
 {
-	gUsedInterface = &gApplication;
+	gUsedInterface = &gBillboardCloud;
 	GLFWwindow* window = InitializeSystem();
 	//RunCoreloop(window);
 	RunCoreloop2(window);

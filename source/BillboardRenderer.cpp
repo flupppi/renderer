@@ -1,14 +1,14 @@
 // This is a personal academic project. Dear PVS-Studio, please check it.
 
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
-#include "Renderer.h"
+#include "BillboardRenderer.h"
 
 
 
 //************************************
 // Load and Initialize all Index and Vertex buffer Objects, Shaders, Vertex Array Objects and Textures that are needed for rendering the Model.
 //************************************
-void Renderer::Initialize()
+void BillboardRenderer::Initialize()
 {
 	std::vector<SkinMesh> SkinVertices = ReadVertexBufferMesh("./input/Geometrie/MarsienneSkin_VB.raw");
 	std::vector<unsigned int> SkinIndices = ReadIndexBuffer("./input/Geometrie/MarsienneSkin_IB.raw");
@@ -250,7 +250,7 @@ void Renderer::Initialize()
 
 }
 
-void Renderer::InitQuad(const Quad& quad) {
+void BillboardRenderer::InitQuad(const Quad& quad) {
 	unsigned int indices[] = {
 	0, 1, 2, // first Triangle
 	2, 3, 0	 // second Triangle
@@ -276,7 +276,7 @@ void Renderer::InitQuad(const Quad& quad) {
 //************************************
 // Render one red square for each joint in the skeleton.
 //************************************
-void Renderer::RenderQuad(const glm::mat4& transformationMatrix)
+void BillboardRenderer::RenderQuad(const glm::mat4& transformationMatrix)
 {
 	glUseProgram(m_shaderProgram[4]);
 	glUniformMatrix4fv(m_skeletonTransformLocation, 1, GL_FALSE, glm::value_ptr(transformationMatrix));
@@ -289,7 +289,7 @@ void Renderer::RenderQuad(const glm::mat4& transformationMatrix)
 //************************************
 // Render every vertex array object and assign the relevant uniform inputs for each.
 //************************************
-void Renderer::RenderSkin(const glm::mat4& transformationMatrix, const std::vector<glm::mat4>& boneModelMatrices, const float expression, GLfloat lightColor[3], GLfloat lightPos[3])
+void BillboardRenderer::RenderSkin(const glm::mat4& transformationMatrix, const std::vector<glm::mat4>& boneModelMatrices, const float expression, GLfloat lightColor[3], GLfloat lightPos[3])
 {
 
 	glUseProgram(m_shaderProgram[0]);
@@ -309,8 +309,8 @@ void Renderer::RenderSkin(const glm::mat4& transformationMatrix, const std::vect
 	float blendWeight = 0.5f + 0.5f * glm::sin(elapsedTime);
 	glUniform1f(glGetUniformLocation(m_shaderProgram[0], "blendWeight"), expression);
 	glUniform1i(glGetUniformLocation(m_shaderProgram[0], "DecalTexture"), 0); // set texture uniform manually
-	glUniform1i(glGetUniformLocation(m_shaderProgram[0], "GlossTexture"), 1); 
-	glUniform1i(glGetUniformLocation(m_shaderProgram[0], "AOTexture"), 2); 
+	glUniform1i(glGetUniformLocation(m_shaderProgram[0], "GlossTexture"), 1);
+	glUniform1i(glGetUniformLocation(m_shaderProgram[0], "AOTexture"), 2);
 
 	// Draw Skin Mesh
 	glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
@@ -369,7 +369,7 @@ void Renderer::RenderSkin(const glm::mat4& transformationMatrix, const std::vect
 //************************************
 // Delete Buffers, VAOs and Shaders
 //************************************
-void Renderer::ClearResources()
+void BillboardRenderer::ClearResources()
 {
 	glDeleteBuffers(1, &m_vertexBufferObject);
 	glDeleteBuffers(1, &m_elementBufferObject);
@@ -380,7 +380,7 @@ void Renderer::ClearResources()
 //************************************
 // Load the shader programs from their glsl files using the ShaderUtil.
 //************************************
-void Renderer::LoadShaders()
+void BillboardRenderer::LoadShaders()
 {
 	m_shaderProgram[0] = ShaderUtil::CreateShaderProgram("shaders/VColor.glsl", "shaders/FColor.glsl", "shaders/GHair.glsl");
 	m_transformLocation = glGetUniformLocation(m_shaderProgram[0], "transformation");
@@ -400,6 +400,3 @@ void Renderer::LoadShaders()
 
 
 }
-
-
-

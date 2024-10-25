@@ -15,9 +15,9 @@
 #include "Quad.h"
 #include "SkinMesh.h"
 
-
-class Renderer
+class BillboardRenderer
 {
+
 public:
 	void Initialize();
 	void InitQuad(const Quad& quad);
