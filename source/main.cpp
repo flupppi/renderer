@@ -14,14 +14,10 @@
 #include "MeshSimplification/BillboardCloud.h"
 #include "2DGame/Game.h"
 #include "Raytracer/Raytracer.h"
+#include "MeshSimplification/BillboardGenerator.h"
+#include "MeshSimplification/PlaneSelector.h"
 
-BillboardCloud gBillboardCloud;
-Application gApplication;
-Game g2DGame;
-Raytracer gRaytracer;
 GameInterface* gUsedInterface;
-
-
 
 // Helper to display a little (?) mark which shows a tooltip when hovered.
 // In your own code you may want to display an actual icon if you are using a merged icon fonts (see docs/FONTS.md)
@@ -109,6 +105,26 @@ void RunCoreloop(GLFWwindow* window)
 	}
 }
 
+std::unique_ptr<GameInterface> CreateGameInterface(const std::string& mode) {
+	if (mode == "BillboardCloud") {
+		// Create specific implementations for generator and selector
+		auto generator = std::make_unique<BillboardGenerator>();
+		auto selector = std::make_unique<PlaneSelector>();
+		return std::make_unique<BillboardCloud>(std::move(generator), std::move(selector));
+	}
+	else if (mode == "Application") {
+		return std::make_unique<Application>();
+	}
+	else if (mode == "Game") {
+		return std::make_unique<Game>();
+	}
+	else if (mode == "Raytracer") {
+		return std::make_unique<Raytracer>();
+	}
+	else {
+		throw std::runtime_error("Unknown game mode: " + mode);
+	}
+}
 
 //************************************
 // Unload all resources used by the System.
@@ -122,11 +138,21 @@ void ShutdownSystem()
 //************************************
 // Program entry point
 //************************************
-int main()
+int main(int argc, char* argv[])
 {
-	gUsedInterface = &gBillboardCloud;
+	// Select the game mode based on some configuration, argument, or state.
+	std::string mode = argc > 1 ? argv[1] : "BillboardCloud";
+
+	// Create the GameInterface instance using the factory function
+	auto gameInterface = CreateGameInterface(mode);
+
+	// Set the global pointer to the created instance
+	gUsedInterface = gameInterface.get();  // Assign to the global pointer
+
 	GLFWwindow* window = InitializeSystem();
 	RunCoreloop(window);
 	ShutdownSystem();
 }
+
+
 

@@ -160,9 +160,15 @@
   <ItemGroup>
     <ClCompile Include="2DGame\Game.cpp" />
     <ClCompile Include="2DGame\GameRenderer.cpp" />
+    <ClCompile Include="Face.cpp" />
+    <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="MeshSimplification\Billboard.cpp" />
+    <ClCompile Include="MeshSimplification\BillboardGenerator.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="MeshSimplification\BillboardCloud.cpp" />
     <ClCompile Include="MeshSimplification\BillboardRenderer.cpp" />
+    <ClCompile Include="MeshSimplification\PlaneSelector.cpp" />
+    <ClCompile Include="MeshSimplification\Plane.cpp" />
     <ClCompile Include="Raytracer\Raytracer.cpp" />
     <ClCompile Include="Raytracer\RaytracerRenderer.cpp" />
     <ClCompile Include="Quad.cpp" />
@@ -188,9 +194,17 @@
   <ItemGroup>
     <ClInclude Include="2DGame\Game.h" />
     <ClInclude Include="2DGame\GameRenderer.h" />
+    <ClInclude Include="Face.h" />
+    <ClInclude Include="Mesh.h" />
+    <ClInclude Include="MeshSimplification\Billboard.h" />
+    <ClInclude Include="MeshSimplification\BillboardGenerator.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="MeshSimplification\BillboardCloud.h" />
     <ClInclude Include="MeshSimplification\BillboardRenderer.h" />
+    <ClInclude Include="MeshSimplification\IBillboardGenerator.h" />
+    <ClInclude Include="MeshSimplification\IPlaneSelector.h" />
+    <ClInclude Include="MeshSimplification\PlaneSelector.h" />
+    <ClInclude Include="MeshSimplification\Plane.h" />
     <ClInclude Include="Raytracer\Raytracer.h" />
     <ClInclude Include="Raytracer\RaytracerRenderer.h" />
     <ClInclude Include="Quad.h" />
