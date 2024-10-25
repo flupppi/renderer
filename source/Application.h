@@ -14,6 +14,9 @@
 #include <iostream>
 #include "InputSystem.h"
 #include "Quad.h"
+#include "vendor/imgui/imgui.h"
+#include "vendor/imgui/imgui_impl_glfw.h"
+#include "vendor/imgui/imgui_impl_opengl3.h"
 
 
 
@@ -23,6 +26,7 @@ public:
 	void Initialize(GLFWwindow* window) override;
 	void BuildSkeleton();
 	void Render(float aspectRatio) override;
+	void RenderIMGui();
 	void ClearResources() override;
 	void Update(double deltaTime) override;
 	Skeleton m_skeleton;
@@ -39,4 +43,9 @@ private:
 	float m_currentAngle = 0.0f;
 	float m_transitionTime = 0.0f;
 	const float TRANSITION_DURATION = 10.0f;
+	// Our state
+	bool edit_state = false;
+	bool show_demo_window = true;
+	bool show_another_window = false;
+	bool show_mesh = false;
 };
