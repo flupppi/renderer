@@ -13,14 +13,16 @@
 #include <fstream>
 #include <chrono>
 #include "../Quad.h"
+#include "../IRenderer.h"
 
-class BillboardRenderer
+class BillboardRenderer : IRenderer
 {
 
 public:
-	void Initialize();
+	void Initialize() override;
 	void InitializeGizmo();
 	void InitQuad(const Quad& quad);
+	void Render() override;
 	void RenderQuad(const glm::mat4& transformationMatrix);
 	void RenderGizmo(const glm::mat4& mvp);
 

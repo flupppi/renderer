@@ -30,6 +30,13 @@ void BillboardCloud::Initialize(GLFWwindow* window)
 	m_renderer.Initialize();
 	Quad quad(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(3.0f, 0.0f, 0.0f), glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(0.0f, 2.0f, 0.0f));
 	m_renderer.InitQuad(quad);
+
+	glm::vec3 position = {0.0f, 0.0f, 0.0f };
+	glm::vec3 rotation = { 0.0f, 0.0f, 0.0f };
+	glm::vec3 scale = { 1.0f, 1.0f, 1.0f };
+	GameObject myObject;
+	auto* transformComp = myObject.AddComponent<TransformComponent>(position, rotation, scale);
+
 }
 //************************************
 // Calculate mvp matrix, calculate and render joint transforms and calculate and render skin using the boneModelMatrices.

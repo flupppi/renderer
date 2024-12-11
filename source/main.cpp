@@ -141,7 +141,7 @@ void ShutdownSystem()
 int main(int argc, char* argv[])
 {
 	// Select the game mode based on some configuration, argument, or state.
-	std::string mode = argc > 1 ? argv[1] : "BillboardCloud";
+	std::string mode = argc > 1 ? argv[1] : "Raytracer";
 
 	// Create the GameInterface instance using the factory function
 	auto gameInterface = CreateGameInterface(mode);

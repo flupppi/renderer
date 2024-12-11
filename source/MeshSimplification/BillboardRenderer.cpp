@@ -84,6 +84,10 @@ void BillboardRenderer::InitQuad(const Quad& quad) {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
+void BillboardRenderer::Render()
+{
+}
+
 //************************************
 // Render one red square for each joint in the skeleton.
 //************************************

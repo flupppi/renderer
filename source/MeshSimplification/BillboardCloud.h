@@ -12,6 +12,8 @@
 #include "../Camera.h"
 #include "BillboardGenerator.h"
 #include "PlaneSelector.h"
+#include "../GameObject.h"
+#include "../TransformComponent.h"
 
 class BillboardCloud : public GameInterface
 {
