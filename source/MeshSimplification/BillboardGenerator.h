@@ -5,10 +5,12 @@
 #include"../Mesh.h"
 #include"../Face.h"
 #include"IBillboardGenerator.h"
+namespace Engine {
 
-class BillboardGenerator : public IBillboardGenerator
-{
-public:
-	std::vector<Billboard> generateBillboards(std::vector<Plane> planes, Mesh mesh) override;
-};
+	class BillboardGenerator : public IBillboardGenerator
+	{
+	public:
+		std::vector<Billboard> generateBillboards(std::vector<Plane> planes, Mesh mesh) override;
+	};
 
+}

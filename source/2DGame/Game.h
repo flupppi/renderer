@@ -12,21 +12,25 @@
 #include "../vendor/imgui/imgui_impl_glfw.h"
 #include "../vendor/imgui/imgui_impl_opengl3.h"
 #include "../Quad.h"
-class Game : public GameInterface
-{
-public:
-	void Initialize(GLFWwindow* window) override;
-	void Render(float aspectRatio) override;
-	void ClearResources() override;
-	void Update(double deltaTime) override;
-	void RenderIMGui();
-private:
-	GameRenderer m_renderer;
-	InputSystem m_input;
 
-	glm::vec2 m_playerPosition{ 0.0f, 0.0f }; // Player quad position
-	glm::vec2 m_collectiblePosition{ 3.0f, 3.0f }; // Random collectible position
-	float m_playerSpeed = 5.0f; // Movement speed
-	int m_score = 0; // Player's score
-};
+namespace Engine {
 
+	class Game : public GameInterface
+	{
+	public:
+		void Initialize(GLFWwindow* window) override;
+		void Render(float aspectRatio) override;
+		void ClearResources() override;
+		void Update(double deltaTime) override;
+		void RenderIMGui();
+	private:
+		GameRenderer m_renderer;
+		InputSystem m_input;
+
+		glm::vec2 m_playerPosition{ 0.0f, 0.0f }; // Player quad position
+		glm::vec2 m_collectiblePosition{ 3.0f, 3.0f }; // Random collectible position
+		float m_playerSpeed = 5.0f; // Movement speed
+		int m_score = 0; // Player's score
+	};
+
+}

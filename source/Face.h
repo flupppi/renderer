@@ -1,5 +1,7 @@
 #pragma once
-class Face
-{
-};
+namespace Engine {
 
+	class Face
+	{
+	};
+}

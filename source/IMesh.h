@@ -1,5 +1,7 @@
 #pragma once
-class IMesh
-{
-};
+namespace Engine {
 
+	class IMesh
+	{
+	};
+}

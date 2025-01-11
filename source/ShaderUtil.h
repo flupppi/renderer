@@ -6,15 +6,18 @@
 #include <string>
 #include <iostream>
 #include <fstream>
-class ShaderUtil
-{
-public:
-	static GLuint CreateShaderProgram(const char* vertexFilename, const char* fragmentFilename, const char* geometryFilename);
+namespace Engine {
 
-private:
-	static std::string LoadFile(const char* fileName);
-	static void PrintShaderLog(GLuint shader);
-	static void PrintProgramLog(GLuint program);
-	static void PrintOGlErrors();
-};
+	class ShaderUtil
+	{
+	public:
+		static GLuint CreateShaderProgram(const char* vertexFilename, const char* fragmentFilename, const char* geometryFilename);
 
+	private:
+		static std::string LoadFile(const char* fileName);
+		static void PrintShaderLog(GLuint shader);
+		static void PrintProgramLog(GLuint program);
+		static void PrintOGlErrors();
+	};
+
+}

@@ -13,15 +13,18 @@
 #include <fstream>
 #include <chrono>
 #include "Quad.h"
-class IRenderer
-{
-public:
-	virtual void Initialize() = 0;
-	virtual void Render() = 0;
-	virtual void ClearResources() = 0;
-protected:
-	virtual void LoadShaders() = 0;
+namespace Engine {
 
-};
+	class IRenderer
+	{
+	public:
+		virtual void Initialize() = 0;
+		virtual void Render() = 0;
+		virtual void ClearResources() = 0;
+	protected:
+		virtual void LoadShaders() = 0;
+
+	};
 
 
+}

@@ -1,10 +1,12 @@
 #pragma once
-class IComponent
-{
-public:
+namespace Engine {
 
-	virtual void Update() = 0;
-	virtual void Start() = 0;
-	virtual void Awake() = 0;
-};
+	class IComponent
+	{
+	public:
 
+		virtual void Update() = 0;
+		virtual void Start() = 0;
+		virtual void Awake() = 0;
+	};
+}

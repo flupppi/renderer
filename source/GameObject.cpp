@@ -1,32 +1,33 @@
 #include "GameObject.h"
-
-void GameObject::Update()
-{
-	for (int i = 0; i < components.size(); i++)
+namespace Engine {
+	void GameObject::Update()
 	{
-		components[i].Update();
+		for (auto& c : components)
+		{
+			c->Update();
+		}
 	}
-}
 
-void GameObject::Start()
-{
-	for (int i = 0; i < components.size(); i++)
+	void GameObject::Start()
 	{
-		components[i].Start();
+		for (auto& c : components)
+		{
+			c->Start();
+		}
 	}
-}
 
-void GameObject::Awake()
-{
-	for (int i = 0; i < components.size(); i++)
+	void GameObject::Awake()
 	{
-		components[i].Awake();
+		for (auto& c : components)
+		{
+			c->Awake();
+		}
 	}
+
+	void GameObject::RemoveComponent(IComponent* component)
+	{
+
+
+	}
+
 }
-
-void GameObject::RemoveComponent(IComponent* component)
-{
-
-	
-}
-

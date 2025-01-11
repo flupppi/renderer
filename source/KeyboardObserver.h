@@ -4,18 +4,21 @@
 #pragma once
 #include "GLFW/glfw3.h"
 struct GLFWwindow;
-class KeyboardObserver{
-private:
-	GLFWwindow* m_window;
-	int m_key;
+namespace Engine {
 
-public:
-	KeyboardObserver();
-	KeyboardObserver(GLFWwindow* window, int key);
-	void Update();
+	class KeyboardObserver {
+	private:
+		GLFWwindow* m_window;
+		int m_key;
 
-	bool m_isDown;
-	bool m_wasPressed;
-	bool m_wasReleased;
-};
+	public:
+		KeyboardObserver();
+		KeyboardObserver(GLFWwindow* window, int key);
+		void Update();
 
+		bool m_isDown;
+		bool m_wasPressed;
+		bool m_wasReleased;
+	};
+
+}

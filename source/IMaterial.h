@@ -1,5 +1,9 @@
 #pragma once
-class IMaterial
-{
-};
 
+namespace Engine {
+
+	class IMaterial
+	{
+	};
+
+}

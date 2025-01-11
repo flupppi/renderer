@@ -3,9 +3,13 @@
 #include"Plane.h"
 #include"../Mesh.h"
 #include"IPlaneSelector.h"
-class PlaneSelector : public IPlaneSelector
-{
-public:
-	std::vector<Plane> selectRepresentativePlanes(Mesh mesh) override ;
-};
 
+namespace Engine {
+
+	class PlaneSelector : public IPlaneSelector
+	{
+	public:
+		std::vector<Plane> selectRepresentativePlanes(Mesh mesh) override;
+	};
+
+}

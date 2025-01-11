@@ -17,7 +17,11 @@
 #include "MeshSimplification/BillboardGenerator.h"
 #include "MeshSimplification/PlaneSelector.h"
 
+using namespace Engine;
 GameInterface* gUsedInterface;
+const int WIDTH{ 1024 };
+const int HEIGHT{ 768 };
+
 
 // Helper to display a little (?) mark which shows a tooltip when hovered.
 // In your own code you may want to display an actual icon if you are using a merged icon fonts (see docs/FONTS.md)
@@ -49,7 +53,7 @@ void InitializeDearImGui(GLFWwindow* window)
 //************************************
 // Initialize GLFW, Load OpenGL with glew and set up the renderer.
 //************************************
-GLFWwindow* InitializeSystem()
+GLFWwindow* InitializeSystem(const std::string& mode)
 {
 	// Setup window
 	glfwInit();
@@ -57,7 +61,7 @@ GLFWwindow* InitializeSystem()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
-	GLFWwindow* window = glfwCreateWindow(1024, 768, "Billboard Clouds", nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, mode.c_str(), nullptr, nullptr);
 
 	glfwMakeContextCurrent(window);
 	//glfwSwapInterval(1); // Enable vsync
@@ -140,19 +144,26 @@ void ShutdownSystem()
 //************************************
 int main(int argc, char* argv[])
 {
-	// Select the game mode based on some configuration, argument, or state.
-	std::string mode = argc > 1 ? argv[1] : "Raytracer";
+	try {
+		// Select the game mode based on some configuration, argument, or state.
+		const std::string mode = argc > 1 ? argv[1] : "Raytracer";
 
-	// Create the GameInterface instance using the factory function
-	auto gameInterface = CreateGameInterface(mode);
+		// Create the GameInterface instance using the factory function
+		const auto gameInterface = CreateGameInterface(mode);
 
-	// Set the global pointer to the created instance
-	gUsedInterface = gameInterface.get();  // Assign to the global pointer
+		// Set the global pointer to the created instance
+		gUsedInterface = gameInterface.get();  // Assign to the global pointer
 
-	GLFWwindow* window = InitializeSystem();
-	RunCoreloop(window);
-	ShutdownSystem();
+		GLFWwindow* window = InitializeSystem(mode);
+		RunCoreloop(window);
+		ShutdownSystem();
+	}
+	catch (std::out_of_range&)
+	{
+		std::cerr << "range error\n";
+	}
+	catch (...)
+	{
+		std::cerr << "unknown exception thrown\n";
+	}
 }
-
-
-

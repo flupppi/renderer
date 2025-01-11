@@ -1,5 +1,8 @@
 #pragma once
-class Mesh
-{
-};
 
+namespace Engine {
+
+	class Mesh
+	{
+	};
+}

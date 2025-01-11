@@ -14,23 +14,29 @@
 #include "PlaneSelector.h"
 #include "../GameObject.h"
 #include "../TransformComponent.h"
+#include <vector>
+namespace Engine {
 
-class BillboardCloud : public GameInterface
-{
-public:
-	BillboardCloud(std::unique_ptr<IBillboardGenerator> generator,
-		std::unique_ptr<IPlaneSelector> selector)
-		: m_billboardGenerator(std::move(generator)),
-		m_planeSelector(std::move(selector)) {}
-	void Initialize(GLFWwindow* window) override;
-	void Render(float aspectRatio) override;
-	void ClearResources() override;
-	void Update(double deltaTime) override;
-private:
-	BillboardRenderer m_renderer;
-	InputSystem m_input;
-	Camera m_camera;
-	std::unique_ptr<IBillboardGenerator> m_billboardGenerator;
-	std::unique_ptr<IPlaneSelector> m_planeSelector;
-};
+	class BillboardCloud : public GameInterface
+	{
+	public:
+		BillboardCloud(std::unique_ptr<IBillboardGenerator> generator,
+			std::unique_ptr<IPlaneSelector> selector)
+			: m_billboardGenerator(std::move(generator)),
+			m_planeSelector(std::move(selector)) {
+		}
+		void Initialize(GLFWwindow* window) override;
+		void Render(float aspectRatio) override;
+		void ClearResources() override;
+		void Update(double deltaTime) override;
+
+	private:
+		BillboardRenderer m_renderer;
+		InputSystem m_input;
+		Camera m_camera;
+		std::vector<Quad> m_scene;
+		const std::unique_ptr<IBillboardGenerator> m_billboardGenerator;
+		const std::unique_ptr<IPlaneSelector> m_planeSelector;
+	};
+}
 
