@@ -1,6 +1,6 @@
 #include "BillboardGenerator.h"
 namespace Engine {
-	std::vector<Billboard> BillboardGenerator::generateBillboards(std::vector<Plane> planes, Mesh mesh)
+	auto BillboardGenerator::generateBillboards(std::vector<Plane> planes, Mesh mesh) -> std::vector<Billboard>
 	{
 		return std::vector<Billboard>();
 	}

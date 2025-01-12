@@ -16,7 +16,7 @@
 #include "../TransformComponent.h"
 #include <vector>
 namespace Engine {
-
+	
 	class BillboardCloud : public GameInterface
 	{
 	public:

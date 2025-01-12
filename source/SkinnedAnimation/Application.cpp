@@ -2,6 +2,8 @@
 
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 #include "Application.h"
+
+import std.core;
 namespace Engine {
 	//************************************
 	// Build Skeleton from Joints using hard coded transformation matrices and store their relationships. 

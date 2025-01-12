@@ -96,22 +96,10 @@
     <ClCompile Include="MeshSimplification\BillboardRenderer.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="Face.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="Mesh.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="MeshSimplification\Billboard.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
     <ClCompile Include="MeshSimplification\BillboardGenerator.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="MeshSimplification\PlaneSelector.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="MeshSimplification\Plane.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="IRenderer.cpp">
@@ -138,6 +126,13 @@
     <ClCompile Include="IMaterial.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="Example.ixx" />
+    <ClCompile Include="Vector.ixx" />
+    <ClCompile Include="Test.ixx" />
+    <ClCompile Include="Face.ixx" />
+    <ClCompile Include="Plane.ixx" />
+    <ClCompile Include="Billboard.ixx" />
+    <ClCompile Include="Mesh.ixx" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameInterface.h">
@@ -221,15 +216,6 @@
     <ClInclude Include="MeshSimplification\BillboardRenderer.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="Face.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="Mesh.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="MeshSimplification\Billboard.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
     <ClInclude Include="MeshSimplification\BillboardGenerator.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
@@ -240,9 +226,6 @@
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="MeshSimplification\PlaneSelector.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="MeshSimplification\Plane.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="IRenderer.h">

@@ -6,7 +6,6 @@
 #define GLEW_STATIC
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <iostream>
 #include "vendor/imgui/imgui.h"
 #include "vendor/imgui/imgui_impl_glfw.h"
 #include "vendor/imgui/imgui_impl_opengl3.h"
@@ -19,11 +18,17 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <lua.hpp> // Lua header for C API
+
+import Example;
+import Vector;
+import std;
 
 using namespace Engine;
 GameInterface* gUsedInterface;
 const int WIDTH{ 1024 };
 const int HEIGHT{ 768 };
+
 
 
 // Helper to display a little (?) mark which shows a tooltip when hovered.
@@ -51,6 +56,90 @@ void InitializeDearImGui(GLFWwindow* window)
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init(nullptr);
 	ImGui::StyleColorsDark();
+}
+
+
+
+
+// Function to test Lua integration
+void TestLua() {
+	// Initialize Lua
+	lua_State* L = luaL_newstate(); // Create new Lua state
+	if (!L) {
+		std::cerr << "Failed to create Lua state\n";
+		return;
+	}
+
+	// Load Lua standard libraries
+	luaL_openlibs(L);
+
+	// Lua script (embedded as a string)
+	const char* luaScript = R"(
+        print("Hello, World from Lua!")
+        function add(a, b)
+            return a + b
+        end
+    )";
+
+	// Execute the Lua script
+	if (luaL_dostring(L, luaScript) != LUA_OK) {
+		std::cerr << "Error running Lua script: " << lua_tostring(L, -1) << "\n";
+		lua_close(L);
+		return;
+	}
+
+	// Call the Lua function `add` from C++
+	lua_getglobal(L, "add"); // Push the function onto the stack
+	lua_pushnumber(L, 5);   // Push first argument
+	lua_pushnumber(L, 10);  // Push second argument
+
+	// Call the function (2 arguments, 1 return value)
+	if (lua_pcall(L, 2, 1, 0) != LUA_OK) {
+		std::cerr << "Error calling Lua function: " << lua_tostring(L, -1) << "\n";
+		lua_close(L);
+		return;
+	}
+
+	// Retrieve the result
+	if (lua_isnumber(L, -1)) {
+		double result = lua_tonumber(L, -1);
+		std::cout << "Result of add(5, 10): " << result << "\n";
+	}
+
+	// Close Lua
+	lua_close(L);
+}
+
+
+void TestAssimp() {
+	// Create an instance of the Importer class
+	Assimp::Importer importer;
+
+	// Load a test model (replace "path/to/model.obj" with an actual path to a model)
+	const aiScene* scene = importer.ReadFile(
+		"./input/Car-Model/Car.obj", // Path to your 3D model
+		aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices
+	);
+
+	// Check if the model was loaded successfully
+	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+		std::cerr << "Assimp Error: " << importer.GetErrorString() << "\n";
+		return;
+	}
+
+	// Print basic information about the model
+	std::cout << "Model loaded successfully!\n";
+	std::cout << "Number of meshes: " << scene->mNumMeshes << "\n";
+	std::cout << "Number of materials: " << scene->mNumMaterials << "\n";
+
+	// Print information about the first mesh
+	if (scene->mNumMeshes > 0) {
+		aiMesh* mesh = scene->mMeshes[0];
+		std::cout << "First mesh has " << mesh->mNumVertices << " vertices.\n";
+		if (mesh->HasFaces()) {
+			std::cout << "First mesh has " << mesh->mNumFaces << " faces.\n";
+		}
+	}
 }
 
 //************************************
@@ -148,8 +237,14 @@ void ShutdownSystem()
 int main(int argc, char* argv[])
 {
 	try {
+
 		// Select the game mode based on some configuration, argument, or state.
 		const std::string mode = argc > 1 ? argv[1] : "Raytracer";
+
+		TestLua();
+		TestAssimp();
+		std::cout << "The result of f() is " << Example_NS::f() << std::endl; // 42
+		
 
 		// Create the GameInterface instance using the factory function
 		const auto gameInterface = CreateGameInterface(mode);
@@ -158,7 +253,6 @@ int main(int argc, char* argv[])
 		gUsedInterface = gameInterface.get();  // Assign to the global pointer
 
 		GLFWwindow* window = InitializeSystem(mode);
-		Assimp::Importer importer;
 		RunCoreloop(window);
 		ShutdownSystem();
 	}

@@ -1,9 +1,10 @@
 #pragma once
 #include<vector>
-#include"Plane.h"
-#include"Billboard.h"
-#include"../Mesh.h"
-#include"../Face.h"
+import Plane;
+import Billboard;
+import Mesh;
+import Face;
+
 namespace Engine {
 
 	class IBillboardGenerator
@@ -11,6 +12,7 @@ namespace Engine {
 	public:
 		virtual std::vector<Billboard> generateBillboards(std::vector<Plane> planes, Mesh mesh) = 0;
 		virtual ~IBillboardGenerator() = default;
+
 
 	};
 }

@@ -109,6 +109,8 @@
       <AdditionalIncludeDirectories>$(SolutionDir)\..\ExternalResources\glew\include;$(SolutionDir)\..\ExternalResources\glfw\include;$(SolutionDir)\..\ExternalResources\glm;$(SolutionDir)\..\ExternalResources\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <EnableModules>true</EnableModules>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
+      <BuildStlModules>true</BuildStlModules>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -149,6 +151,13 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)\..\ExternalResources\glew\include;$(SolutionDir)\..\ExternalResources\glfw\include;$(SolutionDir)\..\ExternalResources\glm;$(SolutionDir)\..\ExternalResources\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <EnableModules>true</EnableModules>
+      <BuildStlModules>true</BuildStlModules>
+      <CompileAs>CompileAsCppModule</CompileAs>
+      <DebugInformationFormat>OldStyle</DebugInformationFormat>
+      <AdditionalOptions>/experimental:ifcDebugRecords %(AdditionalOptions)</AdditionalOptions>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -162,22 +171,21 @@
   <ItemGroup>
     <ClCompile Include="2DGame\Game.cpp" />
     <ClCompile Include="2DGame\GameRenderer.cpp" />
+    <ClCompile Include="Example.ixx">
+      <DebugInformationFormat Condition="'$(Configuration)|$(Platform)'=='Release|x64'">OldStyle</DebugInformationFormat>
+    </ClCompile>
     <ClCompile Include="IMaterial.cpp" />
     <ClCompile Include="IMesh.cpp" />
     <ClCompile Include="RendererComponent.cpp" />
-    <ClCompile Include="Face.cpp" />
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="IComponent.cpp" />
     <ClCompile Include="IGameObject.cpp" />
     <ClCompile Include="IRenderer.cpp" />
-    <ClCompile Include="Mesh.cpp" />
-    <ClCompile Include="MeshSimplification\Billboard.cpp" />
     <ClCompile Include="MeshSimplification\BillboardGenerator.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="MeshSimplification\BillboardCloud.cpp" />
     <ClCompile Include="MeshSimplification\BillboardRenderer.cpp" />
     <ClCompile Include="MeshSimplification\PlaneSelector.cpp" />
-    <ClCompile Include="MeshSimplification\Plane.cpp" />
     <ClCompile Include="Raytracer\Raytracer.cpp" />
     <ClCompile Include="Raytracer\RaytracerRenderer.cpp" />
     <ClCompile Include="Quad.cpp" />
@@ -191,6 +199,7 @@
     <ClCompile Include="ShaderUtil.cpp" />
     <ClCompile Include="SkinnedAnimation\Skeleton.cpp" />
     <ClCompile Include="SkinnedAnimation\SkinMesh.cpp" />
+    <ClCompile Include="Test.ixx" />
     <ClCompile Include="TransformComponent.cpp" />
     <ClCompile Include="vendor\imgui\imgui.cpp" />
     <ClCompile Include="vendor\imgui\imgui_demo.cpp" />
@@ -207,13 +216,19 @@
     <ClInclude Include="IMaterial.h" />
     <ClInclude Include="IMesh.h" />
     <ClInclude Include="RendererComponent.h" />
-    <ClInclude Include="Face.h" />
+    <ClCompile Include="Face.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="IComponent.h" />
     <ClInclude Include="IGameObject.h" />
     <ClInclude Include="IRenderer.h" />
-    <ClInclude Include="Mesh.h" />
-    <ClInclude Include="MeshSimplification\Billboard.h" />
+    <ClCompile Include="Mesh.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="Billboard.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
     <ClInclude Include="MeshSimplification\BillboardGenerator.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="MeshSimplification\BillboardCloud.h" />
@@ -221,7 +236,9 @@
     <ClInclude Include="MeshSimplification\IBillboardGenerator.h" />
     <ClInclude Include="MeshSimplification\IPlaneSelector.h" />
     <ClInclude Include="MeshSimplification\PlaneSelector.h" />
-    <ClInclude Include="MeshSimplification\Plane.h" />
+    <ClCompile Include="Plane.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
     <ClInclude Include="Raytracer\Raytracer.h" />
     <ClInclude Include="Raytracer\RaytracerRenderer.h" />
     <ClInclude Include="Quad.h" />
@@ -235,6 +252,10 @@
     <ClInclude Include="SkinnedAnimation\Skeleton.h" />
     <ClInclude Include="SkinnedAnimation\SkinMesh.h" />
     <ClInclude Include="TransformComponent.h" />
+    <ClCompile Include="Vector.ixx">
+      <FileType>Document</FileType>
+      <DebugInformationFormat Condition="'$(Configuration)|$(Platform)'=='Release|x64'">OldStyle</DebugInformationFormat>
+    </ClCompile>
     <ClInclude Include="vendor\imgui\imconfig.h" />
     <ClInclude Include="vendor\imgui\imgui.h" />
     <ClInclude Include="vendor\imgui\imgui_impl_glfw.h" />
@@ -302,6 +323,8 @@
   <ImportGroup Label="ExtensionTargets">
     <Import Project="packages\Assimp.redist.3.0.0\build\native\Assimp.redist.targets" Condition="Exists('packages\Assimp.redist.3.0.0\build\native\Assimp.redist.targets')" />
     <Import Project="packages\Assimp.3.0.0\build\native\Assimp.targets" Condition="Exists('packages\Assimp.3.0.0\build\native\Assimp.targets')" />
+    <Import Project="packages\glfw.3.4.0\build\native\glfw.targets" Condition="Exists('packages\glfw.3.4.0\build\native\glfw.targets')" />
+    <Import Project="packages\lua.5.4.7.2\build\native\Lua.targets" Condition="Exists('packages\lua.5.4.7.2\build\native\Lua.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -309,5 +332,7 @@
     </PropertyGroup>
     <Error Condition="!Exists('packages\Assimp.redist.3.0.0\build\native\Assimp.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Assimp.redist.3.0.0\build\native\Assimp.redist.targets'))" />
     <Error Condition="!Exists('packages\Assimp.3.0.0\build\native\Assimp.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Assimp.3.0.0\build\native\Assimp.targets'))" />
+    <Error Condition="!Exists('packages\glfw.3.4.0\build\native\glfw.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\glfw.3.4.0\build\native\glfw.targets'))" />
+    <Error Condition="!Exists('packages\lua.5.4.7.2\build\native\Lua.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\lua.5.4.7.2\build\native\Lua.targets'))" />
   </Target>
 </Project>

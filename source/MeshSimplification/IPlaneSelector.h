@@ -1,7 +1,8 @@
 #pragma once
 #include<vector>
-#include"Plane.h"
-#include"../Mesh.h"
+import Plane;
+import Mesh;
+
 namespace Engine {
 
 	class IPlaneSelector
