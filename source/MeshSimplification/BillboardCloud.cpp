@@ -27,18 +27,15 @@ namespace Engine {
 		m_input.ObserveKey(GLFW_KEY_LEFT_SHIFT);
 		m_input.ObserveKey(GLFW_KEY_J);
 		m_input.ObserveKey(GLFW_KEY_K);
-
-
-
+		m_input.ObserveKey(GLFW_KEY_I);
+		m_input.ObserveKey(GLFW_KEY_M);
 		m_renderer.Initialize();
-
 
 		for (int i = 0; i < 5; i++) {
 			Quad quad;
 			quad.trans.SetPosition(glm::vec3(-5.0f + (i * 2.1f), 0.0f, 0.0f));
 			m_scene.push_back(quad);
 			m_renderer.InitQuad(quad);
-
 		}
 	}
 	//************************************
@@ -83,6 +80,8 @@ namespace Engine {
 
 		bool right{ m_input.IsKeyDown(GLFW_KEY_K) };
 		bool left{ m_input.IsKeyDown(GLFW_KEY_J) };
+		bool up{ m_input.IsKeyDown(GLFW_KEY_I) };
+		bool down{ m_input.IsKeyDown(GLFW_KEY_M) };
 		if (right) {
 			glm::vec3 deltaPos{1.0f*deltaTime, 0.0f, 0.0f };
 			glm::vec3 oldPos{ m_scene.at(0).trans.GetPosition() };
@@ -95,6 +94,19 @@ namespace Engine {
 			glm::vec3 newPos{ oldPos + deltaPos };
 			m_scene.at(0).trans.SetPosition(newPos);
 		}
+		if (up) {
+			glm::vec3 deltaPos{0.0f, 1.0f*deltaTime, 0.0f };
+			glm::vec3 oldPos{ m_scene.at(0).trans.GetPosition() };
+			glm::vec3 newPos{ oldPos + deltaPos };
+			m_scene.at(0).trans.SetPosition(newPos);
+		}
+		if (down) {
+			glm::vec3 deltaPos{0.0f, -1.0f*deltaTime, 0.0f };
+			glm::vec3 oldPos{ m_scene.at(0).trans.GetPosition() };
+			glm::vec3 newPos{ oldPos + deltaPos };
+			m_scene.at(0).trans.SetPosition(newPos);
+		}
+
 
 		
 		// Update the camera with input flags

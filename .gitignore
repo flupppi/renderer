@@ -1,3 +1,15 @@
 *.drawio.bkp
 .vs/
 .idea/
+
+# Ignore the packages folder
+source/packages/
+
+# Ignore other potential build artifacts
+build/
+out/
+
+# Ignore vcpkg temporary and internal files
+.vcpkg-root
+.vscode/
+vcpkg_installed/

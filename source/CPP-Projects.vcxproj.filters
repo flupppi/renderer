@@ -304,6 +304,7 @@
     <None Include="shaders\VFullScreenQuad.glsl" />
     <None Include="shaders\VGizmo.glsl" />
     <None Include="shaders\VPlayer.glsl" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="input\Transformationen.xml" />

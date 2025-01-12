@@ -16,6 +16,9 @@
 #include "Raytracer/Raytracer.h"
 #include "MeshSimplification/BillboardGenerator.h"
 #include "MeshSimplification/PlaneSelector.h"
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 using namespace Engine;
 GameInterface* gUsedInterface;
@@ -155,6 +158,7 @@ int main(int argc, char* argv[])
 		gUsedInterface = gameInterface.get();  // Assign to the global pointer
 
 		GLFWwindow* window = InitializeSystem(mode);
+		Assimp::Importer importer;
 		RunCoreloop(window);
 		ShutdownSystem();
 	}
