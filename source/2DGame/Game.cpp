@@ -1,10 +1,15 @@
-// This is a personal academic project. Dear PVS-Studio, please check it.
+module;
+#include <glm/ext/quaternion_float.hpp>
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/ext.hpp>
+#include <glm/gtx/rotate_vector.hpp>
+#include "../vendor/imgui/imgui.h"
+#include "../vendor/imgui/imgui_impl_glfw.h"
+#include "../vendor/imgui/imgui_impl_opengl3.h"
 
-// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
+module Game;
 
-
-
-#include "Game.h"
 
 namespace Engine {
 	//************************************

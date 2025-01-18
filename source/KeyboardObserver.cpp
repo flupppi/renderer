@@ -1,7 +1,8 @@
-// This is a personal academic project. Dear PVS-Studio, please check it.
+module;
+#include "GLFW/glfw3.h"
+module KeyboardObserver;
 
-// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
-#include "KeyboardObserver.h"
+
 namespace Engine {
 	KeyboardObserver::KeyboardObserver() : KeyboardObserver(nullptr, -1)
 	{

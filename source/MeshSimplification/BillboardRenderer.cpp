@@ -1,7 +1,10 @@
-// This is a personal academic project. Dear PVS-Studio, please check it.
-
-// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
-#include "BillboardRenderer.h"
+module;
+#include <glm/mat4x4.hpp>
+#include <GL/glew.h>
+#include "../vendor/stb_image/stb_image.h"
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+module BillboardRenderer;
 
 
 namespace Engine {

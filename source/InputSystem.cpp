@@ -1,7 +1,9 @@
-// This is a personal academic project. Dear PVS-Studio, please check it.
+module; 
+#include <glm/mat4x4.hpp>
+#include <GLFW/glfw3.h>
+module InputSystem;
 
-// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
-#include "InputSystem.h"
+
 namespace Engine {
 	void InputSystem::Update()
 	{

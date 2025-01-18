@@ -1,4 +1,8 @@
-#include "Quad.h"
+module;
+#include<glm/glm.hpp>
+
+module Quad;
+
 namespace Engine {
 	/**
 	 * Default constructor of a four sided polygon

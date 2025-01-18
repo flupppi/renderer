@@ -83,6 +83,9 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>
@@ -174,24 +177,14 @@
     <ClCompile Include="Example.ixx">
       <DebugInformationFormat Condition="'$(Configuration)|$(Platform)'=='Release|x64'">OldStyle</DebugInformationFormat>
     </ClCompile>
-    <ClCompile Include="IMaterial.cpp" />
-    <ClCompile Include="IMesh.cpp" />
-    <ClCompile Include="RendererComponent.cpp" />
-    <ClCompile Include="GameObject.cpp" />
-    <ClCompile Include="IComponent.cpp" />
-    <ClCompile Include="IGameObject.cpp" />
-    <ClCompile Include="IRenderer.cpp" />
-    <ClCompile Include="MeshSimplification\BillboardGenerator.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="MeshSimplification\BillboardCloud.cpp" />
     <ClCompile Include="MeshSimplification\BillboardRenderer.cpp" />
-    <ClCompile Include="MeshSimplification\PlaneSelector.cpp" />
     <ClCompile Include="Raytracer\Raytracer.cpp" />
     <ClCompile Include="Raytracer\RaytracerRenderer.cpp" />
     <ClCompile Include="Quad.cpp" />
     <ClCompile Include="SkinnedAnimation\Joint.cpp" />
     <ClCompile Include="SkinnedAnimation\Renderer.cpp" />
-    <ClCompile Include="GameInterface.cpp" />
     <ClCompile Include="InputSystem.cpp" />
     <ClCompile Include="KeyboardObserver.cpp" />
     <ClCompile Include="SkinnedAnimation\Application.cpp" />
@@ -211,47 +204,103 @@
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="2DGame\Game.h" />
-    <ClInclude Include="2DGame\GameRenderer.h" />
-    <ClInclude Include="IMaterial.h" />
-    <ClInclude Include="IMesh.h" />
-    <ClInclude Include="RendererComponent.h" />
+    <ClCompile Include="2DGame\Game.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="2DGame\GameRenderer.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="IMaterial.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="IMesh.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="RendererComponent.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
     <ClCompile Include="Face.ixx">
       <FileType>Document</FileType>
     </ClCompile>
-    <ClInclude Include="GameObject.h" />
-    <ClInclude Include="IComponent.h" />
-    <ClInclude Include="IGameObject.h" />
-    <ClInclude Include="IRenderer.h" />
+    <ClCompile Include="GameObject.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="IComponent.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="IGameObject.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="IRenderer.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
     <ClCompile Include="Mesh.ixx">
       <FileType>Document</FileType>
     </ClCompile>
     <ClCompile Include="Billboard.ixx">
       <FileType>Document</FileType>
     </ClCompile>
-    <ClInclude Include="MeshSimplification\BillboardGenerator.h" />
-    <ClInclude Include="Camera.h" />
-    <ClInclude Include="MeshSimplification\BillboardCloud.h" />
-    <ClInclude Include="MeshSimplification\BillboardRenderer.h" />
-    <ClInclude Include="MeshSimplification\IBillboardGenerator.h" />
-    <ClInclude Include="MeshSimplification\IPlaneSelector.h" />
-    <ClInclude Include="MeshSimplification\PlaneSelector.h" />
+    <ClCompile Include="MeshSimplification\BillboardGenerator.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="Camera.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="MeshSimplification\BillboardCloud.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="MeshSimplification\BillboardRenderer.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="MeshSimplification\IBillboardGenerator.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="MeshSimplification\IPlaneSelector.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="MeshSimplification\PlaneSelector.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
     <ClCompile Include="Plane.ixx">
       <FileType>Document</FileType>
     </ClCompile>
-    <ClInclude Include="Raytracer\Raytracer.h" />
-    <ClInclude Include="Raytracer\RaytracerRenderer.h" />
-    <ClInclude Include="Quad.h" />
-    <ClInclude Include="SkinnedAnimation\Joint.h" />
-    <ClInclude Include="SkinnedAnimation\Renderer.h" />
-    <ClInclude Include="GameInterface.h" />
-    <ClInclude Include="InputSystem.h" />
-    <ClInclude Include="KeyboardObserver.h" />
-    <ClInclude Include="SkinnedAnimation\Application.h" />
-    <ClInclude Include="ShaderUtil.h" />
-    <ClInclude Include="SkinnedAnimation\Skeleton.h" />
-    <ClInclude Include="SkinnedAnimation\SkinMesh.h" />
-    <ClInclude Include="TransformComponent.h" />
+    <ClCompile Include="Raytracer\Raytracer.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="Raytracer\RaytracerRenderer.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="Quad.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="SkinnedAnimation\Joint.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="SkinnedAnimation\Renderer.ixx" />
+    <ClCompile Include="GameInterface.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="InputSystem.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="KeyboardObserver.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="SkinnedAnimation\Application.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="ShaderUtil.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="SkinnedAnimation\Skeleton.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="SkinnedAnimation\SkinMesh.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="TransformComponent.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
     <ClCompile Include="Vector.ixx">
       <FileType>Document</FileType>
       <DebugInformationFormat Condition="'$(Configuration)|$(Platform)'=='Release|x64'">OldStyle</DebugInformationFormat>
@@ -280,6 +329,7 @@
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
+    <None Include=".gitignore" />
     <None Include="packages.config" />
     <None Include="shaders\FCollectible.glsl">
       <FileType>Document</FileType>
@@ -304,6 +354,8 @@
     <None Include="shaders\VJoint.glsl" />
     <None Include="shaders\VPlayer.glsl" />
     <None Include="shaders\VTeeth.glsl" />
+    <None Include="vcpkg-configuration.json" />
+    <None Include="vcpkg.json" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="input\Transformationen.xml" />

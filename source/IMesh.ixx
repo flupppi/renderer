@@ -1,11 +1,9 @@
 module;
 #pragma once
-export module Mesh;
-
-
+export module IMesh;
 namespace Engine {
 
-	export class Mesh
+	export class IMesh
 	{
 	};
 }

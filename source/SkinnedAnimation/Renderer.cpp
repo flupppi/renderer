@@ -1,7 +1,12 @@
-// This is a personal academic project. Dear PVS-Studio, please check it.
+module;
+#include <glm/mat4x4.hpp>
+#include <GL/glew.h>
+#include "../vendor/stb_image/stb_image.h"
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+module Renderer;
 
-// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
-#include "Renderer.h"
+
 namespace Engine {
 
 
@@ -292,8 +297,10 @@ namespace Engine {
 		glUniformMatrix4fv(m_transformLocation, 1, GL_FALSE, glm::value_ptr(transformationMatrix));
 		glUniformMatrix4fv(m_jointTransforms, 9, GL_FALSE, glm::value_ptr(boneModelMatrices[0]));
 		auto currentTime = std::chrono::high_resolution_clock::now();
-		float elapsedTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-		float blendWeight = 0.5f + 0.5f * glm::sin(elapsedTime);
+		auto elapsedTimeMs = std::chrono::duration(currentTime - startTime).count();
+		// Convert milliseconds to seconds for calculations
+		float elapsedTimeSec = elapsedTimeMs / 1000.0f;
+		float blendWeight = 0.5f + 0.5f * glm::sin(elapsedTimeSec);
 		glUniform1f(glGetUniformLocation(m_shaderProgram[0], "blendWeight"), expression);
 		glUniform1i(glGetUniformLocation(m_shaderProgram[0], "DecalTexture"), 0); // set texture uniform manually
 		glUniform1i(glGetUniformLocation(m_shaderProgram[0], "GlossTexture"), 1);

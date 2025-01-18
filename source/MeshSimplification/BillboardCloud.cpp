@@ -1,7 +1,12 @@
-// This is a personal academic project. Dear PVS-Studio, please check it.
+module;
+#include <glm/ext/quaternion_float.hpp>
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/ext.hpp>
+#include <glm/gtx/rotate_vector.hpp>
+module BillboardCloud;
 
-// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
-#include "BillboardCloud.h"
+
 namespace Engine {
 	//************************************
 	// Set up Keyboard Observer, Initialize the Renderer and Initialize the Skeleton.

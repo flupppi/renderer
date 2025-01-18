@@ -1,20 +1,10 @@
-// This is a personal academic project. Dear PVS-Studio, please check it.
-
-// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 #pragma once
-#include "GameInterface.h"
 #define GLEW_STATIC
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include "vendor/imgui/imgui.h"
 #include "vendor/imgui/imgui_impl_glfw.h"
 #include "vendor/imgui/imgui_impl_opengl3.h"
-#include "SkinnedAnimation/Application.h"
-#include "MeshSimplification/BillboardCloud.h"
-#include "2DGame/Game.h"
-#include "Raytracer/Raytracer.h"
-#include "MeshSimplification/BillboardGenerator.h"
-#include "MeshSimplification/PlaneSelector.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -23,6 +13,13 @@
 import Example;
 import Vector;
 import std;
+import BillboardCloud;
+import GameInterface;
+import Application;
+import Game;
+import Raytracer;
+import BillboardGenerator;
+import PlaneSelector;
 
 using namespace Engine;
 GameInterface* gUsedInterface;

@@ -21,9 +21,6 @@
     <ClCompile Include="main.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="GameInterface.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
     <ClCompile Include="ShaderUtil.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
@@ -96,34 +93,7 @@
     <ClCompile Include="MeshSimplification\BillboardRenderer.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="MeshSimplification\BillboardGenerator.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="MeshSimplification\PlaneSelector.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="IRenderer.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="IGameObject.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="RendererComponent.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="GameObject.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="IComponent.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
     <ClCompile Include="TransformComponent.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="IMesh.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="IMaterial.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="Example.ixx" />
@@ -133,20 +103,95 @@
     <ClCompile Include="Plane.ixx" />
     <ClCompile Include="Billboard.ixx" />
     <ClCompile Include="Mesh.ixx" />
+    <ClCompile Include="MeshSimplification\BillboardCloud.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+    <ClCompile Include="SkinnedAnimation\Application.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshSimplification\BillboardGenerator.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshSimplification\BillboardRenderer.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+    <ClCompile Include="2DGame\Game.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+    <ClCompile Include="GameInterface.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+    <ClCompile Include="GameObject.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+    <ClCompile Include="2DGame\GameRenderer.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshSimplification\IBillboardGenerator.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+    <ClCompile Include="IComponent.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+    <ClCompile Include="IGameObject.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+    <ClCompile Include="IMaterial.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+    <ClCompile Include="IMesh.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+    <ClCompile Include="InputSystem.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshSimplification\IPlaneSelector.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+    <ClCompile Include="IRenderer.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+    <ClCompile Include="SkinnedAnimation\Joint.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+    <ClCompile Include="KeyboardObserver.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshSimplification\PlaneSelector.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+    <ClCompile Include="Quad.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+    <ClCompile Include="Raytracer\Raytracer.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+    <ClCompile Include="Raytracer\RaytracerRenderer.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+    <ClCompile Include="SkinnedAnimation\Renderer.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererComponent.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderUtil.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+    <ClCompile Include="SkinnedAnimation\Skeleton.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+    <ClCompile Include="SkinnedAnimation\SkinMesh.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
+    <ClCompile Include="TransformComponent.ixx">
+      <Filter>Headerdateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GameInterface.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="ShaderUtil.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="KeyboardObserver.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="InputSystem.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
     <ClInclude Include="vendor\stb_image\stb_image.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
@@ -175,81 +220,6 @@
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="vendor\imgui\imstb_truetype.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="Quad.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="2DGame\Game.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="2DGame\GameRenderer.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="Camera.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="Raytracer\Raytracer.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="Raytracer\RaytracerRenderer.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="SkinnedAnimation\Joint.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="SkinnedAnimation\Renderer.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="SkinnedAnimation\Application.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="SkinnedAnimation\Skeleton.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="SkinnedAnimation\SkinMesh.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="MeshSimplification\BillboardCloud.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="MeshSimplification\BillboardRenderer.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="MeshSimplification\BillboardGenerator.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="MeshSimplification\IBillboardGenerator.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="MeshSimplification\IPlaneSelector.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="MeshSimplification\PlaneSelector.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="IRenderer.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="IGameObject.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="RendererComponent.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="GameObject.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="IComponent.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="TransformComponent.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="IMesh.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="IMaterial.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>
@@ -288,6 +258,9 @@
     <None Include="shaders\VGizmo.glsl" />
     <None Include="shaders\VPlayer.glsl" />
     <None Include="packages.config" />
+    <None Include="vcpkg.json" />
+    <None Include="vcpkg-configuration.json" />
+    <None Include=".gitignore" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="input\Transformationen.xml" />

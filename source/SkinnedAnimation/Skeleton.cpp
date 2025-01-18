@@ -1,7 +1,8 @@
-// This is a personal academic project. Dear PVS-Studio, please check it.
+module;
+#include <glm/glm.hpp>
+module Skeleton;
 
-// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
-#include "Skeleton.h"
+
 namespace Engine {
 	Skeleton::Skeleton() = default;
 

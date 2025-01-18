@@ -1,4 +1,6 @@
-#include "SkinMesh.h"
+module;
+module SkinMesh;
+
 
 namespace Engine {
 	//************************************

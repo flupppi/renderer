@@ -1,4 +1,8 @@
-﻿#include "Camera.h"
+﻿module;
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+module Camera;
+
 namespace Engine {
     Camera::Camera(float distance, float angle, float speed, float aspectRatio)
         : cameraDistance(distance), cameraAngle(angle), cameraSpeed(speed), pitch(0.0f) {

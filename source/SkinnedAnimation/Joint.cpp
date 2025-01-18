@@ -1,7 +1,8 @@
-// This is a personal academic project. Dear PVS-Studio, please check it.
+module;
+#include <glm/glm.hpp>
+module Joint;
 
-// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
-#include "Joint.h"
+
 namespace Engine {
 	//************************************
 	// Sets transformation matrices to Identity Matrix, parent Null

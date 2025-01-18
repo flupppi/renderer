@@ -1,7 +1,8 @@
-// This is a personal academic project. Dear PVS-Studio, please check it.
+module;
+#include <GL/glew.h>
+#include <malloc.h>
+module ShaderUtil;
 
-// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
-#include "ShaderUtil.h"
 namespace Engine {
 	GLuint ShaderUtil::CreateShaderProgram(const char* vertexFilename, const char* fragmentFilename, const char* geometryFilename)
 	{
@@ -94,7 +95,7 @@ namespace Engine {
 		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &memLength);
 		if (memLength == 0)
 			return;
-		log = (char*)malloc(memLength);
+		log = (char*)malloc(memLength); // TODO: Remove usage of malloc and free here!!
 		glGetProgramInfoLog(program, memLength, &messageLength, log);
 		std::cout << "Program Info Log: " << log << std::endl;
 		free(log);
