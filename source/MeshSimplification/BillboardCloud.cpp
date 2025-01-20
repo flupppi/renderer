@@ -34,6 +34,14 @@ namespace Engine {
 		m_input.ObserveKey(GLFW_KEY_K);
 		m_input.ObserveKey(GLFW_KEY_I);
 		m_input.ObserveKey(GLFW_KEY_M);
+
+		// Movement Keys
+		m_input.ObserveKey(GLFW_KEY_W);
+		m_input.ObserveKey(GLFW_KEY_A);
+		m_input.ObserveKey(GLFW_KEY_S);
+		m_input.ObserveKey(GLFW_KEY_D);
+		m_input.ObserveKey(GLFW_KEY_LEFT_ALT);
+
 		m_renderer.Initialize();
 
 		for (int i = 0; i < 5; i++) {
@@ -111,8 +119,24 @@ namespace Engine {
 			glm::vec3 newPos{ oldPos + deltaPos };
 			m_scene.at(0).trans.SetPosition(newPos);
 		}
+		if (m_input.WasKeyPressed(GLFW_KEY_LEFT_ALT) ){
+			m_camera.ToggleMode();
+		}
 
 
+		if (m_camera.GetCameraMode() == Camera::CameraMode::FPS) {
+			if (m_input.IsRightMouseButtonDown())
+				m_camera.UpdateDirection(m_input.GetMouseDeltaX(), m_input.GetMouseDeltaY());
+			else
+				m_camera.UpdateDirection(0, 0);
+
+		}
+
+		m_camera.HandleInput(deltaTime,
+			m_input.IsKeyDown(GLFW_KEY_W), m_input.IsKeyDown(GLFW_KEY_S),
+			m_input.IsKeyDown(GLFW_KEY_A), m_input.IsKeyDown(GLFW_KEY_D),
+			rotateLeft, rotateRight,
+			zoomIn, zoomOut);
 		
 		// Update the camera with input flags
 		m_camera.Update(deltaTime, rotateLeft, rotateRight, zoomIn, zoomOut);

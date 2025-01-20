@@ -18,6 +18,7 @@ import Skeleton;
 import Renderer;
 import Joint;
 import InputSystem;
+import Camera;
 import std;
 namespace Engine {
 
@@ -49,5 +50,6 @@ namespace Engine {
 		bool show_demo_window{ true };
 		bool show_another_window{ false };
 		bool show_mesh{ false };
+		
 	};
 }

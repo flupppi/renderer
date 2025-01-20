@@ -23,8 +23,8 @@ import PlaneSelector;
 
 using namespace Engine;
 GameInterface* gUsedInterface;
-const int WIDTH{ 1024 };
-const int HEIGHT{ 768 };
+const int WIDTH{ 1920 };
+const int HEIGHT{ 1080 };
 
 
 

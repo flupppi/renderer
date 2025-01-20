@@ -7,8 +7,40 @@ module InputSystem;
 namespace Engine {
 	void InputSystem::Update()
 	{
-		for (auto i = m_keyMapper.begin(); i != m_keyMapper.end(); ++i)
-			i->second.Update();
+		// Skip processing if the window is not focused
+		if (!glfwGetWindowAttrib(m_window, GLFW_FOCUSED)) {
+			m_mouseDeltaX = 0.0;
+			m_mouseDeltaY = 0.0;
+			return;
+		}
+
+		// Get the current cursor position
+		double currentMouseX, currentMouseY;
+		glfwGetCursorPos(m_window, &currentMouseX, &currentMouseY);
+
+		// Get window size and position
+		int windowX, windowY, windowWidth, windowHeight;
+		glfwGetWindowSize(m_window, &windowWidth, &windowHeight);
+		glfwGetWindowPos(m_window, &windowX, &windowY);
+
+		//// Check if cursor is inside the window
+		//if (currentMouseX < 0 || currentMouseY < 0 ||
+		//	currentMouseX >= windowWidth || currentMouseY >= windowHeight) {
+		//	m_mouseDeltaX = 0.0;
+		//	m_mouseDeltaY = 0.0;
+		//	return;
+		//}
+
+		// Calculate mouse deltas
+		m_mouseDeltaX = currentMouseX - m_prevMouseX;
+		m_mouseDeltaY = currentMouseY - m_prevMouseY;
+
+		m_prevMouseX = currentMouseX;
+		m_prevMouseY = currentMouseY;
+
+		// Update key states
+		for (auto& [key, observer] : m_keyMapper)
+			observer.Update();
 	}
 
 	void InputSystem::ObserveKey(int key)

@@ -37,6 +37,7 @@ namespace Engine {
 		std::vector<Quad> m_scene;
 		const std::unique_ptr<IBillboardGenerator> m_billboardGenerator;
 		const std::unique_ptr<IPlaneSelector> m_planeSelector;
+
 	};
 }
 

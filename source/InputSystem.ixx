@@ -29,7 +29,19 @@ namespace Engine {
 		void GetPickingRay(const glm::mat4& transformationMatrix, glm::vec3& startingPoint, glm::vec3& direction);
 		void GetMousePosition(double& xpos, double& ypos);
 
+		double GetMouseDeltaX() const {
+			return m_mouseDeltaX;
+		}
+
+		double GetMouseDeltaY() const {
+			return m_mouseDeltaY;
+		}
+
 	private:
+		double m_prevMouseX = 0.0;
+		double m_prevMouseY = 0.0;
+		double m_mouseDeltaX = 0.0;
+		double m_mouseDeltaY = 0.0;
 		std::map<int, KeyboardObserver> m_keyMapper;
 		GLFWwindow* m_window;
 	};
