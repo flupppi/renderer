@@ -14,6 +14,7 @@ import std;
 import IRenderer;
 import Quad;
 import ShaderUtil;
+import Model;
 namespace Engine {
 
 	export class BillboardRenderer : IRenderer
@@ -58,6 +59,10 @@ namespace Engine {
 		GLuint m_vertexArraySize{ 0 };
 		GLuint m_jointTransforms{ 0 };
 
+		std::unique_ptr<Shader> m_modelShader;
+
+		std::unique_ptr<Model> m_model;
+
 	};
 
 
@@ -66,9 +71,7 @@ namespace Engine {
 //************************************
 	void BillboardRenderer::Initialize()
 	{
-
 		LoadShaders();
-
 		GLuint vertexBufferObjects[6], elementBufferObjects[6];
 		glGenVertexArrays(8, m_arrayBufferObjects);
 		glGenBuffers(1, &m_vertexBufferObject);
@@ -83,7 +86,6 @@ namespace Engine {
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 		InitializeGizmo();
-
 	}
 
 	void BillboardRenderer::InitializeGizmo() {
@@ -139,6 +141,7 @@ namespace Engine {
 
 	void BillboardRenderer::Render()
 	{
+
 	}
 
 	//************************************
@@ -165,6 +168,12 @@ namespace Engine {
 		glBindVertexArray(0);
 
 		glUseProgram(0);
+
+		glm::mat4 model = glm::mat4(1.0f); // Model matrix
+		m_modelShader->use();
+		m_modelShader->setMat4("mvp", mvp); // Set the MVP matrix
+		m_model->Draw(*m_modelShader);
+
 	}
 
 	//************************************
@@ -189,6 +198,11 @@ namespace Engine {
 	//************************************
 	void BillboardRenderer::LoadShaders()
 	{
+		stbi_set_flip_vertically_on_load(true);
+
+		m_modelShader = std::make_unique<Shader>("shaders/VBasic.glsl", "shaders/FBasic.glsl");
+		m_model = std::make_unique<Model>("input/Trees/SingleTree/Tree.obj");
+
 		m_shaderProgram[0] = ShaderUtil::CreateShaderProgram("shaders/VJoint.glsl", "shaders/FJoint.glsl", nullptr);
 		m_skeletonTransformLocation = glGetUniformLocation(m_shaderProgram[0], "transformation");
 		// Load gizmo shader program

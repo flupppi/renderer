@@ -54,7 +54,6 @@
     <ClCompile Include="Face.ixx" />
     <ClCompile Include="Plane.ixx" />
     <ClCompile Include="MeshSimplification\Billboard.ixx" />
-    <ClCompile Include="Mesh.ixx" />
     <ClCompile Include="MeshSimplification\BillboardCloud.ixx">
       <Filter>Headerdateien</Filter>
     </ClCompile>
@@ -136,12 +135,13 @@
     <ClCompile Include="SkinnedAnimation\Skeleton.ixx">
       <Filter>Headerdateien</Filter>
     </ClCompile>
-    <ClCompile Include="SkinnedAnimation\SkinMesh.ixx">
+    <ClCompile Include="SkinnedAnimation\Mesh.ixx">
       <Filter>Headerdateien</Filter>
     </ClCompile>
     <ClCompile Include="TransformComponent.ixx">
       <Filter>Headerdateien</Filter>
     </ClCompile>
+    <ClCompile Include="Model.ixx" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="vendor\stb_image\stb_image.h">
@@ -213,6 +213,8 @@
     <None Include="vcpkg.json" />
     <None Include="vcpkg-configuration.json" />
     <None Include=".gitignore" />
+    <None Include="shaders\VBasic.glsl" />
+    <None Include="shaders\FBasic.glsl" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="input\Transformationen.xml" />

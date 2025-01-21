@@ -14,7 +14,7 @@ namespace Engine {
             Orbit,
         };
 
-        Camera(float distance = 10.0f, float angle = 0.0f, float speed = 1.0f, float aspectRatio = 4.0f / 3.0f): cameraDistance(distance), cameraAngle(angle), cameraSpeed(speed), pitch(0.0f), yaw(-90.0f),
+        Camera(float distance = 10.0f, float angle = 0.0f, float speed = 2.0f, float aspectRatio = 16.0f / 9.0f): cameraDistance(distance), cameraAngle(angle), cameraSpeed(speed), pitch(0.0f), yaw(-90.0f),
             position(glm::vec3(0.0f, 0.0f, 3.0f)),
             front(glm::vec3(0.0f, 0.0f, -1.0f)),
             up(glm::vec3(0.0f, 1.0f, 0.0f)),

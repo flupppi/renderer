@@ -173,6 +173,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="2DGame\GameRenderer.cpp" />
+    <ClCompile Include="Model.ixx" />
     <ClCompile Include="Raytracer\RaytracerRenderer.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="vendor\imgui\imgui.cpp" />
@@ -213,9 +214,6 @@
       <FileType>Document</FileType>
     </ClCompile>
     <ClCompile Include="IRenderer.ixx">
-      <FileType>Document</FileType>
-    </ClCompile>
-    <ClCompile Include="Mesh.ixx">
       <FileType>Document</FileType>
     </ClCompile>
     <ClCompile Include="MeshSimplification\Billboard.ixx">
@@ -276,7 +274,7 @@
     <ClCompile Include="SkinnedAnimation\Skeleton.ixx">
       <FileType>Document</FileType>
     </ClCompile>
-    <ClCompile Include="SkinnedAnimation\SkinMesh.ixx">
+    <ClCompile Include="SkinnedAnimation\Mesh.ixx">
       <FileType>Document</FileType>
     </ClCompile>
     <ClCompile Include="TransformComponent.ixx">
@@ -308,6 +306,7 @@
   <ItemGroup>
     <None Include=".gitignore" />
     <None Include="packages.config" />
+    <None Include="shaders\FBasic.glsl" />
     <None Include="shaders\FCollectible.glsl">
       <FileType>Document</FileType>
     </None>
@@ -321,6 +320,7 @@
     </None>
     <None Include="shaders\FTeeth.glsl" />
     <None Include="shaders\GHair.glsl" />
+    <None Include="shaders\VBasic.glsl" />
     <None Include="shaders\VCollectible.glsl">
       <FileType>Document</FileType>
     </None>

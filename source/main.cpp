@@ -204,6 +204,7 @@ std::unique_ptr<GameInterface> CreateGameInterface(const std::string& mode) {
 		return std::make_unique<BillboardCloud>(std::move(generator), std::move(selector));
 	}
 	else if (mode == "Application") {
+
 		return std::make_unique<Application>();
 	}
 	else if (mode == "Game") {

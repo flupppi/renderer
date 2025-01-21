@@ -8,11 +8,13 @@ module;
 #include "../vendor/stb_image/stb_image.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include<glm/glm.hpp>
 
 export module Renderer;
 import ShaderUtil;
-import SkinMesh;
+import Mesh;
 import std;
+import Model;
 namespace Engine {
 
 	export class Renderer
@@ -43,6 +45,7 @@ namespace Engine {
 		GLuint m_vertexArraySize{ 0 };
 		GLuint m_jointTransforms{ 0 };
 
+
 	};
 
 
@@ -52,19 +55,19 @@ namespace Engine {
 	//************************************
 	void Renderer::Initialize()
 	{
-		std::vector<SkinMesh> SkinVertices = ReadVertexBufferMesh("./input/Geometrie/MarsienneSkin_VB.raw");
+		std::vector<SkinnedMeshVertex> SkinVertices = ReadVertexBufferMesh("./input/Geometrie/MarsienneSkin_VB.raw");
 		std::vector<unsigned int> SkinIndices = ReadIndexBuffer("./input/Geometrie/MarsienneSkin_IB.raw");
-		std::vector<Vertex> UpperJawVertices = ReadVertexBuffer("./input/Geometrie/UpperJaw_VB.raw");
+		std::vector<BaseVertex> UpperJawVertices = ReadVertexBuffer("./input/Geometrie/UpperJaw_VB.raw");
 		std::vector<unsigned int> UpperJawIndices = ReadIndexBuffer("./input/Geometrie/UpperJaw_IB.raw");
-		std::vector<Vertex> LowerJawVertices = ReadVertexBuffer("./input/Geometrie/LowerJaw_VB.raw");
+		std::vector<BaseVertex> LowerJawVertices = ReadVertexBuffer("./input/Geometrie/LowerJaw_VB.raw");
 		std::vector<unsigned int> LowerJawIndices = ReadIndexBuffer("./input/Geometrie/LowerJaw_IB.raw");
-		std::vector<Vertex> RtEyeBallVertices = ReadVertexBuffer("./input/Geometrie/RtEyeBall_smtt_VB.raw");
+		std::vector<BaseVertex> RtEyeBallVertices = ReadVertexBuffer("./input/Geometrie/RtEyeBall_smtt_VB.raw");
 		std::vector<unsigned int> RtEyeBallIndices = ReadIndexBuffer("./input/Geometrie/RtEyeBall_smtt_IB.raw");
-		std::vector<Vertex> LtEyeBallVertices = ReadVertexBuffer("./input/Geometrie/LtEyeBall_smtt_VB.raw");
+		std::vector<BaseVertex> LtEyeBallVertices = ReadVertexBuffer("./input/Geometrie/LtEyeBall_smtt_VB.raw");
 		std::vector<unsigned int> LtEyeBallIndices = ReadIndexBuffer("./input/Geometrie/LtEyeBall_smtt_IB.raw");
-		std::vector<Vertex> RtEyeTranspVertices = ReadVertexBuffer("./input/Geometrie/RtEyeTransp_smtt_VB.raw");
+		std::vector<BaseVertex> RtEyeTranspVertices = ReadVertexBuffer("./input/Geometrie/RtEyeTransp_smtt_VB.raw");
 		std::vector<unsigned int> RtEyeTranspIndices = ReadIndexBuffer("./input/Geometrie/RtEyeTransp_smtt_IB.raw");
-		std::vector<Vertex> LtEyeTranspVertices = ReadVertexBuffer("./input/Geometrie/LtEyeTransp_smtt_VB.raw");
+		std::vector<BaseVertex> LtEyeTranspVertices = ReadVertexBuffer("./input/Geometrie/LtEyeTransp_smtt_VB.raw");
 		std::vector<unsigned int> LtEyeTranspIndices = ReadIndexBuffer("./input/Geometrie/LtEyeTransp_smtt_IB.raw");
 
 		LoadShaders();
@@ -79,26 +82,26 @@ namespace Engine {
 		// Skin Mesh
 		glBindVertexArray(m_arrayBufferObjects[0]);
 		glBindBuffer(GL_ARRAY_BUFFER, m_vertexBufferObject);
-		glBufferData(GL_ARRAY_BUFFER, SkinVertices.size() * sizeof(SkinMesh), &SkinVertices[0], GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, SkinVertices.size() * sizeof(SkinnedMeshVertex), &SkinVertices[0], GL_STATIC_DRAW);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_elementBufferObject);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, SkinIndices.size() * sizeof(unsigned int), &SkinIndices[0], GL_STATIC_DRAW);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SkinMesh), (void*)offsetof(SkinMesh, position));
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SkinnedMeshVertex), (void*)offsetof(SkinnedMeshVertex, position));
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(SkinMesh), (void*)offsetof(SkinMesh, texCoord));
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(SkinnedMeshVertex), (void*)offsetof(SkinnedMeshVertex, texCoord));
 		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(SkinMesh), (void*)offsetof(SkinMesh, normal));
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(SkinnedMeshVertex), (void*)offsetof(SkinnedMeshVertex, normal));
 		glEnableVertexAttribArray(2);
-		glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(SkinMesh), (void*)offsetof(SkinMesh, boneIndex));
+		glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(SkinnedMeshVertex), (void*)offsetof(SkinnedMeshVertex, boneIndex));
 		glEnableVertexAttribArray(3);
-		glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(SkinMesh), (void*)offsetof(SkinMesh, skinWeights));
+		glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(SkinnedMeshVertex), (void*)offsetof(SkinnedMeshVertex, skinWeights));
 		glEnableVertexAttribArray(4);
-		glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(SkinMesh), (void*)offsetof(SkinMesh, positionOffset0));
+		glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(SkinnedMeshVertex), (void*)offsetof(SkinnedMeshVertex, positionOffset0));
 		glEnableVertexAttribArray(5);
-		glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, sizeof(SkinMesh), (void*)offsetof(SkinMesh, normalOffset0));
+		glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, sizeof(SkinnedMeshVertex), (void*)offsetof(SkinnedMeshVertex, normalOffset0));
 		glEnableVertexAttribArray(6);
-		glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, sizeof(SkinMesh), (void*)offsetof(SkinMesh, positionOffset1));
+		glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, sizeof(SkinnedMeshVertex), (void*)offsetof(SkinnedMeshVertex, positionOffset1));
 		glEnableVertexAttribArray(7);
-		glVertexAttribPointer(8, 3, GL_FLOAT, GL_FALSE, sizeof(SkinMesh), (void*)offsetof(SkinMesh, normalOffset1));
+		glVertexAttribPointer(8, 3, GL_FLOAT, GL_FALSE, sizeof(SkinnedMeshVertex), (void*)offsetof(SkinnedMeshVertex, normalOffset1));
 		glEnableVertexAttribArray(8);
 
 
@@ -168,79 +171,79 @@ namespace Engine {
 		// Upper Jaw
 		glBindVertexArray(m_arrayBufferObjects[1]);
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObjects[0]);
-		glBufferData(GL_ARRAY_BUFFER, UpperJawVertices.size() * sizeof(Vertex), &UpperJawVertices[0], GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, UpperJawVertices.size() * sizeof(BaseVertex), &UpperJawVertices[0], GL_STATIC_DRAW);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBufferObjects[0]);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, UpperJawIndices.size() * sizeof(unsigned int), &UpperJawIndices[0], GL_STATIC_DRAW);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(BaseVertex), (void*)offsetof(BaseVertex, position));
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoord));
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(BaseVertex), (void*)offsetof(BaseVertex, texCoord));
 		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(BaseVertex), (void*)offsetof(BaseVertex, normal));
 		glEnableVertexAttribArray(2);
 
 		// Lower Jaw
 		glBindVertexArray(m_arrayBufferObjects[2]);
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObjects[1]);
-		glBufferData(GL_ARRAY_BUFFER, LowerJawVertices.size() * sizeof(Vertex), &LowerJawVertices[0], GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, LowerJawVertices.size() * sizeof(BaseVertex), &LowerJawVertices[0], GL_STATIC_DRAW);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBufferObjects[1]);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, LowerJawIndices.size() * sizeof(unsigned int), &LowerJawIndices[0], GL_STATIC_DRAW);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(BaseVertex), (void*)offsetof(BaseVertex, position));
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoord));
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(BaseVertex), (void*)offsetof(BaseVertex, texCoord));
 		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(BaseVertex), (void*)offsetof(BaseVertex, normal));
 		glEnableVertexAttribArray(2);
 
 		// RtEyeBall
 		glBindVertexArray(m_arrayBufferObjects[3]);
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObjects[2]);
-		glBufferData(GL_ARRAY_BUFFER, RtEyeBallVertices.size() * sizeof(Vertex), &RtEyeBallVertices[0], GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, RtEyeBallVertices.size() * sizeof(BaseVertex), &RtEyeBallVertices[0], GL_STATIC_DRAW);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBufferObjects[2]);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, RtEyeBallIndices.size() * sizeof(unsigned int), &RtEyeBallIndices[0], GL_STATIC_DRAW);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(BaseVertex), (void*)offsetof(BaseVertex, position));
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoord));
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(BaseVertex), (void*)offsetof(BaseVertex, texCoord));
 		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(BaseVertex), (void*)offsetof(BaseVertex, normal));
 		glEnableVertexAttribArray(2);
 
 		// LtEyeBall
 		glBindVertexArray(m_arrayBufferObjects[4]);
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObjects[3]);
-		glBufferData(GL_ARRAY_BUFFER, LtEyeBallVertices.size() * sizeof(Vertex), &LtEyeBallVertices[0], GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, LtEyeBallVertices.size() * sizeof(BaseVertex), &LtEyeBallVertices[0], GL_STATIC_DRAW);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBufferObjects[3]);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, LtEyeBallIndices.size() * sizeof(unsigned int), &LtEyeBallIndices[0], GL_STATIC_DRAW);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(BaseVertex), (void*)offsetof(BaseVertex, position));
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoord));
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(BaseVertex), (void*)offsetof(BaseVertex, texCoord));
 		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(BaseVertex), (void*)offsetof(BaseVertex, normal));
 		glEnableVertexAttribArray(2);
 
 		// RtEyeTransp
 		glBindVertexArray(m_arrayBufferObjects[5]);
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObjects[4]);
-		glBufferData(GL_ARRAY_BUFFER, RtEyeTranspVertices.size() * sizeof(Vertex), &RtEyeTranspVertices[0], GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, RtEyeTranspVertices.size() * sizeof(BaseVertex), &RtEyeTranspVertices[0], GL_STATIC_DRAW);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBufferObjects[4]);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, RtEyeTranspIndices.size() * sizeof(unsigned int), &RtEyeTranspIndices[0], GL_STATIC_DRAW);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(BaseVertex), (void*)offsetof(BaseVertex, position));
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoord));
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(BaseVertex), (void*)offsetof(BaseVertex, texCoord));
 		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(BaseVertex), (void*)offsetof(BaseVertex, normal));
 		glEnableVertexAttribArray(2);
 
 		// LtEyeTransp
 		glBindVertexArray(m_arrayBufferObjects[6]);
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObjects[5]);
-		glBufferData(GL_ARRAY_BUFFER, LtEyeTranspVertices.size() * sizeof(Vertex), &LtEyeTranspVertices[0], GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, LtEyeTranspVertices.size() * sizeof(BaseVertex), &LtEyeTranspVertices[0], GL_STATIC_DRAW);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBufferObjects[5]);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, LtEyeTranspIndices.size() * sizeof(unsigned int), &LtEyeTranspIndices[0], GL_STATIC_DRAW);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(BaseVertex), (void*)offsetof(BaseVertex, position));
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoord));
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(BaseVertex), (void*)offsetof(BaseVertex, texCoord));
 		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(BaseVertex), (void*)offsetof(BaseVertex, normal));
 		glEnableVertexAttribArray(2);
 
 		// Unbind Buffers
