@@ -109,6 +109,8 @@ namespace Engine {
 		m_input.ObserveKey(GLFW_KEY_A);
 		m_input.ObserveKey(GLFW_KEY_S);
 		m_input.ObserveKey(GLFW_KEY_D);
+		m_input.ObserveKey(GLFW_KEY_Q);
+		m_input.ObserveKey(GLFW_KEY_E);
 		m_input.ObserveKey(GLFW_KEY_LEFT_ALT);
 
 		m_renderer.Initialize();
@@ -172,6 +174,7 @@ namespace Engine {
 		m_camera.HandleInput(deltaTime,
 			m_input.IsKeyDown(GLFW_KEY_W), m_input.IsKeyDown(GLFW_KEY_S),
 			m_input.IsKeyDown(GLFW_KEY_A), m_input.IsKeyDown(GLFW_KEY_D),
+			m_input.IsKeyDown(GLFW_KEY_Q), m_input.IsKeyDown(GLFW_KEY_E),
 			rotateLeft, rotateRight,
 			zoomIn, zoomOut);
 

@@ -88,26 +88,9 @@ namespace Engine {
             else
                 mode = CameraMode::FPS;
         }
-        void HandleInput(float deltaTime, bool forward, bool backward, bool left, bool right,
-            bool rotateLeft, bool rotateRight, bool zoomIn, bool zoomOut) {
-            if (mode == CameraMode::FPS) {
-                Move(deltaTime, forward, backward, left, right);
-            }
-            else if (mode == CameraMode::Orbit) {
-                Update(deltaTime, rotateLeft, rotateRight, zoomIn, zoomOut);
-            }
-        }
-        void Move(float deltaTime, bool forward, bool backward, bool left, bool right) {
-            float velocity = cameraSpeed * deltaTime;
-            if (forward)
-                position += front * velocity;
-            if (backward)
-                position -= front * velocity;
-            if (left)
-                position -= this->right * velocity;
-            if (right)
-                position += this->right * velocity;
-        }
+        void HandleInput(float deltaTime, bool forward, bool backward, bool left, bool right, bool up, bool down,
+            bool rotateLeft, bool rotateRight, bool zoomIn, bool zoomOut);
+        void Move(float deltaTime, bool forward, bool backward, bool left, bool right, bool up, bool down);
         void SetSpeed(float speed) {
             cameraSpeed = speed;
 
@@ -160,4 +143,31 @@ namespace Engine {
         float yaw;           // Horizontal rotation angle
         float pitch;         // Vertical rotation angle
     };
+
+
+    void Camera::HandleInput(float deltaTime, bool forward, bool backward, bool left, bool right, bool up, bool down,
+        bool rotateLeft, bool rotateRight, bool zoomIn, bool zoomOut) {
+        if (mode == CameraMode::FPS) {
+            Move(deltaTime, forward, backward, left, right, up, down);
+        }
+        else if (mode == CameraMode::Orbit) {
+            Update(deltaTime, rotateLeft, rotateRight, zoomIn, zoomOut);
+        }
+    }
+
+    void Camera::Move(float deltaTime, bool forward, bool backward, bool left, bool right, bool up, bool down) {
+        float velocity = cameraSpeed * deltaTime;
+        if (forward)
+            position += front * velocity;
+        if (backward)
+            position -= front * velocity;
+        if (left)
+            position -= this->right * velocity;
+        if (right)
+            position += this->right * velocity;
+		if (up)
+			position += this->up * velocity;
+		if (down)
+			position -= this->up * velocity;
+    }
 }
