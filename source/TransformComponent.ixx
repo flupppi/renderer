@@ -17,13 +17,13 @@ namespace Engine {
         }
         TransformComponent() : m_position{ 0.0f, 0.0f, 0.0f }, m_rotation{ 0.0f, 0.0f, 0.0f }, m_scale{ 1.0f, 1.0f, 1.0f } {}
 
-        void Update() override;
+        void Update() override {};
 
 
-        void Start() override;
+        void Start() override {};
 
 
-        void Awake() override;
+        void Awake() override {};
 
         // Getters and setters for position, rotation, and scale if needed
         const glm::vec3& GetPosition() const { return m_position; }
@@ -35,7 +35,13 @@ namespace Engine {
         void SetScale(const glm::vec3& scale) { m_scale = scale; }
 
         // Calculate and return the transform matrix
-        glm::mat4 GetTransform() const;
+        glm::mat4 GetTransform() const {
+            glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), m_position);
+            glm::mat4 rotationMatrix = glm::mat4_cast(glm::quat(glm::radians(m_rotation)));
+            glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), m_scale);
+
+            return translationMatrix * rotationMatrix * scaleMatrix;
+        };
     private:
         glm::vec3 m_position;
         glm::vec3 m_rotation;

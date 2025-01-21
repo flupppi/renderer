@@ -15,5 +15,4 @@ namespace Engine {
 		glm::mat4 modelMatrix;
 		Plane representativePlane;
 	};
-}
- 
+} 

@@ -12,9 +12,31 @@ namespace Engine {
 	export class Joint {
 
 	public:
-		Joint();
-		Joint(const std::string& name, const glm::mat4& matrix, Joint* parent = nullptr);
-		void SetLocalTransform(glm::mat4 transformOperation);
+		//************************************
+		// Sets transformation matrices to Identity Matrix, parent Null
+		//************************************
+		Joint() {
+			m_localBindPoseMatrix = glm::mat4(1.0f);
+			m_localTransformationMatrix = glm::mat4(1.0f);
+			m_targetTransformationMatrix = glm::mat4(1.0f);
+			m_parent = nullptr;
+		}
+		//************************************
+		// Construct Joint from name, bind-pose matrix and parent.
+		//************************************
+		Joint(const std::string& name, const glm::mat4& matrix, Joint* parent = nullptr) {
+			this->m_name = name;
+			this->m_localBindPoseMatrix = matrix;
+			this->m_parent = parent;
+			this->m_localTransformationMatrix = glm::mat4(1.0f);
+			this->m_targetTransformationMatrix = glm::mat4(1.0f);
+		}
+		//************************************
+		// set local transform to change joint orientation.
+		//************************************
+		void SetLocalTransform(glm::mat4 transformOperation) {
+			this->m_localTransformationMatrix = transformOperation;
+		}
 		std::string m_name;
 		glm::mat4 m_localBindPoseMatrix{};
 		glm::mat4 m_localTransformationMatrix{};

@@ -172,28 +172,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="2DGame\Game.cpp" />
     <ClCompile Include="2DGame\GameRenderer.cpp" />
-    <ClCompile Include="Example.ixx">
-      <DebugInformationFormat Condition="'$(Configuration)|$(Platform)'=='Release|x64'">OldStyle</DebugInformationFormat>
-    </ClCompile>
-    <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="MeshSimplification\BillboardCloud.cpp" />
-    <ClCompile Include="MeshSimplification\BillboardRenderer.cpp" />
-    <ClCompile Include="Raytracer\Raytracer.cpp" />
     <ClCompile Include="Raytracer\RaytracerRenderer.cpp" />
-    <ClCompile Include="Quad.cpp" />
-    <ClCompile Include="SkinnedAnimation\Joint.cpp" />
-    <ClCompile Include="SkinnedAnimation\Renderer.cpp" />
-    <ClCompile Include="InputSystem.cpp" />
-    <ClCompile Include="KeyboardObserver.cpp" />
-    <ClCompile Include="SkinnedAnimation\Application.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="ShaderUtil.cpp" />
-    <ClCompile Include="SkinnedAnimation\Skeleton.cpp" />
-    <ClCompile Include="SkinnedAnimation\SkinMesh.cpp" />
-    <ClCompile Include="Test.ixx" />
-    <ClCompile Include="TransformComponent.cpp" />
     <ClCompile Include="vendor\imgui\imgui.cpp" />
     <ClCompile Include="vendor\imgui\imgui_demo.cpp" />
     <ClCompile Include="vendor\imgui\imgui_draw.cpp" />
@@ -237,7 +218,7 @@
     <ClCompile Include="Mesh.ixx">
       <FileType>Document</FileType>
     </ClCompile>
-    <ClCompile Include="Billboard.ixx">
+    <ClCompile Include="MeshSimplification\Billboard.ixx">
       <FileType>Document</FileType>
     </ClCompile>
     <ClCompile Include="MeshSimplification\BillboardGenerator.ixx">
@@ -300,10 +281,6 @@
     </ClCompile>
     <ClCompile Include="TransformComponent.ixx">
       <FileType>Document</FileType>
-    </ClCompile>
-    <ClCompile Include="Vector.ixx">
-      <FileType>Document</FileType>
-      <DebugInformationFormat Condition="'$(Configuration)|$(Platform)'=='Release|x64'">OldStyle</DebugInformationFormat>
     </ClCompile>
     <ClInclude Include="vendor\imgui\imconfig.h" />
     <ClInclude Include="vendor\imgui\imgui.h" />

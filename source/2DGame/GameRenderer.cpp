@@ -11,7 +11,6 @@ namespace Engine {
 	//************************************
 	void GameRenderer::Initialize()
 	{
-
 		LoadShaders();
 
 		GLuint vertexBufferObjects[6], elementBufferObjects[6];
@@ -88,8 +87,5 @@ namespace Engine {
 
 		m_shaderProgram[1] = ShaderUtil::CreateShaderProgram("shaders/VCollectible.glsl", "shaders/FCollectible.glsl", nullptr);
 		m_transformLocation[1] = glGetUniformLocation(m_shaderProgram[1], "transformation");
-
-
-
 	}
 }

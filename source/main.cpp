@@ -10,8 +10,6 @@
 #include <assimp/postprocess.h>
 #include <lua.hpp> // Lua header for C API
 
-import Example;
-import Vector;
 import std;
 import BillboardCloud;
 import GameInterface;
@@ -240,7 +238,6 @@ int main(int argc, char* argv[])
 
 		TestLua();
 		TestAssimp();
-		std::cout << "The result of f() is " << Example_NS::f() << std::endl; // 42
 		
 
 		// Create the GameInterface instance using the factory function
