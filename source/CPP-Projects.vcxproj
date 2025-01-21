@@ -173,6 +173,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="2DGame\GameRenderer.cpp" />
+    <ClCompile Include="MeshSimplification\BillboardTexture.ixx" />
+    <ClCompile Include="MeshSimplification\BoundingBox.ixx" />
+    <ClCompile Include="MeshSimplification\IBillboardGenerator.ixx" />
+    <ClCompile Include="MeshSimplification\IPlaneSelector.ixx" />
+    <ClCompile Include="MeshSimplification\PlaneSpace.ixx" />
     <ClCompile Include="Model.ixx" />
     <ClCompile Include="Raytracer\RaytracerRenderer.cpp" />
     <ClCompile Include="main.cpp" />
@@ -229,12 +234,6 @@
       <FileType>Document</FileType>
     </ClCompile>
     <ClCompile Include="MeshSimplification\BillboardRenderer.ixx">
-      <FileType>Document</FileType>
-    </ClCompile>
-    <ClCompile Include="MeshSimplification\IBillboardGenerator.ixx">
-      <FileType>Document</FileType>
-    </ClCompile>
-    <ClCompile Include="MeshSimplification\IPlaneSelector.ixx">
       <FileType>Document</FileType>
     </ClCompile>
     <ClCompile Include="MeshSimplification\PlaneSelector.ixx">

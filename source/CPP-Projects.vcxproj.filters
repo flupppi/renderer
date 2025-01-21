@@ -81,9 +81,6 @@
     <ClCompile Include="2DGame\GameRenderer.ixx">
       <Filter>Headerdateien</Filter>
     </ClCompile>
-    <ClCompile Include="MeshSimplification\IBillboardGenerator.ixx">
-      <Filter>Headerdateien</Filter>
-    </ClCompile>
     <ClCompile Include="IComponent.ixx">
       <Filter>Headerdateien</Filter>
     </ClCompile>
@@ -97,9 +94,6 @@
       <Filter>Headerdateien</Filter>
     </ClCompile>
     <ClCompile Include="InputSystem.ixx">
-      <Filter>Headerdateien</Filter>
-    </ClCompile>
-    <ClCompile Include="MeshSimplification\IPlaneSelector.ixx">
       <Filter>Headerdateien</Filter>
     </ClCompile>
     <ClCompile Include="IRenderer.ixx">
@@ -142,6 +136,11 @@
       <Filter>Headerdateien</Filter>
     </ClCompile>
     <ClCompile Include="Model.ixx" />
+    <ClCompile Include="MeshSimplification\IBillboardGenerator.ixx" />
+    <ClCompile Include="MeshSimplification\IPlaneSelector.ixx" />
+    <ClCompile Include="MeshSimplification\BoundingBox.ixx" />
+    <ClCompile Include="MeshSimplification\PlaneSpace.ixx" />
+    <ClCompile Include="MeshSimplification\BillboardTexture.ixx" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="vendor\stb_image\stb_image.h">

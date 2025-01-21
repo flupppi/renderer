@@ -4,6 +4,7 @@ module;
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 import Plane;
+import BillboardTexture;
 
 export module Billboard;
 namespace Engine {
@@ -14,5 +15,13 @@ namespace Engine {
 		GLuint textureID;
 		glm::mat4 modelMatrix;
 		Plane representativePlane;
+		void render();
+		void updateTexture(const BillboardTexture& texture);
 	};
-} 
+	void Billboard::render()
+	{
+	}
+	void Billboard::updateTexture(const BillboardTexture& texture)
+	{
+	}
+}

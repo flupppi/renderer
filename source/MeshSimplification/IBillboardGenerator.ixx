@@ -8,7 +8,10 @@ import Mesh;
 import Face;
 
 namespace Engine {
-
+	/*
+	 * @brief Interface for generating billboards
+	 * Here the finished selection of planes are passed along with the mesh, and the billboards are rendered and returned.
+	 */
 	export class IBillboardGenerator
 	{
 	public:
