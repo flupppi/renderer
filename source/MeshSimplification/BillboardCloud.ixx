@@ -67,6 +67,8 @@ namespace Engine {
 		{
 			ImGui::Begin("Game HUD");
 			ImGui::Text("Render Mode: %s", m_camera.DebugMode().c_str());
+			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
 		}
 		ImGui::End();
 		ImGui::Begin("Plane Space Metrics");
@@ -76,9 +78,6 @@ namespace Engine {
 		ImGui::SliderFloat("Azimuth (theta)", &m_theta, 0.0f, 360.0f);
 		ImGui::SliderFloat("Polar Angle (phi)", &m_phi, 0.0f, 180.0f);
 
-		// Update plane
-		m_currentPlane = generatePlaneFromParams(m_d, m_theta, m_phi);
-		m_currentPlane.setupMesh(); // Generate vertices and OpenGL buffers
 
 		ImGui::Text("Plane Metrics:");
 		ImGui::Text("Density: %.3f", m_density);
@@ -153,6 +152,9 @@ namespace Engine {
 		m_input.ObserveKey(GLFW_KEY_LEFT_ALT);
 
 		m_renderer.Initialize();
+		// Update plane
+		m_currentPlane = Plane(m_d, m_theta, m_phi);
+		m_currentPlane.setupMesh(); // Generate vertices and OpenGL buffers
 
 		// Define Objects in the scene.
 		//for (int i = 0; i < 5; i++) {
@@ -217,6 +219,12 @@ namespace Engine {
 			m_input.IsKeyDown(GLFW_KEY_Q), m_input.IsKeyDown(GLFW_KEY_E),
 			rotateLeft, rotateRight,
 			zoomIn, zoomOut);
+
+		// Update the existing plane
+		m_currentPlane.UpdateTransform(m_d, m_theta, m_phi);
+
+
+
 
 		// Update the camera with input flags
 		m_camera.Update(deltaTime, rotateLeft, rotateRight, zoomIn, zoomOut);

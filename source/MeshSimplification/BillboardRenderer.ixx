@@ -218,7 +218,7 @@ namespace Engine {
 		stbi_set_flip_vertically_on_load(true);
 
 		m_modelShader = std::make_unique<Shader>("shaders/VBasic.glsl", "shaders/FBasic.glsl");
-		m_model = std::make_unique<Model>("input/backpack/backpack.obj");
+		m_model = std::make_unique<Model>("input/Trees/SingleTree/Tree.obj");
 
 		
 		m_redShader = std::make_unique<Shader>("shaders/VJoint.glsl", "shaders/FJoint.glsl");
