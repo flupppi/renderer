@@ -15,6 +15,7 @@ import IRenderer;
 import Quad;
 import ShaderUtil;
 import Model;
+import Plane;
 namespace Engine {
 
 	export class BillboardRenderer : IRenderer
@@ -26,6 +27,7 @@ namespace Engine {
 		void InitQuad(const Quad& quad);
 		void Render() override;
 		void RenderQuad(const glm::mat4& transformationMatrix);
+		void RenderPlane(const Plane& plane, const glm::mat4& transformationMatrix);
 		void RenderGizmo(const glm::mat4& mvp);
 
 		void ClearResources();
@@ -60,6 +62,7 @@ namespace Engine {
 		GLuint m_jointTransforms{ 0 };
 
 		std::unique_ptr<Shader> m_modelShader;
+		std::unique_ptr<Shader> m_redShader;
 
 		std::unique_ptr<Model> m_model;
 
@@ -158,6 +161,15 @@ namespace Engine {
 		glUseProgram(0);
 	}
 
+	void BillboardRenderer::RenderPlane(const Plane& plane, const glm::mat4& transformationMatrix)
+	{
+		m_redShader->use();
+		m_redShader->setMat4("transformation", transformationMatrix); // Set the MVP matrix
+
+		plane.Draw(*m_redShader);
+
+	}
+
 	void BillboardRenderer::RenderGizmo(const glm::mat4& mvp)
 	{
 		glUseProgram(m_gizmoShaderProgram);
@@ -202,6 +214,7 @@ namespace Engine {
 
 		m_modelShader = std::make_unique<Shader>("shaders/VBasic.glsl", "shaders/FBasic.glsl");
 		m_model = std::make_unique<Model>("input/backpack/backpack.obj");
+		m_redShader = std::make_unique<Shader>("shaders/VJoint.glsl", "shaders/FJoint.glsl");
 
 		m_shaderProgram[0] = ShaderUtil::CreateShaderProgram("shaders/VJoint.glsl", "shaders/FJoint.glsl", nullptr);
 		m_skeletonTransformLocation = glGetUniformLocation(m_shaderProgram[0], "transformation");

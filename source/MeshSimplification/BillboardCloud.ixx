@@ -21,6 +21,7 @@ import Camera;
 import Quad;
 import ShaderUtil;
 import Model;
+import Plane;
 
 namespace Engine {
 	
@@ -47,6 +48,15 @@ namespace Engine {
 		std::vector<Quad> m_scene;
 		const std::unique_ptr<IBillboardGenerator> m_billboardGenerator;
 		const std::unique_ptr<IPlaneSelector> m_planeSelector;
+		
+		Plane generatePlaneFromParams(float d, float theta, float phi);
+
+		Plane m_currentPlane;
+		float m_d{ 0.0f };
+		float m_theta{ 0.0f };
+		float m_phi{ 0.0f};
+		float m_density{0.0f};
+		float m_penalty{0.0f};
 
 	};
 
@@ -59,8 +69,33 @@ namespace Engine {
 			ImGui::Text("Render Mode: %s", m_camera.DebugMode().c_str());
 		}
 		ImGui::End();
+		ImGui::Begin("Plane Space Metrics");
+
+		// Input sliders
+		ImGui::SliderFloat("Distance (d)", &m_d, -10.0f, 10.0f);
+		ImGui::SliderFloat("Azimuth (theta)", &m_theta, 0.0f, 360.0f);
+		ImGui::SliderFloat("Polar Angle (phi)", &m_phi, 0.0f, 180.0f);
+
+		// Update plane
+		m_currentPlane = generatePlaneFromParams(m_d, m_theta, m_phi);
+		m_currentPlane.setupMesh(); // Generate vertices and OpenGL buffers
+
+		ImGui::Text("Plane Metrics:");
+		ImGui::Text("Density: %.3f", m_density);
+		ImGui::Text("Penalty: %.3f", m_penalty);
+		ImGui::End();
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+	}
+
+	Plane BillboardCloud::generatePlaneFromParams(float d, float theta, float phi) {
+		glm::vec3 normal = glm::normalize(glm::vec3(
+			std::sin(glm::radians(phi)) * std::cos(glm::radians(theta)),
+			std::sin(glm::radians(phi)) * std::sin(glm::radians(theta)),
+			std::cos(glm::radians(phi))
+		));
+		return { normal, d };
 	}
 	void BillboardCloud::Render(float aspectRatio) {
 
@@ -75,6 +110,10 @@ namespace Engine {
 
 		}
 		glm::mat4 Model{ glm::mat4(1.0f) };
+		glm::mat4 mvp = Projection * View * Model;
+		m_renderer.RenderPlane(m_currentPlane, mvp); // Delegate drawing to the renderer
+
+
 		// Render the gizmo lines
         m_renderer.RenderGizmo(Projection * View * glm::scale(Model, glm::vec3(0.5f)) );
 		RenderIMGui();
@@ -115,6 +154,7 @@ namespace Engine {
 
 		m_renderer.Initialize();
 
+		// Define Objects in the scene.
 		//for (int i = 0; i < 5; i++) {
 		//	Quad quad;
 		//	quad.trans.SetPosition(glm::vec3(-5.0f + (i * 2.1f), 0.0f, 0.0f));
