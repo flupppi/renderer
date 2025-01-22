@@ -8,6 +8,7 @@ module;
 export module Mesh;
 import std;
 import ShaderUtil;
+import Face;
 namespace Engine {    // Base Vertex Structure
 	export struct BaseVertex {
 		glm::vec3 position;  // Common: Vertex position
@@ -15,7 +16,7 @@ namespace Engine {    // Base Vertex Structure
 		glm::vec3 normal;    // Common: Normal vector
 
 		BaseVertex() = default;
-		BaseVertex(const glm::vec3& pos, const glm::vec2& tex, const glm::vec3& norm)
+		BaseVertex(const glm::vec3& pos, const glm::vec2& tex = glm::vec2{0.0f}, const glm::vec3& norm = glm::vec3{0.0f})
 			: position(pos), texCoord(tex), normal(norm) {
 		}
 	};
@@ -28,8 +29,8 @@ namespace Engine {    // Base Vertex Structure
 		std::array<float, MAX_BONE_INFLUENCE> m_Weights = { 0.0f }; // Bone weights
 
 		Vertex() = default;
-		Vertex(const glm::vec3& pos, const glm::vec2& tex, const glm::vec3& norm,
-			const glm::vec3& tan, const glm::vec3& bitan)
+		Vertex(const glm::vec3& pos, const glm::vec2& tex=glm::vec2{0.0f}, const glm::vec3& norm = glm::vec3{ 0.0f },
+			const glm::vec3& tan = glm::vec3{ 0.0f }, const glm::vec3& bitan = glm::vec3{ 0.0f })
 			: BaseVertex(pos, tex, norm), tangent(tan), bitangent(bitan) {
 		}
 	};
@@ -153,7 +154,7 @@ namespace Engine {    // Base Vertex Structure
 		unsigned int VAO;
 
 		// constructor
-		Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures): vertices(vertices), indices(indices), textures(textures){
+		Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures) : vertices(vertices), indices(indices), textures(textures) {
 			// set the vertex buffers and its attribute pointers.
 			setupMesh();
 		}
@@ -162,6 +163,8 @@ namespace Engine {    // Base Vertex Structure
 
 		// render the mesh
 		void Draw(Shader& shader);
+
+		std::vector<Face> ExtractFaces() const;
 		
 
 	private:
@@ -266,5 +269,20 @@ namespace Engine {    // Base Vertex Structure
 		// always good practice to set everything back to defaults once configured.
 		glActiveTexture(GL_TEXTURE0);
 	}
+	std::vector<Face> Mesh::ExtractFaces() const {
+		std::vector<Face> faces;
 
+		// Ensure the indices define triangles
+		if (indices.size() % 3 != 0) {
+			std::cerr << "Mesh indices do not define triangles." << std::endl;
+			return faces;
+		}
+
+		// Loop through indices and construct faces
+		for (size_t i = 0; i < indices.size(); i += 3) {
+			faces.emplace_back(indices[i], indices[i + 1], indices[i + 2]);
+		}
+
+		return faces;
+	}
 }

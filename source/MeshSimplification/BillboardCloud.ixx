@@ -22,6 +22,8 @@ import Quad;
 import ShaderUtil;
 import Model;
 import Plane;
+import Mesh;
+import Face;
 
 namespace Engine {
 	
@@ -50,6 +52,9 @@ namespace Engine {
 		const std::unique_ptr<IPlaneSelector> m_planeSelector;
 		
 		Plane generatePlaneFromParams(float d, float theta, float phi);
+		float computeDensityForPlane(const Plane& plane, const Mesh& mesh, float epsilon);
+		bool isPlaneValidForFace(const Plane& plane, const Face& face, const Mesh& mesh, float epsilon);
+		float calculateProjectedArea(const Plane& plane, const Face& face, const Mesh& mesh);
 
 		Plane m_currentPlane;
 		float m_d{ 0.0f };
@@ -59,6 +64,52 @@ namespace Engine {
 		float m_penalty{0.0f};
 
 	};
+
+	float BillboardCloud::computeDensityForPlane(const Plane& plane, const Mesh& mesh, float epsilon) {
+		float density = 0.0f;
+		std::vector<Face> faces = mesh.ExtractFaces();
+		for (const Face& face : faces) {
+			if (isPlaneValidForFace(plane, face, mesh, epsilon)) {
+				float projectedArea = calculateProjectedArea(plane, face, mesh);
+				std::cout << "Projected Area: " << projectedArea << std::endl;
+				density += projectedArea;
+			}
+		}
+
+		return density;
+	}
+
+	bool BillboardCloud::isPlaneValidForFace(const Plane& plane, const Face& face, const Mesh& mesh, float epsilon) {
+		// Retrieve vertex positions from the mesh using face indices
+		glm::vec3 v0 = mesh.vertices[face.v0].position;
+		glm::vec3 v1 = mesh.vertices[face.v1].position;
+		glm::vec3 v2 = mesh.vertices[face.v2].position;
+
+		// Check distance for each vertex
+		std::array<glm::vec3, 3> vertices = { v0, v1, v2 };
+		for (const auto& vertex : vertices) {
+			float distance = glm::abs(glm::dot(plane.normal, vertex) + plane.originOffset);
+			if (distance > epsilon) {
+				return false; // Plane is not valid for this face
+			}
+		}
+
+		return true; // All vertices are within the error threshold
+	}
+
+	float BillboardCloud::calculateProjectedArea(const Plane& plane, const Face& face, const Mesh& mesh) {
+		// Retrieve vertex positions from the mesh using face indices
+		glm::vec3 v0 = mesh.vertices[face.v0].position;
+		glm::vec3 v1 = mesh.vertices[face.v1].position;
+		glm::vec3 v2 = mesh.vertices[face.v2].position;
+
+		// Compute face normal and area
+		glm::vec3 faceNormal = glm::normalize(glm::cross(v1 - v0, v2 - v0));
+		float faceArea = 0.5f * glm::length(glm::cross(v1 - v0, v2 - v0));
+
+		// Projected area onto the plane
+		return faceArea * glm::abs(glm::dot(faceNormal, plane.normal));
+	}
 
 	void BillboardCloud::RenderIMGui() {
 		ImGui_ImplOpenGL3_NewFrame();
@@ -155,7 +206,15 @@ namespace Engine {
 		// Update plane
 		m_currentPlane = Plane(m_d, m_theta, m_phi);
 		m_currentPlane.setupMesh(); // Generate vertices and OpenGL buffers
-
+		auto vertexes = std::vector<Vertex>{ Vertex(glm::vec3(0.0f, 0.0f, 0.0f)),
+			Vertex(glm::vec3(0.0f, 1.0f, 0.0f)),
+			Vertex(glm::vec3(0.0f, 0.0f, 1.0f)) };
+		auto indexes = std::vector<unsigned int>{ 0, 1, 2 };
+		 // Triangle face} };
+        Mesh testMesh{ vertexes, indexes, {} };
+		float epsilon = 0.1f;
+		float density = computeDensityForPlane(m_currentPlane, testMesh, epsilon);
+		std::cout << "Density: " << density << std::endl;
 		// Define Objects in the scene.
 		//for (int i = 0; i < 5; i++) {
 		//	Quad quad;
