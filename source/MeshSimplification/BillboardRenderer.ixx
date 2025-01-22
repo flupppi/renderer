@@ -186,6 +186,11 @@ namespace Engine {
 		m_modelShader->setMat4("mvp", mvp); // Set the MVP matrix
 		m_model->Draw(*m_modelShader);
 
+		m_redShader->use();
+		m_redShader->setMat4("transformation", mvp); // Set the MVP matrix
+
+		m_model->boundingBox.Draw(*m_redShader);
+
 	}
 
 	//************************************
@@ -214,6 +219,8 @@ namespace Engine {
 
 		m_modelShader = std::make_unique<Shader>("shaders/VBasic.glsl", "shaders/FBasic.glsl");
 		m_model = std::make_unique<Model>("input/backpack/backpack.obj");
+
+		
 		m_redShader = std::make_unique<Shader>("shaders/VJoint.glsl", "shaders/FJoint.glsl");
 
 		m_shaderProgram[0] = ShaderUtil::CreateShaderProgram("shaders/VJoint.glsl", "shaders/FJoint.glsl", nullptr);

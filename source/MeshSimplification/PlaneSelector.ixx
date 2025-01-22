@@ -36,6 +36,7 @@ namespace Engine {
 	// Return representative planes by computing metrics and greedily selecting the densest planes.
 	std::vector<Plane> PlaneSelector::selectRepresentativePlanes(Model model)
 	{
+		
 		// Placeholder
 		return std::vector<Plane>();
 	}
