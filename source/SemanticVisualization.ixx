@@ -4,9 +4,11 @@
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 #include <glm/gtx/rotate_vector.hpp>
+#include <stb_image.h>
 #include "./vendor/imgui/imgui.h"
 #include "./vendor/imgui/imgui_impl_glfw.h"
 #include "./vendor/imgui/imgui_impl_opengl3.h"
+
 export module SemanticVisualization;
 
 import std;
@@ -17,13 +19,13 @@ import InputSystem;
 import RaytracerRenderer;
 namespace Engine {
 
-	bool drawImage = true;
-	bool drawBoundingBox = true;
-	bool drawInstanceBoundary = true;
-	bool drawSemanticMask = true;
-	bool drawDepthOverlay = false;
-
-	std::string filterClass = "";
+	// Internal Program state
+	bool drawImage{ true };
+	bool drawBoundingBox{ true };
+	bool drawInstanceBoundary{ true };
+	bool drawSemanticMask{ true };
+	bool drawDepthOverlay{ false };
+	std::string filterClass{ "" }; // Filter classes should be adaptable
 	
 	void exportSVGWithMetadata(std::string filename, float scale) {
 		// TODO: Implement this function
@@ -45,8 +47,8 @@ namespace Engine {
 
 		// Image buffer for ray tracing output
 		std::vector<uint8_t> m_rayTraceImage;
-		int m_imageWidth{ 1024 };
-		int m_imageHeight{ 768 };
+		int m_imageWidth{ 800 };
+		int m_imageHeight{600 };
 
 		void GenerateRayTraceImage(); // Ray tracing function
 
@@ -87,9 +89,12 @@ namespace Engine {
 		m_input.ObserveKey(GLFW_KEY_M);
 		m_input.ObserveKey(GLFW_KEY_D);
 		m_input.ObserveKey(GLFW_KEY_V);
-
-
-
+		int width{ 800 };
+		int height{ 600 };
+		int nrChannels{ 3 };
+		unsigned char* renderImage{ stbi_load("./input/Texturen/SkinTex_Gloss.jpg", &width, &height, &nrChannels, 0) };
+		//int renderImage = loadImage("render.png");
+		//int cocoData = loadJSONObject("coco_output.json");
 		m_renderer.Initialize();
 		Quad quad(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(3.0f, 0.0f, 0.0f), glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(0.0f, 2.0f, 0.0f));
 		m_renderer.InitQuad(quad);

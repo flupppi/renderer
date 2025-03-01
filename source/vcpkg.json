@@ -1,3 +1,10 @@
 {
-  "dependencies": []
+  "dependencies": [
+    "cxxopts",
+    "fmt",
+    "range-v3",
+    "glm",
+    "glfw3", 
+    "lua"
+  ]
 }

@@ -249,4 +249,7 @@
       <Filter>Ressourcendateien</Filter>
     </Image>
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMAKE.txt" />
+  </ItemGroup>
 </Project>

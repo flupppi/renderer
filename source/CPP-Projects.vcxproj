@@ -114,6 +114,7 @@
       <EnableModules>true</EnableModules>
       <UseStandardPreprocessor>true</UseStandardPreprocessor>
       <BuildStlModules>true</BuildStlModules>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -348,6 +349,9 @@
     <Image Include="input\Texturen\SkinTex_Decal.jpg" />
     <Image Include="input\Texturen\SkinTex_Gloss.jpg" />
     <Image Include="input\Texturen\SkinUV.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMAKE.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -9,6 +9,9 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <lua.hpp> // Lua header for C API
+#include <cxxopts.hpp>
+#include <fmt/format.h>
+#include <range/v3/view.hpp>
 
 import std;
 import BillboardCloud;
@@ -22,8 +25,8 @@ import SemanticVisualization;
 
 using namespace Engine;
 GameInterface* gUsedInterface;
-const int WIDTH{ 1920 };
-const int HEIGHT{ 1080 };
+const int WIDTH{ 800 };
+const int HEIGHT{ 600 };
 
 
 
