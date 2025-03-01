@@ -1,12 +1,13 @@
 {
   "dependencies": [
     "assimp",
+    "assimp",
     "cxxopts",
     "fmt",
     "glfw3",
     "glm",
     "lua",
     "range-v3",
-    "assimp"
+    "nlohmann-json"
   ]
 }
