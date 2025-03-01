@@ -1,10 +1,12 @@
 {
   "dependencies": [
+    "assimp",
     "cxxopts",
     "fmt",
-    "range-v3",
+    "glfw3",
     "glm",
-    "glfw3", 
-    "lua"
+    "lua",
+    "range-v3",
+    "assimp"
   ]
 }

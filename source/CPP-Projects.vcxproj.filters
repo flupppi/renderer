@@ -209,7 +209,6 @@
     <None Include="shaders\VFullScreenQuad.glsl" />
     <None Include="shaders\VGizmo.glsl" />
     <None Include="shaders\VPlayer.glsl" />
-    <None Include="packages.config" />
     <None Include="vcpkg.json" />
     <None Include="vcpkg-configuration.json" />
     <None Include=".gitignore" />
