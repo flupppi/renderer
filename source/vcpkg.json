@@ -8,6 +8,10 @@
     "glm",
     "lua",
     "range-v3",
-    "nlohmann-json"
+    "nlohmann-json",
+    {
+      "name": "imgui",
+      "features": [ "glfw-binding", "opengl3-binding" ]
+    }
   ]
 }
