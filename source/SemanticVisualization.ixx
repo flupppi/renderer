@@ -8,6 +8,8 @@
 #include "./vendor/imgui/imgui.h"
 #include "./vendor/imgui/imgui_impl_glfw.h"
 #include "./vendor/imgui/imgui_impl_opengl3.h"
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
 
 export module SemanticVisualization;
 
@@ -25,6 +27,10 @@ namespace Engine {
 	bool drawInstanceBoundary{ true };
 	bool drawSemanticMask{ true };
 	bool drawDepthOverlay{ false };
+	json Document;
+
+	std::string Data{
+	  R"({ "name": "Roderick", "role": "Barbarian" })" };
 	std::string filterClass{ "" }; // Filter classes should be adaptable
 	
 	void exportSVGWithMetadata(std::string filename, float scale) {
@@ -89,11 +95,17 @@ namespace Engine {
 		m_input.ObserveKey(GLFW_KEY_M);
 		m_input.ObserveKey(GLFW_KEY_D);
 		m_input.ObserveKey(GLFW_KEY_V);
+
+		// Load Image
 		int width{ 800 };
 		int height{ 600 };
 		int nrChannels{ 3 };
 		unsigned char* renderImage{ stbi_load("./input/Texturen/SkinTex_Gloss.jpg", &width, &height, &nrChannels, 0) };
 		//int renderImage = loadImage("render.png");
+		// Load Json Data
+		Document = { json::parse(Data) };
+		std::string Name{ Document["name"] };
+		std::string Role{ Document["role"] };
 		//int cocoData = loadJSONObject("coco_output.json");
 		m_renderer.Initialize();
 		Quad quad(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(3.0f, 0.0f, 0.0f), glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(0.0f, 2.0f, 0.0f));
