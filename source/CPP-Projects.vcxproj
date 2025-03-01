@@ -121,7 +121,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)\..\ExternalResources\glew\lib\Release\x64;$(SolutionDir)\..\ExternalResources\glfw\lib-vc2017;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;glfw3.lib;glew32s.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;glew32s.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <IgnoreSpecificDefaultLibraries>MSVCRT;LIBCMT;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
@@ -291,6 +291,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
+    <None Include="input\segmentation\coco_output.json" />
     <None Include="README.md" />
     <None Include="shaders\FBasic.glsl" />
     <None Include="shaders\FCollectible.glsl">
@@ -324,6 +325,7 @@
     <Xml Include="input\Transformationen.xml" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="input\segmentation\render.png" />
     <Image Include="input\Texturen\EyesUV.png" />
     <Image Include="input\Texturen\EyeTex_Decal00.jpg" />
     <Image Include="input\Texturen\EyeTex_Decal01.jpg" />

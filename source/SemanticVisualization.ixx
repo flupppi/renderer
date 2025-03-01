@@ -1,3 +1,4 @@
+module;
 #pragma once
 #include <glm/ext/quaternion_float.hpp>
 #include <GLFW/glfw3.h>
@@ -28,15 +29,13 @@ namespace Engine {
 	bool drawSemanticMask{ true };
 	bool drawDepthOverlay{ false };
 	json Document;
-
-	std::string Data{
-	  R"({ "name": "Roderick", "role": "Barbarian" })" };
 	std::string filterClass{ "" }; // Filter classes should be adaptable
 	
 	void exportSVGWithMetadata(std::string filename, float scale) {
 		// TODO: Implement this function
 
 	}
+	
 
 	export class SemanticVisualization : public GameInterface
 	{
@@ -70,6 +69,22 @@ namespace Engine {
 		glm::vec3 center;
 		float radius;
 	};
+	json loadJSONObject(std::string filename)
+	{
+		std::fstream file{};
+		json doc{};
+		try {
+			file.open(filename, std::ios::in);
+			doc = { json::parse(file) };
+			return doc;
+		}
+		catch (json::parse_error e)
+		{
+			std::cout << e.what() << std::endl;
+			return nullptr;
+		}
+	}
+
 
 	//************************************
 // Set up Keyboard Observer, Initialize the Renderer and Initialize the Skeleton.
@@ -103,10 +118,8 @@ namespace Engine {
 		unsigned char* renderImage{ stbi_load("./input/Texturen/SkinTex_Gloss.jpg", &width, &height, &nrChannels, 0) };
 		//int renderImage = loadImage("render.png");
 		// Load Json Data
-		Document = { json::parse(Data) };
-		std::string Name{ Document["name"] };
-		std::string Role{ Document["role"] };
-		//int cocoData = loadJSONObject("coco_output.json");
+		json cocoData = loadJSONObject("./input/segmentation/coco_output.json");
+
 		m_renderer.Initialize();
 		Quad quad(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(3.0f, 0.0f, 0.0f), glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(0.0f, 2.0f, 0.0f));
 		m_renderer.InitQuad(quad);
