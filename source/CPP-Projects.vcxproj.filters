@@ -141,6 +141,7 @@
     <ClCompile Include="MeshSimplification\BoundingBox.ixx" />
     <ClCompile Include="MeshSimplification\PlaneSpace.ixx" />
     <ClCompile Include="MeshSimplification\BillboardTexture.ixx" />
+    <ClCompile Include="SemanticVisualization.ixx" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="vendor\stb_image\stb_image.h">
@@ -214,6 +215,7 @@
     <None Include=".gitignore" />
     <None Include="shaders\VBasic.glsl" />
     <None Include="shaders\FBasic.glsl" />
+    <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="input\Transformationen.xml" />

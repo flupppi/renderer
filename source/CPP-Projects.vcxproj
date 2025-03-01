@@ -181,6 +181,7 @@
     <ClCompile Include="Model.ixx" />
     <ClCompile Include="Raytracer\RaytracerRenderer.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="SemanticVisualization.ixx" />
     <ClCompile Include="vendor\imgui\imgui.cpp" />
     <ClCompile Include="vendor\imgui\imgui_demo.cpp" />
     <ClCompile Include="vendor\imgui\imgui_draw.cpp" />
@@ -305,6 +306,7 @@
   <ItemGroup>
     <None Include=".gitignore" />
     <None Include="packages.config" />
+    <None Include="README.md" />
     <None Include="shaders\FBasic.glsl" />
     <None Include="shaders\FCollectible.glsl">
       <FileType>Document</FileType>

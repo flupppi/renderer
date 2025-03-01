@@ -18,6 +18,7 @@ import Game;
 import Raytracer;
 import BillboardGenerator;
 import PlaneSelector;
+import SemanticVisualization;
 
 using namespace Engine;
 GameInterface* gUsedInterface;
@@ -212,6 +213,9 @@ std::unique_ptr<GameInterface> CreateGameInterface(const std::string& mode) {
 	}
 	else if (mode == "Raytracer") {
 		return std::make_unique<Raytracer>();
+	}
+	else if (mode == "SemanticVisualization") {
+		return std::make_unique<SemanticVisualization>();
 	}
 	else {
 		throw std::runtime_error("Unknown game mode: " + mode);
