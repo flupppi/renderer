@@ -55,6 +55,7 @@ namespace Engine {
 	static GLuint g_imageTex = 0; // We'll store the texture ID here after loading
 	int g_imageWidth{ 800 };
 	int g_imageHeight{ 600 };
+	std::array<int, 4> g_nearColor, g_farColor;
 
 
 	json cocoData;
@@ -282,6 +283,11 @@ namespace Engine {
 		cocoData = loadJSONObject("./input/segmentation/coco_output.json");
 		loadAnnotations();
 
+		// Set up depth gradient colors.
+		g_nearColor = { 255, 0, 0, 150 };  // semi-transparent red
+		g_farColor = { 0, 0, 255, 150 };   // semi-transparent blue
+
+
 		m_renderer.Initialize();
 		Quad quad(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(3.0f, 0.0f, 0.0f), glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(0.0f, 2.0f, 0.0f));
 		m_renderer.InitQuad(quad);
@@ -297,8 +303,9 @@ namespace Engine {
 		glm::mat4 View = m_camera.GetViewMatrix();
 		glm::mat4 Model = glm::mat4(1.0f);
 		glm::mat4 mvp = Projection * View * Model;
-
 		glm::mat4 quadTransform = mvp * glm::mat4(1.0f);
+
+
 
 	
 
@@ -442,11 +449,9 @@ namespace Engine {
 			}
 
 			ImGui::Separator();
-			// Show the loaded image if we have a valid texture and drawImage == true
+			// Shows the loaded image if we have a valid texture and drawImage == true
 			if (drawImage && g_imageTex != 0)
 			{
-				// We can auto-fit or scale as needed, but let's just do
-				// actual size for demonstration
 				ImGui::Text("Loaded Image:");
 				ImGui::Image(
 					reinterpret_cast<void*>(static_cast<intptr_t>(g_imageTex)),
@@ -454,9 +459,72 @@ namespace Engine {
 				);
 			}
 			else
-			{
-				ImGui::Text("(No image or drawImage disabled.)");
+			{ // We can deactivate showing the actual image
+				ImGui::Text("No image loaded. Showing placeholder background...");
+				ImVec2 imageSize((float)g_imageWidth, (float)g_imageHeight);
+				ImGui::InvisibleButton("image_placeholder", imageSize);
+				ImVec2 startPos = ImGui::GetItemRectMin(); // top-left
+				ImVec2 endPos = ImGui::GetItemRectMax(); // bottom-right
+				ImDrawList* drawList = ImGui::GetWindowDrawList();
+				drawList->AddRectFilled(
+					startPos,
+					endPos,
+					IM_COL32(20, 20, 20, 255) 
+				);
 			}
+			// Iterate through each annotation
+			// Where ImGui drew the image in the window:
+			ImVec2 imagePos = ImGui::GetItemRectMin(); // top-left corner in screen coords
+			ImVec2 imageSize = ImGui::GetItemRectSize(); // size of the drawn image
+
+			// Retrieve ImGui's current draw list for this window
+			ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+			for (auto& ann : g_annotations)
+			{
+				if (!filterClass.empty() && (ann.semClass != filterClass)) {
+					continue; // skip this annotation
+				}
+
+				if (drawDepthOverlay) {
+					
+				}
+				else if (drawSemanticMask) {
+
+				}
+				if (drawInstanceBoundary)
+				{
+
+				}
+				// Only draw bounding boxes if toggled
+				if (drawBoundingBox)
+				{
+					// BBox coordinates in the *image* coordinate system
+					float x = ann.bbox[0];
+					float y = ann.bbox[1];
+					float w = ann.bbox[2];
+					float h = ann.bbox[3];
+					ImVec2 topLeft = ImVec2(imagePos.x + x, imagePos.y + y);
+					ImVec2 botRight = ImVec2(imagePos.x + x + w, imagePos.y + y + h);
+
+					// Draw a red rectangle
+					drawList->AddRect(
+						topLeft,
+						botRight,
+						IM_COL32(255, 0, 0, 255), // Red color
+						0.0f,    // Rounding
+						0,       // Corner flags
+						2.0f     // Thickness
+					);
+
+					// Draw a label above the top-left corner
+					//    e.g., "object_51 (box)"
+					ImVec2 textPos = ImVec2(topLeft.x, topLeft.y - 5.0f);
+					std::string label = ann.id + " (" + ann.semClass + ")";
+					drawList->AddText(textPos, IM_COL32(255, 0, 0, 255), label.c_str());
+				}
+			}
+
 			ImGui::End();
 		}
 
