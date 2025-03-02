@@ -19,8 +19,30 @@ import GameInterface;
 import Camera;
 import Quad;
 import InputSystem;
-import RaytracerRenderer;
+import SemanticSegmentationRenderer;
 namespace Engine {
+	std::vector<uint8_t> getOverlayColor(std::string semClass) {
+		std::vector<uint8_t> color;
+		if (semClass == "sphere") {
+			color = { 255, 0, 0, 100 };
+		}
+		else if (semClass =="box") {
+			color = { 0, 255, 0, 100 };
+		}
+		else if (semClass == "cone") {
+			color = { 0, 0, 255, 100 };
+		}
+		else {
+			color = { 255, 255, 255, 100 };
+		}
+		return color;
+	}
+	// --- Get Boundary Color ---
+// Returns a fully opaque color for boundary drawing.
+	std::vector<uint8_t> getBoundaryColor(std::string semClass) {
+		std::vector<uint8_t> color{ 255, 255, 255, 255 };
+		return color;
+	}
 
 	// A lightweight equivalent of your "Annotation" class in Processing.
 	// Store any fields you need (bbox, mask, depth, etc.)
@@ -34,43 +56,50 @@ namespace Engine {
 		float depth{ 0.0f };
 		int height{ 0 };
 		int width{ 0 };
+		std::vector<uint8_t> overlayColor{};
+		std::vector<uint8_t> boundaryColor{};
 
 		// For the mask, we can store a vector<bool> or vector<uint8_t>.
 		// This mimics your "boolMask" from Processing.
 		std::vector<bool> boolMask;
 
-		Annotation(std::string id, std::string semClass, std::array<float, 4> bbox, float depth, int H, int W, std::vector<bool> boolMask) :
-			id(id), semClass(semClass), bbox(bbox), depth(depth), height(H), width(W), boolMask(boolMask) {
+		Annotation(std::string id, std::string semClass, std::array<float, 4> bbox, float depth, int H, int W, std::vector<bool> boolMask, std::vector<uint8_t> overlayColor, std::vector<uint8_t> boundaryColor) :
+			id(id), semClass(semClass), bbox(bbox), depth(depth), height(H), width(W), boolMask(boolMask), overlayColor(overlayColor), boundaryColor(boundaryColor) {
 		}
 
 	};
 
-	// Internal Program state
+	// Controls
 	bool drawImage{ true };
 	bool drawBoundingBox{ true };
 	bool drawInstanceBoundary{ true };
 	bool drawSemanticMask{ true };
 	bool drawDepthOverlay{ false };
-	std::vector<uint8_t> g_image;
-	static GLuint g_imageTex = 0; // We'll store the texture ID here after loading
+
+	// Rendering Data
 	int g_imageWidth{ 800 };
 	int g_imageHeight{ 600 };
+	std::vector<uint8_t> g_image;
+
+	// Semantic Mask
+	static std::vector<uint8_t> g_maskComposite; // RGBA buffer
+	GLuint g_depthCompositeTex{ 0 };
+
+
+	// Depth Color Mapping
 	static std::vector<uint8_t> g_depthComposite; // RGBA buffer
-	static GLuint g_depthCompositeTex = 0;        // Single OpenGL texture
-	static bool g_depthCompositeDirty = true;     // True if we need to rebuild
-
-
-	
+	GLuint g_maskCompositeTex{ 0 };
+	static bool g_selectionChanged = true;     // True if we need to rebuild
 	glm::vec4  g_nearColor, g_farColor;
-
+	static float g_minDepth = std::numeric_limits<float>::max();
+	static float g_maxDepth = std::numeric_limits<float>::lowest();
 
 	json cocoData;
 	std::string filterClass{ "" }; // Filter classes should be adaptable
 
 	// Global or static vector to store all annotations (similar to your Processing `ArrayList<Annotation>`)
 	std::vector<Annotation> g_annotations;
-	static float g_minDepth = std::numeric_limits<float>::max();
-	static float g_maxDepth = std::numeric_limits<float>::lowest();
+
 
 
 	float normClamped(float value, float minVal, float maxVal)
@@ -116,15 +145,17 @@ namespace Engine {
 		}
 		return mask;
 	}
+
 	void buildDepthComposite()
 	{
 		// (A) Create/resize the composite buffer if needed
 		g_depthComposite.resize(g_imageWidth * g_imageHeight * 4, 0);
+		g_maskComposite.resize(g_imageWidth * g_imageHeight * 4, 0);
 
 		// 1) Initialize everything transparent
 		// Just ensure it's zeroed:
 		std::fill(g_depthComposite.begin(), g_depthComposite.end(), 0);
-
+		std::fill(g_maskComposite.begin(), g_maskComposite.end(), 0);
 		// 2) For each annotation, if it passes filterClass,
 		//    we compute depthColor & "stamp" it onto the composite
 		for (auto& ann : g_annotations)
@@ -133,6 +164,7 @@ namespace Engine {
 			if (!filterClass.empty() && (ann.semClass != filterClass))
 				continue;
 
+
 			// Compute color from depth
 			glm::vec4 c = getDepthColor(ann.depth);
 			// Convert to RGBA [0..255]
@@ -140,7 +172,7 @@ namespace Engine {
 			uint8_t g = (uint8_t)(c.g * 255.0f);
 			uint8_t b = (uint8_t)(c.b * 255.0f);
 			uint8_t a = (uint8_t)(c.a * 255.0f);
-
+			std::vector<uint8_t> overlayColor = ann.overlayColor;
 			// "Stamp" each pixel where boolMask == true
 			// Same "column-major" approach from your code:
 			// colIndex = x*H + y => unusual, but matches your decodeRLE
@@ -166,60 +198,21 @@ namespace Engine {
 						g_depthComposite[rowIndex + 1] = g;
 						g_depthComposite[rowIndex + 2] = b;
 						g_depthComposite[rowIndex + 3] = a;
+
+						g_maskComposite[rowIndex + 0] = overlayColor.at(0);
+						g_maskComposite[rowIndex + 1] = overlayColor.at(1);
+						g_maskComposite[rowIndex + 2] = overlayColor.at(2);
+						g_maskComposite[rowIndex + 3] = overlayColor.at(3);
 					}
 				}
 			}
 		}
-		g_depthCompositeDirty = true;
+		g_selectionChanged = true;
 	}
-	void uploadDepthComposite()
-	{
-		// If the composite is empty or invalid, skip
-		if (g_depthComposite.empty())
-			return;
 
-		// If we don’t have a texture handle yet, create one
-		if (g_depthCompositeTex == 0)
-		{
-			glGenTextures(1, &g_depthCompositeTex);
-			glBindTexture(GL_TEXTURE_2D, g_depthCompositeTex);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		}
-		else
-		{
-			glBindTexture(GL_TEXTURE_2D, g_depthCompositeTex);
-		}
 
-		// Upload or update with our composite buffer
-		glTexImage2D(
-			GL_TEXTURE_2D,
-			0,       // mip level
-			GL_RGBA, // internal format
-			g_imageWidth,
-			g_imageHeight,
-			0,
-			GL_RGBA,
-			GL_UNSIGNED_BYTE,
-			g_depthComposite.data()
-		);
-		glBindTexture(GL_TEXTURE_2D, 0);
-	}
-	void SetDrawDepthOverlay(bool enable)
-	{
-		drawDepthOverlay = enable;
-		if (enable)
-		{
-			buildDepthComposite();
-			uploadDepthComposite();
-		}
-		else
-		{
-			// maybe clear it or do nothing
-		}
-	}
+
+
 	// --- Load Annotations from COCO JSON ---
 	void loadAnnotations() {
 		json segmentation{ cocoData["segmentation"] };
@@ -246,6 +239,8 @@ namespace Engine {
 			json countsArr{ obj.at("counts") };
 			std::vector<bool> boolMask = decodeRLE(countsArr, H, W);
 
+			std::vector<uint8_t> overlayColor = getOverlayColor(semClass);
+			std::vector<uint8_t> boundaryColor = getBoundaryColor(semClass);			
 			// Get depth from JSON.
 			float depth = obj.at("depth");
 			// Update global min and max depth.
@@ -253,7 +248,7 @@ namespace Engine {
 			if (depth > g_maxDepth) g_maxDepth = depth;
 
 			// Create and store annotation (store the boolean mask as well).
-			Annotation ann(id, semClass, bbox, depth, H, W, std::move(boolMask));
+			Annotation ann(id, semClass, bbox, depth, H, W, std::move(boolMask), overlayColor, boundaryColor);
 			g_annotations.push_back(std::move(ann));
 
 		}
@@ -292,41 +287,6 @@ namespace Engine {
 
 		return imageData;
 	}
-	// --- Creat OpenGL Texture from Image ---
-	GLuint createImage() {
-		GLuint newImage{0};
-		if (!g_image.empty())
-		{
-			glGenTextures(1, &newImage);
-			glBindTexture(GL_TEXTURE_2D, newImage);
-
-			// Set some texture parameters (repeat, filtering, etc.)
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-			// Upload pixel data to the GPU
-			glTexImage2D(
-				GL_TEXTURE_2D,
-				0,               // mip level
-				GL_RGBA,         // internal format
-				g_imageWidth,
-				g_imageHeight,
-				0,               // border
-				GL_RGBA,         // format of the pixel data
-				GL_UNSIGNED_BYTE,
-				g_image.data()   // pointer to data in RAM
-			);
-
-			glBindTexture(GL_TEXTURE_2D, 0);
-		}
-		else
-		{
-			std::cerr << "No valid image data; skipping texture creation.\n";
-		}
-		return newImage;
-	}
 
 
 	
@@ -341,7 +301,7 @@ namespace Engine {
 		void Update(double deltaTime) override;
 		void RenderIMGui();
 	private:
-		RaytracerRenderer m_renderer;
+		SemanticSegmentationRenderer m_renderer;
 		InputSystem m_input;
 		Camera m_camera;
 	};
@@ -396,10 +356,10 @@ namespace Engine {
 		m_input.ObserveKey(GLFW_KEY_M);
 		m_input.ObserveKey(GLFW_KEY_D);
 		m_input.ObserveKey(GLFW_KEY_V);
-
+		m_renderer.Initialize();
 		// Load and Upload Image
 		g_image = loadImage("./input/segmentation/render.png");
-		g_imageTex = createImage();
+		m_renderer.createImage(g_image, g_imageHeight, g_imageWidth);
 
 
 		// Load Annotation JSON Data
@@ -410,10 +370,10 @@ namespace Engine {
 		g_nearColor = glm::vec4(1.0f, 0.0f, 0.0f, 0.5f);  // half-alpha red
 		g_farColor = glm::vec4(0.0f, 0.0f, 1.0f, 0.5f);  // half-alpha blue
 
-		m_renderer.Initialize();
 		buildDepthComposite();
-		uploadDepthComposite();
-
+		m_renderer.uploadComposite(g_depthCompositeTex, g_depthComposite, g_imageHeight, g_imageWidth);
+		m_renderer.uploadComposite(g_maskCompositeTex, g_maskComposite, g_imageHeight, g_imageWidth);
+		g_selectionChanged = false;
 
 		Quad quad(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(3.0f, 0.0f, 0.0f), glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(0.0f, 2.0f, 0.0f));
 		m_renderer.InitQuad(quad);
@@ -446,11 +406,6 @@ namespace Engine {
 	//************************************
 	void SemanticVisualization::ClearResources()
 	{
-		if (g_depthCompositeTex)
-		{
-			glDeleteTextures(1, &g_depthCompositeTex);
-			g_depthCompositeTex = 0;
-		}
 		m_renderer.ClearResources();
 	}
 
@@ -469,15 +424,17 @@ namespace Engine {
 		if (m_input.WasKeyPressed(GLFW_KEY_S)) {
 			filterClass = "sphere";
 			std::cout << "Filtering for spheres\n";
+			g_selectionChanged = true;
 		}
 		else if (m_input.WasKeyPressed(GLFW_KEY_B)) {
 			filterClass = "box";
 			std::cout << "Filtering for boxes\n";
-
+			g_selectionChanged = true;
 		}
 		else if (m_input.WasKeyPressed(GLFW_KEY_C)) {
 			filterClass = "cone";
 			std::cout << "Filtering for cones\n";
+			g_selectionChanged = true;
 		}
 		else if (m_input.WasKeyPressed(GLFW_KEY_A)) {
 			filterClass = "";
@@ -506,6 +463,15 @@ namespace Engine {
 		bool rotateRight = m_input.IsKeyDown(GLFW_KEY_RIGHT);
 		bool zoomIn = m_input.IsKeyDown(GLFW_KEY_UP);
 		bool zoomOut = m_input.IsKeyDown(GLFW_KEY_DOWN);
+
+		if (g_selectionChanged)
+		{
+			buildDepthComposite();
+			m_renderer.uploadComposite(g_depthCompositeTex, g_depthComposite, g_imageHeight, g_imageWidth);
+			m_renderer.uploadComposite(g_maskCompositeTex, g_maskComposite, g_imageHeight, g_imageWidth);
+			g_selectionChanged = false;
+		}
+
 
 		
 
@@ -568,10 +534,13 @@ namespace Engine {
 				filterItems, IM_ARRAYSIZE(filterItems)))
 			{
 				// Update filterClass whenever user changes the combo
-				if (currentFilterIndex == 0) filterClass = "";
-				else if (currentFilterIndex == 1) filterClass = "sphere";
-				else if (currentFilterIndex == 2) filterClass = "box";
-				else if (currentFilterIndex == 3) filterClass = "cone";
+				if (currentFilterIndex == 0) { filterClass = ""; g_selectionChanged = true; }
+				else if (currentFilterIndex == 1) { filterClass = "sphere";			g_selectionChanged = true; }
+				else if (currentFilterIndex == 2) {filterClass = "box";			g_selectionChanged = true;
+			}
+			else if (currentFilterIndex == 3) {filterClass = "cone";			g_selectionChanged = true;
+		}
+
 			}
 
 			// A button to export metadata
@@ -582,11 +551,11 @@ namespace Engine {
 
 			ImGui::Separator();
 			// Shows the loaded image if we have a valid texture and drawImage == true
-			if (drawImage && g_imageTex != 0)
+			if (drawImage && m_renderer.m_image != 0)
 			{
 				ImGui::Text("Loaded Image:");
 				ImGui::Image(
-					reinterpret_cast<void*>(static_cast<intptr_t>(g_imageTex)),
+					reinterpret_cast<void*>(static_cast<intptr_t>(m_renderer.m_image)),
 					ImVec2(static_cast<float>(g_imageWidth), static_cast<float>(g_imageHeight))
 				);
 			}
@@ -611,7 +580,7 @@ namespace Engine {
 
 			// Retrieve ImGui's current draw list for this window
 			ImDrawList* drawList = ImGui::GetWindowDrawList();
-			if (drawDepthOverlay && g_depthCompositeTex != 0)
+			if (drawDepthOverlay)
 			{
 				// Where ImGui drew the base image
 				ImVec2 topLeft = imagePos;
@@ -624,7 +593,15 @@ namespace Engine {
 				);
 			}
 			else if (drawSemanticMask) {
+				// Where ImGui drew the base image
+				ImVec2 topLeft = imagePos;
+				ImVec2 size = ImVec2((float)g_imageWidth, (float)g_imageHeight);
 
+				drawList->AddImage(
+					reinterpret_cast<void*>(static_cast<intptr_t>(g_maskCompositeTex)),
+					topLeft,
+					ImVec2(topLeft.x + size.x, topLeft.y + size.y)
+					);
 			}
 			if (drawInstanceBoundary)
 			{

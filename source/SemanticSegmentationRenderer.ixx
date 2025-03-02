@@ -1,0 +1,382 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
+module;
+#pragma once
+#include <glm/mat4x4.hpp>
+#include <GL/glew.h>
+#include "vendor/stb_image/stb_image.h"
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+export module SemanticSegmentationRenderer;
+import Quad;
+import ShaderUtil;
+import std;
+namespace Engine {
+
+	export class SemanticSegmentationRenderer
+	{
+	public:
+		void Initialize();
+		void InitializeGizmo();
+		void InitQuad(const Quad& quad);
+		void InitializeFullScreenQuad();
+
+		void RenderQuad(const glm::mat4& transformationMatrix);
+		void RenderGizmo(const glm::mat4& mvp);
+		void RenderRayTraceTexture();
+		void UpdateTexture(const std::vector<uint8_t>& image, int width, int height);  // New
+
+		void ClearResources();
+		float GetCubieExtension() const { return 2.0f * m_offset; }
+		void uploadComposite(GLuint& id, const std::vector<uint8_t>& texture, int height, int width);
+		void createImage(std::vector<uint8_t> image, int height, int width);
+
+
+		GLuint m_image{ 0 };        // Single OpenGL texture
+	private:
+		void LoadShaders();
+		const float m_offset = 0.5f;
+		std::chrono::time_point<std::chrono::high_resolution_clock> startTime = std::chrono::high_resolution_clock::now();
+
+		GLuint m_skinTextures[3]{ 0 };
+		GLuint m_eyeTextures[2]{ 0 };
+		GLuint m_arrayBufferObjects[8]{ 0 };
+		GLuint m_skeletonVertexBufferObject{ 0 };
+		GLuint m_skeletonIndexBufferObject{ 0 };
+
+		// For world coordinate system gizmo
+		GLuint m_gizmoVAO{ 0 };
+		GLuint m_gizmoVBO{ 0 };
+		GLuint m_gizmoShaderProgram{ 0 };
+		GLuint m_gizmoMVPUniform{ 0 };
+
+
+		GLuint m_quadVertexBufferObject{ 0 };
+		GLuint m_quadIndexBufferObject{ 0 };
+		GLuint m_vertexBufferObject{ 0 };
+		GLuint m_elementBufferObject{ 0 };
+		GLuint m_shaderProgram[5]{ 0 };
+		GLint  m_transformLocation{ 0 }, m_eyeTransformLocation{ 0 }, m_eyeTranspTransformLocation{ 0 }, m_teethTransformLocation{ 0 }, m_skeletonTransformLocation{ 0 };
+		GLuint m_vertexArraySize{ 0 };
+		GLuint m_jointTransforms{ 0 };
+
+
+		GLuint m_rayTraceTexture{ 0 };  // Texture ID for the ray traced image
+		GLuint m_fullScreenShader{ 0 };
+		GLuint m_fullScreenVAO{ 0 };
+		GLuint m_fullScreenVBO{ 0 };
+
+		std::vector<GLuint> textures{};
+	};
+
+
+	// --- Creat OpenGL Texture from Image ---
+	void SemanticSegmentationRenderer::createImage(std::vector<uint8_t> image, int height, int width) {
+		GLuint newImage{ 0 };
+		if (!image.empty())
+		{
+			glGenTextures(1, &newImage);
+			glBindTexture(GL_TEXTURE_2D, newImage);
+
+			// Set some texture parameters (repeat, filtering, etc.)
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+			// Upload pixel data to the GPU
+			glTexImage2D(
+				GL_TEXTURE_2D,
+				0,               // mip level
+				GL_RGBA,         // internal format
+				width,
+				height,
+				0,               // border
+				GL_RGBA,         // format of the pixel data
+				GL_UNSIGNED_BYTE,
+				image.data()   // pointer to data in RAM
+			);
+
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
+		else
+		{
+			std::cerr << "No valid image data; skipping texture creation.\n";
+		}
+		m_image = newImage;
+	}
+
+	
+	void SemanticSegmentationRenderer::uploadComposite(GLuint& id, const std::vector<uint8_t>& texture, int height, int width)
+	{	
+		// If the composite is empty or invalid, skip
+		if (texture.empty())
+			return;
+
+		// If we don’t have a texture handle yet, create one
+		if (id == 0)
+		{
+			glGenTextures(1, &id);
+			glBindTexture(GL_TEXTURE_2D, id);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			textures.push_back(id); // Store the texture handle for later cleanup 
+		}
+		else
+		{
+			glBindTexture(GL_TEXTURE_2D, id);
+		}
+
+		// Upload or update with our composite buffer
+		glTexImage2D(
+			GL_TEXTURE_2D,
+			0,       // mip level
+			GL_RGBA, // internal format
+			width,
+			height,
+			0,
+			GL_RGBA,
+			GL_UNSIGNED_BYTE,
+			texture.data()
+		);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		
+	}
+	//************************************
+	// Load and Initialize all Index and Vertex buffer Objects, Shaders, Vertex Array Objects and Textures that are needed for rendering the Model.
+	//************************************
+	void SemanticSegmentationRenderer::Initialize()
+	{
+
+		LoadShaders();
+
+		GLuint vertexBufferObjects[6], elementBufferObjects[6];
+		glGenVertexArrays(8, m_arrayBufferObjects);
+		glGenBuffers(1, &m_vertexBufferObject);
+		glGenBuffers(1, &m_elementBufferObject);
+		glGenBuffers(6, vertexBufferObjects);
+		glGenBuffers(6, elementBufferObjects);
+
+		// Unbind Buffers
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
+		glEnableVertexAttribArray(0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+		InitializeGizmo();
+
+		// Initialize ray trace texture
+		glGenTextures(1, &m_rayTraceTexture);
+		glBindTexture(GL_TEXTURE_2D, m_rayTraceTexture);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1024, 768, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);  // Placeholder size
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		InitializeFullScreenQuad();
+
+	}
+	void SemanticSegmentationRenderer::InitializeFullScreenQuad()
+	{
+		// Define vertices for a full-screen quad with position and texture coordinates
+		float quadVertices[] = {
+			// Positions   // TexCoords
+			-1.0f,  1.0f,   0.0f, 1.0f,  // Top-left
+			-1.0f, -1.0f,   0.0f, 0.0f,  // Bottom-left
+			 1.0f, -1.0f,   1.0f, 0.0f,  // Bottom-right
+
+			-1.0f,  1.0f,   0.0f, 1.0f,  // Top-left
+			 1.0f, -1.0f,   1.0f, 0.0f,  // Bottom-right
+			 1.0f,  1.0f,   1.0f, 1.0f   // Top-right
+		};
+
+		// Generate and bind VAO/VBO
+		glGenVertexArrays(1, &m_fullScreenVAO);
+		glGenBuffers(1, &m_fullScreenVBO);
+
+		glBindVertexArray(m_fullScreenVAO);
+
+		glBindBuffer(GL_ARRAY_BUFFER, m_fullScreenVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+
+		// Position attribute
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(0);
+
+		// Texture coordinate attribute
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+		glEnableVertexAttribArray(1);
+
+		// Unbind VAO and VBO
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
+	}
+
+	void SemanticSegmentationRenderer::UpdateTexture(const std::vector<uint8_t>& image, int width, int height)
+	{
+		glBindTexture(GL_TEXTURE_2D, m_rayTraceTexture);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, image.data());
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+
+	void SemanticSegmentationRenderer::RenderRayTraceTexture()
+	{
+
+		glUseProgram(m_fullScreenShader);  // Assume m_fullScreenShader is linked with the quad shaders
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, m_rayTraceTexture);
+		glUniform1i(glGetUniformLocation(m_fullScreenShader, "rayTraceTexture"), 0);
+
+
+		glBindVertexArray(m_fullScreenVAO);  // Full-screen quad VAO
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		glBindVertexArray(0);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glUseProgram(0);
+	}
+	void SemanticSegmentationRenderer::InitializeGizmo() {
+
+		// Define vertices for the x, y, and z axes
+		GLfloat gizmoVertices[] = {
+			// X-axis line
+			0.0f, 0.0f, 0.0f,  // Origin
+			1.0f, 0.0f, 0.0f,  // Along x-axis
+			// Y-axis line
+			0.0f, 0.0f, 0.0f,  // Origin
+			0.0f, 1.0f, 0.0f,  // Along y-axis
+			// Z-axis line
+			0.0f, 0.0f, 0.0f,  // Origin
+			0.0f, 0.0f, 1.0f   // Along z-axis
+		};
+
+		// Generate and bind VAO and VBO
+		glGenVertexArrays(1, &m_gizmoVAO);
+		glGenBuffers(1, &m_gizmoVBO);
+
+		glBindVertexArray(m_gizmoVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, m_gizmoVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(gizmoVertices), gizmoVertices, GL_STATIC_DRAW);
+
+		// Position attribute
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(0);
+
+		// Unbind VAO and VBO
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
+	}
+	void SemanticSegmentationRenderer::InitQuad(const Quad& quad) {
+		unsigned int indices[] = {
+		0, 1, 2, // first Triangle
+		2, 3, 0	 // second Triangle
+		};
+		glGenBuffers(1, &m_quadVertexBufferObject);
+		glGenBuffers(1, &m_quadIndexBufferObject);
+
+		// Joint
+		glBindVertexArray(m_arrayBufferObjects[0]);
+		glBindBuffer(GL_ARRAY_BUFFER, m_quadVertexBufferObject);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(quad.vertices), &quad.vertices, GL_STATIC_DRAW);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_quadIndexBufferObject);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(0);
+
+		// Unbind Buffers
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	}
+
+	//************************************
+	// Render one red square for each joint in the skeleton.
+	//************************************
+	void SemanticSegmentationRenderer::RenderQuad(const glm::mat4& transformationMatrix)
+	{
+		glUseProgram(m_shaderProgram[0]);
+		glUniformMatrix4fv(m_skeletonTransformLocation, 1, GL_FALSE, glm::value_ptr(transformationMatrix));
+		glBindVertexArray(m_arrayBufferObjects[0]);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		glUseProgram(0);
+	}
+
+	void SemanticSegmentationRenderer::RenderGizmo(const glm::mat4& mvp)
+	{
+		glUseProgram(m_gizmoShaderProgram);
+		glUniformMatrix4fv(m_gizmoMVPUniform, 1, GL_FALSE, glm::value_ptr(mvp));
+
+		glBindVertexArray(m_gizmoVAO);
+		glDrawArrays(GL_LINES, 0, 6);  // 6 vertices: 2 for each axis
+		glBindVertexArray(0);
+
+		glUseProgram(0);
+	}
+
+	//************************************
+	// Delete Buffers, VAOs and Shaders
+	//************************************
+	void SemanticSegmentationRenderer::ClearResources()
+	{
+		glDeleteBuffers(1, &m_vertexBufferObject);
+		glDeleteBuffers(1, &m_elementBufferObject);
+		glDeleteVertexArrays(2, m_arrayBufferObjects);
+		glDeleteProgram(m_shaderProgram[0]);
+		glDeleteProgram(m_shaderProgram[1]);
+
+
+		// Cleanup gizmo resources
+		glDeleteVertexArrays(1, &m_gizmoVAO);
+		glDeleteBuffers(1, &m_gizmoVBO);
+		glDeleteProgram(m_gizmoShaderProgram);
+
+		// Cleanup full-screen quad resources
+		glDeleteVertexArrays(1, &m_fullScreenVAO);
+		glDeleteBuffers(1, &m_fullScreenVBO);
+		glDeleteProgram(m_fullScreenShader);
+
+
+		for(GLuint texture : textures)
+		{
+			if (texture)
+			{
+				glDeleteTextures(1, &texture);
+			}
+		}
+		textures.clear();
+	
+		if (m_image)
+		{
+			glDeleteTextures(1, &m_image);
+			m_image = 0;
+		}
+	}
+	//************************************
+	// Load the shader programs from their glsl files using the ShaderUtil.
+	//************************************
+	void SemanticSegmentationRenderer::LoadShaders()
+	{
+
+
+		m_shaderProgram[0] = ShaderUtil::CreateShaderProgram("shaders/VJoint.glsl", "shaders/FJoint.glsl", nullptr);
+		m_skeletonTransformLocation = glGetUniformLocation(m_shaderProgram[0], "transformation");
+
+
+		// Load gizmo shader program
+		m_gizmoShaderProgram = ShaderUtil::CreateShaderProgram("shaders/VGizmo.glsl", "shaders/FGizmo.glsl", nullptr);
+		m_gizmoMVPUniform = glGetUniformLocation(m_gizmoShaderProgram, "mvp");
+
+		// Load full screen shader program
+		m_fullScreenShader = ShaderUtil::CreateShaderProgram("shaders/VFullScreenQuad.glsl", "shaders/FFullScreenQuad.glsl", nullptr);
+
+
+	}
+}
+

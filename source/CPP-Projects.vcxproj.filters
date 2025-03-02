@@ -24,27 +24,6 @@
     <ClCompile Include="vendor\stb_image\stb_image.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="vendor\imgui\imgui.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="vendor\imgui\imgui_demo.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="vendor\imgui\imgui_draw.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="vendor\imgui\imgui_impl_glfw.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="vendor\imgui\imgui_impl_opengl3.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="vendor\imgui\imgui_tables.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="vendor\imgui\imgui_widgets.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
     <ClCompile Include="2DGame\GameRenderer.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
@@ -142,36 +121,10 @@
     <ClCompile Include="MeshSimplification\PlaneSpace.ixx" />
     <ClCompile Include="MeshSimplification\BillboardTexture.ixx" />
     <ClCompile Include="SemanticVisualization.ixx" />
+    <ClCompile Include="SemanticSegmentationRenderer.ixx" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="vendor\stb_image\stb_image.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\imgui\imconfig.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\imgui\imgui.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\imgui\imgui_impl_glfw.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\imgui\imgui_impl_opengl3.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\imgui\imgui_impl_opengl3_loader.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\imgui\imgui_internal.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\imgui\imstb_rectpack.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\imgui\imstb_textedit.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
-    <ClInclude Include="vendor\imgui\imstb_truetype.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>
@@ -215,6 +168,7 @@
     <None Include="shaders\VBasic.glsl" />
     <None Include="shaders\FBasic.glsl" />
     <None Include="README.md" />
+    <None Include="input\segmentation\coco_output.json" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="input\Transformationen.xml" />
@@ -245,6 +199,9 @@
       <Filter>Ressourcendateien</Filter>
     </Image>
     <Image Include="input\Texturen\EyeTex_Decal02.jpg">
+      <Filter>Ressourcendateien</Filter>
+    </Image>
+    <Image Include="input\segmentation\render.png">
       <Filter>Ressourcendateien</Filter>
     </Image>
   </ItemGroup>

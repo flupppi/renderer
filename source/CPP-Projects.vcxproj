@@ -183,6 +183,7 @@
     <ClCompile Include="Model.ixx" />
     <ClCompile Include="Raytracer\RaytracerRenderer.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="SemanticSegmentationRenderer.ixx" />
     <ClCompile Include="SemanticVisualization.ixx" />
     <ClCompile Include="vendor\stb_image\stb_image.cpp" />
   </ItemGroup>
