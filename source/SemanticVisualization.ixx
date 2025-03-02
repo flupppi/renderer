@@ -20,6 +20,7 @@ import Camera;
 import Quad;
 import InputSystem;
 import SemanticSegmentationRenderer;
+
 namespace Engine {
 	std::vector<uint8_t> getOverlayColor(std::string semClass) {
 		std::vector<uint8_t> color;
@@ -52,7 +53,7 @@ namespace Engine {
 
 		std::string id;          // e.g., "object_51"
 		std::string semClass;    // e.g., "sphere", "box", "cone"
-		std::array<float, 4> bbox; // {x, y, w, h}
+		std::array<int, 4> bbox; // {x, y, w, h}
 		float depth{ 0.0f };
 		int height{ 0 };
 		int width{ 0 };
@@ -63,7 +64,7 @@ namespace Engine {
 		// This mimics your "boolMask" from Processing.
 		std::vector<bool> boolMask;
 
-		Annotation(std::string id, std::string semClass, std::array<float, 4> bbox, float depth, int H, int W, std::vector<bool> boolMask, std::vector<uint8_t> overlayColor, std::vector<uint8_t> boundaryColor) :
+		Annotation(std::string id, std::string semClass, std::array<int, 4> bbox, float depth, int H, int W, std::vector<bool> boolMask, std::vector<uint8_t> overlayColor, std::vector<uint8_t> boundaryColor) :
 			id(id), semClass(semClass), bbox(bbox), depth(depth), height(H), width(W), boolMask(boolMask), overlayColor(overlayColor), boundaryColor(boundaryColor) {
 		}
 
@@ -145,68 +146,78 @@ namespace Engine {
 		}
 		return mask;
 	}
-
-	void buildDepthComposite()
+	void generateCompositeImages()
 	{
-		// (A) Create/resize the composite buffer if needed
+		// (A) Create/resize the composite buffers if needed
 		g_depthComposite.resize(g_imageWidth * g_imageHeight * 4, 0);
 		g_maskComposite.resize(g_imageWidth * g_imageHeight * 4, 0);
 
-		// 1) Initialize everything transparent
-		// Just ensure it's zeroed:
+		// 1) Initialize them to zero (fully transparent)
 		std::fill(g_depthComposite.begin(), g_depthComposite.end(), 0);
 		std::fill(g_maskComposite.begin(), g_maskComposite.end(), 0);
+
 		// 2) For each annotation, if it passes filterClass,
-		//    we compute depthColor & "stamp" it onto the composite
+		//    compute its depth color & "stamp" it within its bounding box
 		for (auto& ann : g_annotations)
 		{
-			// Filter
+			// Filter out annotations if we have a non-empty filterClass
 			if (!filterClass.empty() && (ann.semClass != filterClass))
 				continue;
 
+			// Compute a depth-based color
+			glm::vec4 depthColor = getDepthColor(ann.depth);
+			uint8_t r = static_cast<uint8_t>(depthColor.r * 255.0f);
+			uint8_t g = static_cast<uint8_t>(depthColor.g * 255.0f);
+			uint8_t b = static_cast<uint8_t>(depthColor.b * 255.0f);
+			uint8_t a = static_cast<uint8_t>(depthColor.a * 255.0f);
 
-			// Compute color from depth
-			glm::vec4 c = getDepthColor(ann.depth);
-			// Convert to RGBA [0..255]
-			uint8_t r = (uint8_t)(c.r * 255.0f);
-			uint8_t g = (uint8_t)(c.g * 255.0f);
-			uint8_t b = (uint8_t)(c.b * 255.0f);
-			uint8_t a = (uint8_t)(c.a * 255.0f);
-			std::vector<uint8_t> overlayColor = ann.overlayColor;
-			// "Stamp" each pixel where boolMask == true
-			// Same "column-major" approach from your code:
-			// colIndex = x*H + y => unusual, but matches your decodeRLE
-			for (int y = 0; y < ann.height; y++)
+			// Also retrieve this annotation’s overlay color
+			const std::vector<uint8_t>& overlayColor = ann.overlayColor;
+
+			// -------------------------------------------------
+			//   Use the bounding box to restrict iteration
+			// -------------------------------------------------
+			// Convert bbox floats to integer coords
+			int xMin = ann.bbox[0];
+			int yMin = ann.bbox[1];
+			int xMax = xMin + ann.bbox[2];
+			int yMax = yMin + ann.bbox[3];
+
+			// Clip to the global image boundaries
+			xMin = std::max(0, xMin);
+			yMin = std::max(0, yMin);
+			xMax = std::min(g_imageWidth, xMax);
+			yMax = std::min(g_imageHeight, yMax);
+
+			// Traverse only within the bounding box
+			for (int y = yMin; y < yMax; y++)
 			{
-				for (int x = 0; x < ann.width; x++)
+				for (int x = xMin; x < xMax; x++)
 				{
-					int colIndex = x * ann.height + y;
-					if (colIndex < (int)ann.boolMask.size() && ann.boolMask[colIndex])
+					// Convert to index in the boolMask
+					int colIndex = ( x * ann.height + y);
+					if (colIndex >= 0 && colIndex < static_cast<int>(ann.boolMask.size()) && ann.boolMask[colIndex])
 					{
-						// This annotation covers pixel x,y.
-						// We need to place that at (x,y) in the "global" composite
-						// BUT WAIT: The annotation might not always match the entire image size 
-						// if (ann.width != g_imageWidth || ann.height != g_imageHeight).
-						// For now, we assume it does match. 
+						// row-major offset in the global (800×600) image
+						int rowIndex = (y * ann.width + x) * 4;
 
-						// row-major offset
-						int rowIndex = (y * g_imageWidth + x) * 4;
-						// "Blending" for example: if it’s currently 0 alpha, set the color.
-						// or if you want to overwrite, just set it.
-
+						// Depth composite
 						g_depthComposite[rowIndex + 0] = r;
 						g_depthComposite[rowIndex + 1] = g;
 						g_depthComposite[rowIndex + 2] = b;
 						g_depthComposite[rowIndex + 3] = a;
 
-						g_maskComposite[rowIndex + 0] = overlayColor.at(0);
-						g_maskComposite[rowIndex + 1] = overlayColor.at(1);
-						g_maskComposite[rowIndex + 2] = overlayColor.at(2);
-						g_maskComposite[rowIndex + 3] = overlayColor.at(3);
+						// Semantic mask
+						g_maskComposite[rowIndex + 0] = overlayColor[0];
+						g_maskComposite[rowIndex + 1] = overlayColor[1];
+						g_maskComposite[rowIndex + 2] = overlayColor[2];
+						g_maskComposite[rowIndex + 3] = overlayColor[3];
 					}
 				}
 			}
 		}
+
+		// Tell the rest of the system we updated the composite
 		g_selectionChanged = true;
 	}
 
@@ -224,11 +235,11 @@ namespace Engine {
 
 			// Get bounding box.
 			json bboxArr{ obj.at("bbox") };
-			float x{ bboxArr.at(0).get<float>() };
-			float y{ bboxArr.at(1).get<float>() };
-			float w{ bboxArr.at(2).get<float>() };
-			float h{ bboxArr.at(3).get<float>() };
-			std::array<float, 4> bbox{ x, y, w, h };
+			int x{ bboxArr.at(0).get<int>() };
+			int y{ bboxArr.at(1).get<int>() };
+			int w{ bboxArr.at(2).get<int>() };
+			int h{ bboxArr.at(3).get<int>() };
+			std::array<int, 4> bbox{ x, y, w, h };
 
 			// Parse size (height, width).
 			json sizeArr{ obj.at("size") };
@@ -370,7 +381,7 @@ namespace Engine {
 		g_nearColor = glm::vec4(1.0f, 0.0f, 0.0f, 0.5f);  // half-alpha red
 		g_farColor = glm::vec4(0.0f, 0.0f, 1.0f, 0.5f);  // half-alpha blue
 
-		buildDepthComposite();
+		generateCompositeImages();
 		m_renderer.uploadComposite(g_depthCompositeTex, g_depthComposite, g_imageHeight, g_imageWidth);
 		m_renderer.uploadComposite(g_maskCompositeTex, g_maskComposite, g_imageHeight, g_imageWidth);
 		g_selectionChanged = false;
@@ -466,18 +477,11 @@ namespace Engine {
 
 		if (g_selectionChanged)
 		{
-			buildDepthComposite();
+			generateCompositeImages();
 			m_renderer.uploadComposite(g_depthCompositeTex, g_depthComposite, g_imageHeight, g_imageWidth);
 			m_renderer.uploadComposite(g_maskCompositeTex, g_maskComposite, g_imageHeight, g_imageWidth);
 			g_selectionChanged = false;
 		}
-
-
-		
-
-
-
-
 		// Update the camera with input flags
 		m_camera.Update(deltaTime, rotateLeft, rotateRight, zoomIn, zoomOut);
 	}
@@ -650,8 +654,4 @@ namespace Engine {
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	}
-
-
-
-
 }
