@@ -38,9 +38,6 @@ namespace Engine {
 		// For the mask, we can store a vector<bool> or vector<uint8_t>.
 		// This mimics your "boolMask" from Processing.
 		std::vector<bool> boolMask;
-		GLuint maskTex = 0; // store it once
-
-		bool maskTextureCreated = false;
 
 		Annotation(std::string id, std::string semClass, std::array<float, 4> bbox, float depth, int H, int W, std::vector<bool> boolMask) :
 			id(id), semClass(semClass), bbox(bbox), depth(depth), height(H), width(W), boolMask(boolMask) {
@@ -87,88 +84,7 @@ namespace Engine {
 		float t = normClamped(depth, g_minDepth, g_maxDepth);
 		return glm::mix(g_nearColor, g_farColor, t);
 	}
-	// Create a CPU-side RGBA buffer from the boolMask.
-// 'overlayColor' is in RGBA floats [0..255 or 0..1 depending on your usage].
-	std::vector<uint8_t> createMaskImage(const std::vector<bool>& mask,
-		int W, int H,
-		glm::vec4 overlayColor)
-	{
-		// We'll produce W*H RGBA bytes
-		std::vector<uint8_t> output(W * H * 4, 0);
 
-		// overlayColor might be like (255,0,0,100) for a translucent red
-		// So let’s convert that to uint8 per channel
-		uint8_t r = (uint8_t)overlayColor.r;
-		uint8_t g = (uint8_t)overlayColor.g;
-		uint8_t b = (uint8_t)overlayColor.b;
-		uint8_t a = (uint8_t)overlayColor.a;
-
-		// Processing code used "colIndex = x*H + y" => column-major
-		// We'll replicate that for fidelity, but note it's unusual.
-		// rowIndex = y*W + x is typical row-major.
-		// We assume 'mask' has exactly W*H entries (or H*W).
-		for (int y = 0; y < H; y++)
-		{
-			for (int x = 0; x < W; x++)
-			{
-				int rowIndex = (y * W + x) * 4;     // RGBA stride
-				int colIndex = x * H + y;          // as in your Processing code
-
-				if (colIndex < (int)mask.size() && mask[colIndex])
-				{
-					// Set overlay color
-					output[rowIndex + 0] = r;
-					output[rowIndex + 1] = g;
-					output[rowIndex + 2] = b;
-					output[rowIndex + 3] = a;
-				}
-				else
-				{
-					// Transparent
-					output[rowIndex + 0] = 0;
-					output[rowIndex + 1] = 0;
-					output[rowIndex + 2] = 0;
-					output[rowIndex + 3] = 0;
-				}
-			}
-		}
-		return output;
-	}
-
-
-
-
-	GLuint createMaskTexture(const std::vector<uint8_t>& rgbaData, int W, int H)
-	{
-		if (rgbaData.empty() || W <= 0 || H <= 0)
-			return 0;
-
-		GLuint texID = 0;
-		glGenTextures(1, &texID);
-		glBindTexture(GL_TEXTURE_2D, texID);
-
-		// Basic texture params (clamp, linear filtering)
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-		// Upload pixel data
-		glTexImage2D(
-			GL_TEXTURE_2D,
-			0, // mip level
-			GL_RGBA, // internal format
-			W,
-			H,
-			0,
-			GL_RGBA, // data format
-			GL_UNSIGNED_BYTE,
-			rgbaData.data()
-		);
-
-		glBindTexture(GL_TEXTURE_2D, 0);
-		return texID;
-	}
 
 
 	void exportSVGWithMetadata(std::string filename, float scale) {
@@ -200,7 +116,110 @@ namespace Engine {
 		}
 		return mask;
 	}
+	void buildDepthComposite()
+	{
+		// (A) Create/resize the composite buffer if needed
+		g_depthComposite.resize(g_imageWidth * g_imageHeight * 4, 0);
 
+		// 1) Initialize everything transparent
+		// Just ensure it's zeroed:
+		std::fill(g_depthComposite.begin(), g_depthComposite.end(), 0);
+
+		// 2) For each annotation, if it passes filterClass,
+		//    we compute depthColor & "stamp" it onto the composite
+		for (auto& ann : g_annotations)
+		{
+			// Filter
+			if (!filterClass.empty() && (ann.semClass != filterClass))
+				continue;
+
+			// Compute color from depth
+			glm::vec4 c = getDepthColor(ann.depth);
+			// Convert to RGBA [0..255]
+			uint8_t r = (uint8_t)(c.r * 255.0f);
+			uint8_t g = (uint8_t)(c.g * 255.0f);
+			uint8_t b = (uint8_t)(c.b * 255.0f);
+			uint8_t a = (uint8_t)(c.a * 255.0f);
+
+			// "Stamp" each pixel where boolMask == true
+			// Same "column-major" approach from your code:
+			// colIndex = x*H + y => unusual, but matches your decodeRLE
+			for (int y = 0; y < ann.height; y++)
+			{
+				for (int x = 0; x < ann.width; x++)
+				{
+					int colIndex = x * ann.height + y;
+					if (colIndex < (int)ann.boolMask.size() && ann.boolMask[colIndex])
+					{
+						// This annotation covers pixel x,y.
+						// We need to place that at (x,y) in the "global" composite
+						// BUT WAIT: The annotation might not always match the entire image size 
+						// if (ann.width != g_imageWidth || ann.height != g_imageHeight).
+						// For now, we assume it does match. 
+
+						// row-major offset
+						int rowIndex = (y * g_imageWidth + x) * 4;
+						// "Blending" for example: if it’s currently 0 alpha, set the color.
+						// or if you want to overwrite, just set it.
+
+						g_depthComposite[rowIndex + 0] = r;
+						g_depthComposite[rowIndex + 1] = g;
+						g_depthComposite[rowIndex + 2] = b;
+						g_depthComposite[rowIndex + 3] = a;
+					}
+				}
+			}
+		}
+		g_depthCompositeDirty = true;
+	}
+	void uploadDepthComposite()
+	{
+		// If the composite is empty or invalid, skip
+		if (g_depthComposite.empty())
+			return;
+
+		// If we don’t have a texture handle yet, create one
+		if (g_depthCompositeTex == 0)
+		{
+			glGenTextures(1, &g_depthCompositeTex);
+			glBindTexture(GL_TEXTURE_2D, g_depthCompositeTex);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		}
+		else
+		{
+			glBindTexture(GL_TEXTURE_2D, g_depthCompositeTex);
+		}
+
+		// Upload or update with our composite buffer
+		glTexImage2D(
+			GL_TEXTURE_2D,
+			0,       // mip level
+			GL_RGBA, // internal format
+			g_imageWidth,
+			g_imageHeight,
+			0,
+			GL_RGBA,
+			GL_UNSIGNED_BYTE,
+			g_depthComposite.data()
+		);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+	void SetDrawDepthOverlay(bool enable)
+	{
+		drawDepthOverlay = enable;
+		if (enable)
+		{
+			buildDepthComposite();
+			uploadDepthComposite();
+		}
+		else
+		{
+			// maybe clear it or do nothing
+		}
+	}
 	// --- Load Annotations from COCO JSON ---
 	void loadAnnotations() {
 		json segmentation{ cocoData["segmentation"] };
@@ -387,12 +406,15 @@ namespace Engine {
 		cocoData = loadJSONObject("./input/segmentation/coco_output.json");
 		loadAnnotations();
 
-		// Set up depth gradient colors.
-		g_nearColor = { 255, 0, 0, 150 };  // semi-transparent red
-		g_farColor = { 0, 0, 255, 150 };   // semi-transparent blue
-
+		// 50% alpha red to 50% alpha blue
+		g_nearColor = glm::vec4(1.0f, 0.0f, 0.0f, 0.5f);  // half-alpha red
+		g_farColor = glm::vec4(0.0f, 0.0f, 1.0f, 0.5f);  // half-alpha blue
 
 		m_renderer.Initialize();
+		buildDepthComposite();
+		uploadDepthComposite();
+
+
 		Quad quad(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(3.0f, 0.0f, 0.0f), glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(0.0f, 2.0f, 0.0f));
 		m_renderer.InitQuad(quad);
 	}
@@ -424,13 +446,14 @@ namespace Engine {
 	//************************************
 	void SemanticVisualization::ClearResources()
 	{
-		// Now that the program has ended delete the textures from the gpu
-		for (auto& ann : g_annotations)
+		if (g_depthCompositeTex)
 		{
-			glDeleteTextures(1, &ann.maskTex);
+			glDeleteTextures(1, &g_depthCompositeTex);
+			g_depthCompositeTex = 0;
 		}
 		m_renderer.ClearResources();
 	}
+
 
 	//************************************
 	// Handle Input and Update Animation
@@ -588,46 +611,29 @@ namespace Engine {
 
 			// Retrieve ImGui's current draw list for this window
 			ImDrawList* drawList = ImGui::GetWindowDrawList();
+			if (drawDepthOverlay && g_depthCompositeTex != 0)
+			{
+				// Where ImGui drew the base image
+				ImVec2 topLeft = imagePos;
+				ImVec2 size = ImVec2((float)g_imageWidth, (float)g_imageHeight);
 
+				drawList->AddImage(
+					reinterpret_cast<void*>(static_cast<intptr_t>(g_depthCompositeTex)),
+					topLeft,
+					ImVec2(topLeft.x + size.x, topLeft.y + size.y)
+				);
+			}
+			else if (drawSemanticMask) {
+
+			}
+			if (drawInstanceBoundary)
+			{
+			}
 			for (auto& ann : g_annotations)
 			{
 				// For each annotation, if it passes our filter, overlay its mask, boundaries, bbox, and label.
 				if (!filterClass.empty() && (ann.semClass != filterClass)) {
 					continue;
-				}
-
-				if (drawDepthOverlay) {
-
-
-					if (!ann.maskTextureCreated)
-					{
-						glm::vec4 depthColor = getDepthColor(ann.depth);
-						auto maskData = createMaskImage(ann.boolMask, ann.width, ann.height, depthColor);
-						ann.maskTex = createMaskTexture(maskData, ann.width, ann.height);
-						ann.maskTextureCreated = true;
-					}
-					// 4) Draw it in the same place as your base image
-					else
-					{
-						// Where ImGui drew the base image
-						ImVec2 topLeft = imagePos; // e.g. the top-left corner of your base image
-						ImVec2 size = ImVec2((float)g_imageWidth, (float)g_imageHeight);
-
-						// We can use the draw list’s AddImage if we want to overlay in 2D
-						drawList->AddImage(
-							reinterpret_cast<void*>(static_cast<intptr_t>(ann.maskTex)),
-							topLeft,
-							ImVec2(topLeft.x + size.x, topLeft.y + size.y)
-						);
-					}
-
-				}
-				else if (drawSemanticMask) {
-
-				}
-				if (drawInstanceBoundary)
-				{
-
 				}
 				// Only draw bounding boxes if toggled
 				if (drawBoundingBox)
