@@ -38,6 +38,9 @@ namespace Engine {
 		// For the mask, we can store a vector<bool> or vector<uint8_t>.
 		// This mimics your "boolMask" from Processing.
 		std::vector<bool> boolMask;
+		GLuint maskTex = 0; // store it once
+
+		bool maskTextureCreated = false;
 
 		Annotation(std::string id, std::string semClass, std::array<float, 4> bbox, float depth, int H, int W, std::vector<bool> boolMask) :
 			id(id), semClass(semClass), bbox(bbox), depth(depth), height(H), width(W), boolMask(boolMask) {
@@ -55,7 +58,13 @@ namespace Engine {
 	static GLuint g_imageTex = 0; // We'll store the texture ID here after loading
 	int g_imageWidth{ 800 };
 	int g_imageHeight{ 600 };
-	std::array<int, 4> g_nearColor, g_farColor;
+	static std::vector<uint8_t> g_depthComposite; // RGBA buffer
+	static GLuint g_depthCompositeTex = 0;        // Single OpenGL texture
+	static bool g_depthCompositeDirty = true;     // True if we need to rebuild
+
+
+	
+	glm::vec4  g_nearColor, g_farColor;
 
 
 	json cocoData;
@@ -65,7 +74,102 @@ namespace Engine {
 	std::vector<Annotation> g_annotations;
 	static float g_minDepth = std::numeric_limits<float>::max();
 	static float g_maxDepth = std::numeric_limits<float>::lowest();
-	// Image buffer for ray tracing output
+
+
+	float normClamped(float value, float minVal, float maxVal)
+	{
+		float t = (value - minVal) / (maxVal - minVal);
+		return std::clamp(t, 0.0f, 1.0f);
+	}
+	// --- Get Depth Color ---
+	// Maps a depth value to a color gradient between nearColor and farColor.
+	glm::vec4 getDepthColor(float depth) {
+		float t = normClamped(depth, g_minDepth, g_maxDepth);
+		return glm::mix(g_nearColor, g_farColor, t);
+	}
+	// Create a CPU-side RGBA buffer from the boolMask.
+// 'overlayColor' is in RGBA floats [0..255 or 0..1 depending on your usage].
+	std::vector<uint8_t> createMaskImage(const std::vector<bool>& mask,
+		int W, int H,
+		glm::vec4 overlayColor)
+	{
+		// We'll produce W*H RGBA bytes
+		std::vector<uint8_t> output(W * H * 4, 0);
+
+		// overlayColor might be like (255,0,0,100) for a translucent red
+		// So let’s convert that to uint8 per channel
+		uint8_t r = (uint8_t)overlayColor.r;
+		uint8_t g = (uint8_t)overlayColor.g;
+		uint8_t b = (uint8_t)overlayColor.b;
+		uint8_t a = (uint8_t)overlayColor.a;
+
+		// Processing code used "colIndex = x*H + y" => column-major
+		// We'll replicate that for fidelity, but note it's unusual.
+		// rowIndex = y*W + x is typical row-major.
+		// We assume 'mask' has exactly W*H entries (or H*W).
+		for (int y = 0; y < H; y++)
+		{
+			for (int x = 0; x < W; x++)
+			{
+				int rowIndex = (y * W + x) * 4;     // RGBA stride
+				int colIndex = x * H + y;          // as in your Processing code
+
+				if (colIndex < (int)mask.size() && mask[colIndex])
+				{
+					// Set overlay color
+					output[rowIndex + 0] = r;
+					output[rowIndex + 1] = g;
+					output[rowIndex + 2] = b;
+					output[rowIndex + 3] = a;
+				}
+				else
+				{
+					// Transparent
+					output[rowIndex + 0] = 0;
+					output[rowIndex + 1] = 0;
+					output[rowIndex + 2] = 0;
+					output[rowIndex + 3] = 0;
+				}
+			}
+		}
+		return output;
+	}
+
+
+
+
+	GLuint createMaskTexture(const std::vector<uint8_t>& rgbaData, int W, int H)
+	{
+		if (rgbaData.empty() || W <= 0 || H <= 0)
+			return 0;
+
+		GLuint texID = 0;
+		glGenTextures(1, &texID);
+		glBindTexture(GL_TEXTURE_2D, texID);
+
+		// Basic texture params (clamp, linear filtering)
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		// Upload pixel data
+		glTexImage2D(
+			GL_TEXTURE_2D,
+			0, // mip level
+			GL_RGBA, // internal format
+			W,
+			H,
+			0,
+			GL_RGBA, // data format
+			GL_UNSIGNED_BYTE,
+			rgbaData.data()
+		);
+
+		glBindTexture(GL_TEXTURE_2D, 0);
+		return texID;
+	}
+
 
 	void exportSVGWithMetadata(std::string filename, float scale) {
 		// TODO: Implement this function
@@ -320,6 +424,11 @@ namespace Engine {
 	//************************************
 	void SemanticVisualization::ClearResources()
 	{
+		// Now that the program has ended delete the textures from the gpu
+		for (auto& ann : g_annotations)
+		{
+			glDeleteTextures(1, &ann.maskTex);
+		}
 		m_renderer.ClearResources();
 	}
 
@@ -482,12 +591,36 @@ namespace Engine {
 
 			for (auto& ann : g_annotations)
 			{
+				// For each annotation, if it passes our filter, overlay its mask, boundaries, bbox, and label.
 				if (!filterClass.empty() && (ann.semClass != filterClass)) {
-					continue; // skip this annotation
+					continue;
 				}
 
 				if (drawDepthOverlay) {
-					
+
+
+					if (!ann.maskTextureCreated)
+					{
+						glm::vec4 depthColor = getDepthColor(ann.depth);
+						auto maskData = createMaskImage(ann.boolMask, ann.width, ann.height, depthColor);
+						ann.maskTex = createMaskTexture(maskData, ann.width, ann.height);
+						ann.maskTextureCreated = true;
+					}
+					// 4) Draw it in the same place as your base image
+					else
+					{
+						// Where ImGui drew the base image
+						ImVec2 topLeft = imagePos; // e.g. the top-left corner of your base image
+						ImVec2 size = ImVec2((float)g_imageWidth, (float)g_imageHeight);
+
+						// We can use the draw list’s AddImage if we want to overlay in 2D
+						drawList->AddImage(
+							reinterpret_cast<void*>(static_cast<intptr_t>(ann.maskTex)),
+							topLeft,
+							ImVec2(topLeft.x + size.x, topLeft.y + size.y)
+						);
+					}
+
 				}
 				else if (drawSemanticMask) {
 
