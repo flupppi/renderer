@@ -23,7 +23,7 @@ import InputSystem;
 import SemanticSegmentationRenderer;
 
 namespace Engine {
-	
+
 
 	// Controls
 	bool drawImage{ true };
@@ -184,7 +184,7 @@ namespace Engine {
 				{
 
 					// Convert to index in the boolMask
-					int colIndex = ( x * ann.height + y);
+					int colIndex = (x * ann.height + y);
 					if (colIndex >= 0 && colIndex < static_cast<int>(ann.boolMask.size()) && ann.boolMask[colIndex])
 					{
 
@@ -288,7 +288,7 @@ namespace Engine {
 			std::vector<bool> boolMask = decodeRLE(countsArr, H, W);
 
 			std::vector<uint8_t> overlayColor = getOverlayColor(semClass);
-			std::vector<uint8_t> boundaryColor = getBoundaryColor(semClass);			
+			std::vector<uint8_t> boundaryColor = getBoundaryColor(semClass);
 			// Get depth from JSON.
 			float depth = obj.at("depth");
 			// Update global min and max depth.
@@ -302,7 +302,7 @@ namespace Engine {
 		}
 		std::cout << "Loaded " << g_annotations.size() << " annotations.\n";
 		std::cout << "Depth range: min=" << g_minDepth << ", max=" << g_maxDepth << std::endl;
-		
+
 	}
 
 	// --- Load Image from File ---
@@ -337,7 +337,7 @@ namespace Engine {
 	}
 
 
-	
+
 
 
 	export class SemanticVisualization : public GameInterface
@@ -352,7 +352,7 @@ namespace Engine {
 		void ClearResources() override;
 		void Update(double deltaTime) override;
 		void StandaloneImGuiFrame();
-		void DrawImGui();
+		void DrawImGui(bool* pWindowOpen = nullptr);
 	private:
 		SemanticSegmentationRenderer m_renderer;
 		InputSystem m_input;
@@ -408,7 +408,7 @@ namespace Engine {
 		m_renderer.uploadComposite(g_depthCompositeTex, g_depthComposite, g_imageHeight, g_imageWidth);
 		m_renderer.uploadComposite(g_maskCompositeTex, g_maskComposite, g_imageHeight, g_imageWidth);
 		m_renderer.uploadComposite(g_instanceCompositeTex, g_instanceComposite, g_imageHeight, g_imageWidth);
-		g_selectionChanged = false;	
+		g_selectionChanged = false;
 	}
 
 
@@ -419,9 +419,6 @@ namespace Engine {
 		{
 			// If we are running as the only program, do the entire frame
 			StandaloneImGuiFrame();
-		}
-		else {
-			DrawImGui();
 		}
 	}
 
@@ -507,7 +504,7 @@ namespace Engine {
 	}
 
 
-	void SemanticVisualization::DrawImGui()
+	void SemanticVisualization::DrawImGui(bool* pWindowOpen)
 	{
 
 		// -----------------------------------------------
@@ -526,9 +523,17 @@ namespace Engine {
 		// -----------------------------------------------
 		// 2) Create a new window with our semantic visualization controls
 		// -----------------------------------------------
-		{
-			ImGui::Begin("Semantic Visualization");
-
+		bool windowOpen = false;
+		if (pWindowOpen)
+			if (*pWindowOpen) {
+				windowOpen = ImGui::Begin("Semantic Visualization", pWindowOpen);
+			}
+			else {
+				windowOpen = false;
+			}
+		else
+			windowOpen = ImGui::Begin("Semantic Visualization");
+		if (windowOpen) {
 			// Checkboxes for toggles that also exist as keybinds
 			ImGui::Checkbox("Draw Image (Key: 1)", &drawImage);
 			ImGui::Checkbox("Bounding Box (Key: O)", &drawBoundingBox);
@@ -553,12 +558,22 @@ namespace Engine {
 				filterItems, IM_ARRAYSIZE(filterItems)))
 			{
 				// Update filterClass whenever user changes the combo
-				if (currentFilterIndex == 0) { filterClass = ""; g_selectionChanged = true; }
-				else if (currentFilterIndex == 1) { filterClass = "sphere";			g_selectionChanged = true; }
-				else if (currentFilterIndex == 2) {filterClass = "box";			g_selectionChanged = true;
-			}
-			else if (currentFilterIndex == 3) {filterClass = "cone";			g_selectionChanged = true;
-		}
+				if (currentFilterIndex == 0) {
+					filterClass = "";
+					g_selectionChanged = true;
+				}
+				else if (currentFilterIndex == 1) {
+					filterClass = "sphere";
+					g_selectionChanged = true;
+				}
+				else if (currentFilterIndex == 2) {
+					filterClass = "box";
+					g_selectionChanged = true;
+				}
+				else if (currentFilterIndex == 3) {
+					filterClass = "cone";
+					g_selectionChanged = true;
+				}
 
 			}
 
@@ -589,7 +604,7 @@ namespace Engine {
 				drawList->AddRectFilled(
 					startPos,
 					endPos,
-					IM_COL32(20, 20, 20, 255) 
+					IM_COL32(20, 20, 20, 255)
 				);
 			}
 			// Iterate through each annotation
@@ -620,7 +635,7 @@ namespace Engine {
 					reinterpret_cast<void*>(static_cast<intptr_t>(g_maskCompositeTex)),
 					topLeft,
 					ImVec2(topLeft.x + size.x, topLeft.y + size.y)
-					);
+				);
 			}
 			if (drawInstanceBoundary)
 			{
@@ -673,3 +688,4 @@ namespace Engine {
 		}
 	}
 }
+

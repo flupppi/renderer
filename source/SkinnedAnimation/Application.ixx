@@ -35,7 +35,7 @@ namespace Engine {
 		void BuildSkeleton();
 		void Render(float aspectRatio) override;
 		void StandaloneImGuiFrame();
-		void DrawImGui();
+		void DrawImGui(bool* pWindowOpen = nullptr);
 		void ClearResources() override;
 		void Update(double deltaTime) override;
 		Skeleton m_skeleton;
@@ -50,7 +50,7 @@ namespace Engine {
 		float deltaTime_{ 0.0 };
 		glm::quat m_orientationQuaternion{ glm::quat(1.0f, 0.0f, 0.0f, 0.0f) };
 		float m_currentAngle{ 0.0f };
-		float m_transitionTime { 0.0f };
+		float m_transitionTime{ 0.0f };
 		const float TRANSITION_DURATION{ 10.0f };
 		// Our state
 		bool edit_state{ false };
@@ -184,10 +184,6 @@ namespace Engine {
 			// If we are running as the only program, do the entire frame
 			StandaloneImGuiFrame();
 		}
-		else
-		{
-			DrawImGui();
-		}
 
 	}
 
@@ -207,29 +203,38 @@ namespace Engine {
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	}
 
-	void Application::DrawImGui()
+	void Application::DrawImGui(bool* pWindowOpen)
 	{
-		// 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
-		{
-			static float xTurn{ 0.0f };
-			static float yBend{ 0.0f };
-			static float zBow{ 0.0f };
-			static float yOpen{ 0.0f };
-			static float xJut{ 0.0f };
-			static float zlookUDleft{ 0.0f };
-			static float ylookLRleft = 0.0f;
-			static float zlookUDright = 0.0f;
-			static float ylookLRright = 0.0f;
-			static float zLtUpperLid = 0.0f;
-			static float zLtLowerLid = 0.0f;
-			static float zRtUpperLid = 0.0f;
-			static float zRtLowerLid = 0.0f;
-			static float expression = 0.5f;
+		
+		static float xTurn{ 0.0f };
+		static float yBend{ 0.0f };
+		static float zBow{ 0.0f };
+		static float yOpen{ 0.0f };
+		static float xJut{ 0.0f };
+		static float zlookUDleft{ 0.0f };
+		static float ylookLRleft = 0.0f;
+		static float zlookUDright = 0.0f;
+		static float ylookLRright = 0.0f;
+		static float zLtUpperLid = 0.0f;
+		static float zLtLowerLid = 0.0f;
+		static float zRtUpperLid = 0.0f;
+		static float zRtLowerLid = 0.0f;
+		static float expression = 0.5f;
 
-			bool save = false;
+		bool save = false;
 
-			ImGui::Begin("Animation Controls");
 
+		bool windowOpen = false;
+		if (pWindowOpen)
+			if (*pWindowOpen) {
+				windowOpen = ImGui::Begin("Animation Controls", pWindowOpen);
+			}
+			else {
+				windowOpen = false;
+			}
+		else
+			windowOpen = ImGui::Begin("Animation Controls");
+		if (windowOpen) {
 			ImGui::Text("edit animation poses by moving the sliders");
 			ImGui::Checkbox("Edit Animations", &edit_state);      // Edit bools storing our window open/close state
 			if (edit_state) {
@@ -303,9 +308,12 @@ namespace Engine {
 				ImGui::SliderFloat("Z-Position", &lightPos[2], -25.0f, 25.0f);
 			}
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+			ImGui::End();
 		}
-		ImGui::End();
+		
+		
 	}
+
 
 	//************************************
 	// Calculate mvp matrix, calculate and render joint transforms and calculate and render skin using the boneModelMatrices.

@@ -82,21 +82,21 @@ namespace Engine {
 		glm::mat4 ModelColletible = glm::translate(glm::mat4(1.0f), glm::vec3(m_collectiblePosition, 0.0f));
 		m_renderer.RenderQuad(Projection * View * ModelColletible, 1);
 
-		RenderIMGui();
+		//RenderIMGui();
 
 	}
 
 	void Game::RenderIMGui() {
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
-		{
-			ImGui::Begin("Game HUD");
-			ImGui::Text("Score: %d", m_score);
-		}
-		ImGui::End();
-		ImGui::Render();
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+		//ImGui_ImplOpenGL3_NewFrame();
+		//ImGui_ImplGlfw_NewFrame();
+		//ImGui::NewFrame();
+		//{
+		//	ImGui::Begin("Game HUD");
+		//	ImGui::Text("Score: %d", m_score);
+		//}
+		//ImGui::End();
+		//ImGui::Render();
+		//ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	}
 
 	//************************************
