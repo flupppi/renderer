@@ -351,17 +351,6 @@ namespace Engine {
 	private:
 		SemanticSegmentationRenderer m_renderer;
 		InputSystem m_input;
-		Camera m_camera;
-	};
-
-	struct Ray {
-		glm::vec3 origin;
-		glm::vec3 direction;
-	};
-
-	struct Sphere {
-		glm::vec3 center;
-		float radius;
 	};
 	json loadJSONObject(std::string filename)
 	{
@@ -387,14 +376,7 @@ namespace Engine {
 	{
 		m_input.SetWindow(window);
 		// Observe Input
-		m_input.ObserveKey(GLFW_KEY_SPACE);
-		m_input.ObserveKey(GLFW_KEY_RIGHT);
-		m_input.ObserveKey(GLFW_KEY_LEFT);
-		m_input.ObserveKey(GLFW_KEY_UP);
-		m_input.ObserveKey(GLFW_KEY_DOWN);
 		m_input.ObserveKey(GLFW_KEY_1);
-		m_input.ObserveKey(GLFW_KEY_R);
-		m_input.ObserveKey(GLFW_KEY_LEFT_SHIFT);
 		m_input.ObserveKey(GLFW_KEY_S);
 		m_input.ObserveKey(GLFW_KEY_B);
 		m_input.ObserveKey(GLFW_KEY_C);
@@ -408,8 +390,6 @@ namespace Engine {
 		// Load and Upload Image
 		g_image = loadImage("./input/segmentation/render.png");
 		m_renderer.createImage(g_image, g_imageHeight, g_imageWidth);
-
-
 		// Load Annotation JSON Data
 		cocoData = loadJSONObject("./input/segmentation/coco_output.json");
 		loadAnnotations();
@@ -422,31 +402,12 @@ namespace Engine {
 		m_renderer.uploadComposite(g_depthCompositeTex, g_depthComposite, g_imageHeight, g_imageWidth);
 		m_renderer.uploadComposite(g_maskCompositeTex, g_maskComposite, g_imageHeight, g_imageWidth);
 		m_renderer.uploadComposite(g_instanceCompositeTex, g_instanceComposite, g_imageHeight, g_imageWidth);
-		g_selectionChanged = false;
-
-		Quad quad(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(3.0f, 0.0f, 0.0f), glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(0.0f, 2.0f, 0.0f));
-		m_renderer.InitQuad(quad);
+		g_selectionChanged = false;	
 	}
 
 
-	//************************************
-	// Calculate mvp matrix, calculate and render joint transforms and calculate and render skin using the boneModelMatrices.
-	//************************************
 	void SemanticVisualization::Render(float aspectRatio)
 	{
-		glm::mat4 Projection = m_camera.GetProjectionMatrix(aspectRatio);
-		glm::mat4 View = m_camera.GetViewMatrix();
-		glm::mat4 Model = glm::mat4(1.0f);
-		glm::mat4 mvp = Projection * View * Model;
-		glm::mat4 quadTransform = mvp * glm::mat4(1.0f);
-
-
-
-	
-
-		m_renderer.RenderQuad(quadTransform);
-		// Render the gizmo lines
-		m_renderer.RenderGizmo(mvp);
 		RenderIMGui();
 	}
 
@@ -469,7 +430,6 @@ namespace Engine {
 		if (m_input.WasKeyPressed(GLFW_KEY_1)) {
 			drawImage = !drawImage;
 		}
-
 		if (m_input.WasKeyPressed(GLFW_KEY_S)) {
 			filterClass = "sphere";
 			std::cout << "Filtering for spheres\n";
@@ -507,12 +467,6 @@ namespace Engine {
 		if (m_input.WasKeyPressed(GLFW_KEY_V)) {
 			exportSVGWithMetadata("output_metadata.svg", 1.0f);
 		}
-		
-		bool rotateLeft = m_input.IsKeyDown(GLFW_KEY_LEFT);
-		bool rotateRight = m_input.IsKeyDown(GLFW_KEY_RIGHT);
-		bool zoomIn = m_input.IsKeyDown(GLFW_KEY_UP);
-		bool zoomOut = m_input.IsKeyDown(GLFW_KEY_DOWN);
-
 		if (g_selectionChanged)
 		{
 			generateCompositeImages();
@@ -521,8 +475,6 @@ namespace Engine {
 			m_renderer.uploadComposite(g_instanceCompositeTex, g_instanceComposite, g_imageHeight, g_imageWidth);
 			g_selectionChanged = false;
 		}
-		// Update the camera with input flags
-		m_camera.Update(deltaTime, rotateLeft, rotateRight, zoomIn, zoomOut);
 	}
 
 
