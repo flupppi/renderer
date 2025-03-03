@@ -31,41 +31,34 @@ namespace Engine {
 		SemanticVisualization vis;
 		Application app;
 	};
-
-
-
-	//************************************
-// Set up Keyboard Observer, Initialize the Renderer and Initialize the Skeleton.
-//************************************
 	void CombinedInterface::Initialize(GLFWwindow* window)
 	{
 		vis.Initialize(window);
 		app.Initialize(window);
 	}
-
-
-	//************************************
-	// Calculate mvp matrix, calculate and render joint transforms and calculate and render skin using the boneModelMatrices.
-	//************************************
 	void CombinedInterface::Render(float aspectRatio)
 	{
+		// CombinedInterface::Render(...)
+		// 1) Begin the ImGui frame exactly once
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+
 		vis.Render(aspectRatio);
 		app.Render(aspectRatio);
-	}
 
-	//************************************
-	// Calculate mvp matrix, calculate and render joint transforms and calculate and render skin using the boneModelMatrices.
-	//************************************
+		// 3) End the ImGui frame exactly once
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+
+
+	}
 	void CombinedInterface::ClearResources()
 	{
 		vis.ClearResources();
 		app.ClearResources();
 	}
-
-
-	//************************************
-	// Handle Input and Update Animation
-	//************************************
 	void CombinedInterface::Update(double deltaTime)
 	{
 		vis.Update(deltaTime);

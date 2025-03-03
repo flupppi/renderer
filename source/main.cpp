@@ -22,6 +22,7 @@ import Raytracer;
 import BillboardGenerator;
 import PlaneSelector;
 import SemanticVisualization;
+import CombinedInterface;
 
 using namespace Engine;
 GameInterface* gUsedInterface;
@@ -209,7 +210,7 @@ std::unique_ptr<GameInterface> CreateGameInterface(const std::string& mode) {
 	}
 	else if (mode == "Application") {
 
-		return std::make_unique<Application>();
+		return std::make_unique<Application>(true);
 	}
 	else if (mode == "Game") {
 		return std::make_unique<Game>();
@@ -218,7 +219,10 @@ std::unique_ptr<GameInterface> CreateGameInterface(const std::string& mode) {
 		return std::make_unique<Raytracer>();
 	}
 	else if (mode == "SemanticVisualization") {
-		return std::make_unique<SemanticVisualization>();
+		return std::make_unique<SemanticVisualization>(true);
+	}
+	else if (mode == "CombinedInterface") {
+		return std::make_unique<CombinedInterface>();
 	}
 	else {
 		throw std::runtime_error("Unknown game mode: " + mode);

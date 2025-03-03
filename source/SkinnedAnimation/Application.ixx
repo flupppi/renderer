@@ -27,17 +27,22 @@ namespace Engine {
 	export class Application : public GameInterface
 	{
 	public:
+		Application(bool standalone = false)
+			: m_isStandalone(standalone)
+		{
+		}
 		void Initialize(GLFWwindow* window) override;
 		void BuildSkeleton();
 		void Render(float aspectRatio) override;
-		void RenderIMGui();
+		void StandaloneImGuiFrame();
+		void DrawImGui();
 		void ClearResources() override;
 		void Update(double deltaTime) override;
 		Skeleton m_skeleton;
 		//PoseManager m_poseManager;
 		GLfloat lightPos[3] = { 15.0f, 1.0f, 15.0f };
 		GLfloat lightColor[3] = { 1.0f, 1.0f, 1.0f };
-
+		bool m_isStandalone{ false };
 	private:
 		float t{ 0 };
 		Renderer m_renderer;
@@ -174,16 +179,36 @@ namespace Engine {
 			m_renderer.RenderSkeleton(jointTransform);
 		}
 
-		RenderIMGui();
+		if (m_isStandalone)
+		{
+			// If we are running as the only program, do the entire frame
+			StandaloneImGuiFrame();
+		}
+		else
+		{
+			DrawImGui();
+		}
 
 	}
 
-	void Application::RenderIMGui()
-	{
 
+	void Application::StandaloneImGuiFrame()
+	{
+		// This is only used if we are the sole program in the main loop
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
+
+		// Build the UI
+		DrawImGui();
+
+		// Render
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	}
+
+	void Application::DrawImGui()
+	{
 		// 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
 		{
 			static float xTurn{ 0.0f };
@@ -280,8 +305,6 @@ namespace Engine {
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		}
 		ImGui::End();
-		ImGui::Render();
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	}
 
 	//************************************

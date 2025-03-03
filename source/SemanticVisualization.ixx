@@ -343,14 +343,20 @@ namespace Engine {
 	export class SemanticVisualization : public GameInterface
 	{
 	public:
+		SemanticVisualization(bool standalone = false)
+			: m_isStandalone(standalone)
+		{
+		}
 		void Initialize(GLFWwindow* window) override;
 		void Render(float aspectRatio) override;
 		void ClearResources() override;
 		void Update(double deltaTime) override;
-		void RenderIMGui();
+		void StandaloneImGuiFrame();
+		void DrawImGui();
 	private:
 		SemanticSegmentationRenderer m_renderer;
 		InputSystem m_input;
+		bool m_isStandalone{ false };
 	};
 	json loadJSONObject(std::string filename)
 	{
@@ -408,7 +414,15 @@ namespace Engine {
 
 	void SemanticVisualization::Render(float aspectRatio)
 	{
-		RenderIMGui();
+
+		if (m_isStandalone)
+		{
+			// If we are running as the only program, do the entire frame
+			StandaloneImGuiFrame();
+		}
+		else {
+			DrawImGui();
+		}
 	}
 
 	//************************************
@@ -477,14 +491,24 @@ namespace Engine {
 		}
 	}
 
-
-
-	void SemanticVisualization::RenderIMGui()
+	void SemanticVisualization::StandaloneImGuiFrame()
 	{
-		// Start a new ImGui frame
+		// This is only used if we are the sole program in the main loop
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
+
+		// Build the UI
+		DrawImGui();
+
+		// Render
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	}
+
+
+	void SemanticVisualization::DrawImGui()
+	{
 
 		// -----------------------------------------------
 		// 1) Show a simple window for stats (already in your code)
@@ -647,11 +671,5 @@ namespace Engine {
 
 			ImGui::End();
 		}
-
-		// -----------------------------------------------
-		// 3) Render all ImGui windows
-		// -----------------------------------------------
-		ImGui::Render();
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	}
 }
