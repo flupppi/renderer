@@ -123,6 +123,7 @@
     <ClCompile Include="SemanticVisualization.ixx" />
     <ClCompile Include="SemanticSegmentationRenderer.ixx" />
     <ClCompile Include="Annotation.ixx" />
+    <ClCompile Include="CombinedInterface.ixx" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="vendor\stb_image\stb_image.h">

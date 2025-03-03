@@ -176,6 +176,7 @@
   <ItemGroup>
     <ClCompile Include="2DGame\GameRenderer.cpp" />
     <ClCompile Include="Annotation.ixx" />
+    <ClCompile Include="CombinedInterface.ixx" />
     <ClCompile Include="MeshSimplification\BillboardTexture.ixx" />
     <ClCompile Include="MeshSimplification\BoundingBox.ixx" />
     <ClCompile Include="MeshSimplification\IBillboardGenerator.ixx" />
