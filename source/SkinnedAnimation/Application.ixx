@@ -226,12 +226,10 @@ namespace Engine {
 
 		bool windowOpen = false;
 		if (pWindowOpen)
-			if (*pWindowOpen) {
+			if (*pWindowOpen)
 				windowOpen = ImGui::Begin("Animation Controls", pWindowOpen);
-			}
-			else {
-				windowOpen = false;
-			}
+			else
+				return;
 		else
 			windowOpen = ImGui::Begin("Animation Controls");
 		if (windowOpen) {
@@ -308,9 +306,9 @@ namespace Engine {
 				ImGui::SliderFloat("Z-Position", &lightPos[2], -25.0f, 25.0f);
 			}
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-			ImGui::End();
 		}
-		
+		ImGui::End();
+
 		
 	}
 

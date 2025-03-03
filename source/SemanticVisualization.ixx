@@ -525,12 +525,10 @@ namespace Engine {
 		// -----------------------------------------------
 		bool windowOpen = false;
 		if (pWindowOpen)
-			if (*pWindowOpen) {
+			if (*pWindowOpen)
 				windowOpen = ImGui::Begin("Semantic Visualization", pWindowOpen);
-			}
-			else {
-				windowOpen = false;
-			}
+			else 
+				return;
 		else
 			windowOpen = ImGui::Begin("Semantic Visualization");
 		if (windowOpen) {
@@ -683,9 +681,8 @@ namespace Engine {
 					drawList->AddText(textPos, IM_COL32(255, 0, 0, 255), label.c_str());
 				}
 			}
-
-			ImGui::End();
 		}
+		ImGui::End();
 	}
 }
 
