@@ -16,59 +16,14 @@ export module SemanticVisualization;
 
 import std;
 import GameInterface;
+import Annotation;
 import Camera;
 import Quad;
 import InputSystem;
 import SemanticSegmentationRenderer;
 
 namespace Engine {
-	std::vector<uint8_t> getOverlayColor(std::string semClass) {
-		std::vector<uint8_t> color;
-		if (semClass == "sphere") {
-			color = { 255, 0, 0, 100 };
-		}
-		else if (semClass =="box") {
-			color = { 0, 255, 0, 100 };
-		}
-		else if (semClass == "cone") {
-			color = { 0, 0, 255, 100 };
-		}
-		else {
-			color = { 255, 255, 255, 100 };
-		}
-		return color;
-	}
-	// --- Get Boundary Color ---
-// Returns a fully opaque color for boundary drawing.
-	std::vector<uint8_t> getBoundaryColor(std::string semClass) {
-		std::vector<uint8_t> color{ 255, 255, 255, 255 };
-		return color;
-	}
-
-	// A lightweight equivalent of your "Annotation" class in Processing.
-	// Store any fields you need (bbox, mask, depth, etc.)
-	struct Annotation
-	{
-	public:
-
-		std::string id;          // e.g., "object_51"
-		std::string semClass;    // e.g., "sphere", "box", "cone"
-		std::array<int, 4> bbox; // {x, y, w, h}
-		float depth{ 0.0f };
-		int height{ 0 };
-		int width{ 0 };
-		std::vector<uint8_t> overlayColor{};
-		std::vector<uint8_t> boundaryColor{};
-
-		// For the mask, we can store a vector<bool> or vector<uint8_t>.
-		// This mimics your "boolMask" from Processing.
-		std::vector<bool> boolMask;
-
-		Annotation(std::string id, std::string semClass, std::array<int, 4> bbox, float depth, int H, int W, std::vector<bool> boolMask, std::vector<uint8_t> overlayColor, std::vector<uint8_t> boundaryColor) :
-			id(id), semClass(semClass), bbox(bbox), depth(depth), height(H), width(W), boolMask(boolMask), overlayColor(overlayColor), boundaryColor(boundaryColor) {
-		}
-
-	};
+	
 
 	// Controls
 	bool drawImage{ true };
@@ -83,8 +38,11 @@ namespace Engine {
 	std::vector<uint8_t> g_image;
 
 	// Semantic Mask
-	static std::vector<uint8_t> g_maskComposite; // RGBA buffer
+	static std::vector<uint8_t> g_maskComposite{}; // RGBA buffer
 	GLuint g_depthCompositeTex{ 0 };
+	// Instance Mask
+	static std::vector<uint8_t> g_instanceComposite{}; // RGBA buffer
+	GLuint g_instanceCompositeTex{ 0 };
 
 
 	// Depth Color Mapping
@@ -101,7 +59,31 @@ namespace Engine {
 	// Global or static vector to store all annotations (similar to your Processing `ArrayList<Annotation>`)
 	std::vector<Annotation> g_annotations;
 
+	std::vector<uint8_t> getOverlayColor(std::string semClass) {
+		std::vector<uint8_t> color;
+		if (semClass == "sphere") {
+			color = { 255, 0, 0, 100 };
+		}
+		else if (semClass == "box") {
+			color = { 0, 255, 0, 100 };
+		}
+		else if (semClass == "cone") {
+			color = { 0, 0, 255, 100 };
+		}
+		else {
+			color = { 255, 255, 255, 100 };
+		}
+		return color;
+	}
 
+
+
+	// --- Get Boundary Color ---
+// Returns a fully opaque color for boundary drawing.
+	std::vector<uint8_t> getBoundaryColor(std::string semClass) {
+		std::vector<uint8_t> color{ 255, 255, 255, 255 };
+		return color;
+	}
 
 	float normClamped(float value, float minVal, float maxVal)
 	{
@@ -151,10 +133,12 @@ namespace Engine {
 		// (A) Create/resize the composite buffers if needed
 		g_depthComposite.resize(g_imageWidth * g_imageHeight * 4, 0);
 		g_maskComposite.resize(g_imageWidth * g_imageHeight * 4, 0);
+		g_instanceComposite.resize(g_imageWidth * g_imageHeight * 4, 0);
 
 		// 1) Initialize them to zero (fully transparent)
 		std::fill(g_depthComposite.begin(), g_depthComposite.end(), 0);
 		std::fill(g_maskComposite.begin(), g_maskComposite.end(), 0);
+		std::fill(g_instanceComposite.begin(), g_instanceComposite.end(), 0);
 
 		// 2) For each annotation, if it passes filterClass,
 		//    compute its depth color & "stamp" it within its bounding box
@@ -189,17 +173,70 @@ namespace Engine {
 			xMax = std::min(g_imageWidth, xMax);
 			yMax = std::min(g_imageHeight, yMax);
 
+
+			// Retrieve boundary color (fully opaque in this example)
+			const std::vector<uint8_t>& boundaryColor = ann.boundaryColor;
+
 			// Traverse only within the bounding box
 			for (int y = yMin; y < yMax; y++)
 			{
 				for (int x = xMin; x < xMax; x++)
 				{
+
 					// Convert to index in the boolMask
 					int colIndex = ( x * ann.height + y);
 					if (colIndex >= 0 && colIndex < static_cast<int>(ann.boolMask.size()) && ann.boolMask[colIndex])
 					{
+
+
+						// -----------------------------
+						//   Check if this pixel is an edge
+						// -----------------------------
+						bool isEdge = false;
+						for (int dy = -1; dy <= 1 && !isEdge; dy++)
+						{
+							for (int dx = -1; dx <= 1 && !isEdge; dx++)
+							{
+								if (dx == 0 && dy == 0)
+									continue; // skip self
+
+								int nx = x + dx;
+								int ny = y + dy;
+								// If neighbor is out of bounds, this pixel is an edge
+								if (nx < 0 || nx >= ann.width || ny < 0 || ny >= ann.height)
+								{
+									isEdge = true;
+								}
+								else
+								{
+									// Convert neighbor (nx,ny) to boolMask index
+									int nColIndex = nx * ann.height + ny;
+									if (nColIndex < 0 || nColIndex >= static_cast<int>(ann.boolMask.size()) ||
+										!ann.boolMask[nColIndex])
+									{
+										isEdge = true;
+									}
+								}
+							}
+						}
 						// row-major offset in the global (800×600) image
 						int rowIndex = (y * ann.width + x) * 4;
+						// 4) Stamp the boundary color if isEdge, else transparent
+						if (isEdge)
+						{
+							g_instanceComposite[rowIndex + 0] = boundaryColor[0];
+							g_instanceComposite[rowIndex + 1] = boundaryColor[1];
+							g_instanceComposite[rowIndex + 2] = boundaryColor[2];
+							g_instanceComposite[rowIndex + 3] = boundaryColor[3];
+						}
+						else
+						{
+							// Interior => fully transparent
+							g_instanceComposite[rowIndex + 0] = 0;
+							g_instanceComposite[rowIndex + 1] = 0;
+							g_instanceComposite[rowIndex + 2] = 0;
+							g_instanceComposite[rowIndex + 3] = 0;
+						}
 
 						// Depth composite
 						g_depthComposite[rowIndex + 0] = r;
@@ -384,6 +421,7 @@ namespace Engine {
 		generateCompositeImages();
 		m_renderer.uploadComposite(g_depthCompositeTex, g_depthComposite, g_imageHeight, g_imageWidth);
 		m_renderer.uploadComposite(g_maskCompositeTex, g_maskComposite, g_imageHeight, g_imageWidth);
+		m_renderer.uploadComposite(g_instanceCompositeTex, g_instanceComposite, g_imageHeight, g_imageWidth);
 		g_selectionChanged = false;
 
 		Quad quad(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(3.0f, 0.0f, 0.0f), glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(0.0f, 2.0f, 0.0f));
@@ -480,6 +518,7 @@ namespace Engine {
 			generateCompositeImages();
 			m_renderer.uploadComposite(g_depthCompositeTex, g_depthComposite, g_imageHeight, g_imageWidth);
 			m_renderer.uploadComposite(g_maskCompositeTex, g_maskComposite, g_imageHeight, g_imageWidth);
+			m_renderer.uploadComposite(g_instanceCompositeTex, g_instanceComposite, g_imageHeight, g_imageWidth);
 			g_selectionChanged = false;
 		}
 		// Update the camera with input flags
@@ -609,6 +648,15 @@ namespace Engine {
 			}
 			if (drawInstanceBoundary)
 			{
+				// Where ImGui drew the base image
+				ImVec2 topLeft = imagePos;
+				ImVec2 size = ImVec2((float)g_imageWidth, (float)g_imageHeight);
+
+				drawList->AddImage(
+					reinterpret_cast<void*>(static_cast<intptr_t>(g_instanceCompositeTex)),
+					topLeft,
+					ImVec2(topLeft.x + size.x, topLeft.y + size.y)
+				);
 			}
 			for (auto& ann : g_annotations)
 			{
