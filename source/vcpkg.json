@@ -5,6 +5,7 @@
     "cxxopts",
     "fmt",
     "glfw3",
+    "glew",
     "glm",
     "lua",
     "range-v3",
@@ -13,5 +14,7 @@
       "name": "imgui",
       "features": [ "glfw-binding", "opengl3-binding" ]
     }
-  ]
+  ],
+  "version": "1.0.0",
+  "name": "main"
 }
