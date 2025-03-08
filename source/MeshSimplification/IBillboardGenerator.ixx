@@ -1,12 +1,12 @@
 module;
-#pragma once
+#include<glm/glm.hpp>
 export module IBillboardGenerator;
-import std;
+
 import Plane;
 import Billboard;
 import Mesh;
 import Face;
-
+import std;
 namespace Engine {
 	/*
 	 * @brief Interface for generating billboards

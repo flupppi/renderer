@@ -1,5 +1,4 @@
 ﻿module;
-#pragma once
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 export module Camera;
@@ -128,6 +127,8 @@ namespace Engine {
                 return std::string("FPS Mode");
             else if (mode == CameraMode::Orbit)
                 return std::string("Orbit Mode");
+            else
+              return std::string("Mode");
         }
 
 

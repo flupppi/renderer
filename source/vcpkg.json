@@ -1,7 +1,6 @@
 {
   "dependencies": [
     "assimp",
-    "assimp",
     "cxxopts",
     "fmt",
     "glfw3",

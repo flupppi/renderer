@@ -69,7 +69,7 @@ namespace Engine {
 		if (texture.empty())
 			return;
 
-		// If we don’t have a texture handle yet, create one
+		// If we donï¿½t have a texture handle yet, create one
 		if (id == 0)
 		{
 			glGenTextures(1, &id);

@@ -30,7 +30,7 @@ const int WIDTH{ 800 };
 const int HEIGHT{ 600 };
 
 
-
+GLboolean glewExperimental = GL_TRUE;
 // Helper to display a little (?) mark which shows a tooltip when hovered.
 // In your own code you may want to display an actual icon if you are using a merged icon fonts (see docs/FONTS.md)
 static void HelpMarker(const char* desc)
@@ -157,7 +157,6 @@ GLFWwindow* InitializeSystem(const std::string& mode)
 
 	glfwMakeContextCurrent(window);
 	//glfwSwapInterval(1); // Enable vsync
-	glewExperimental = GL_TRUE;
 	glewInit();
 	InitializeDearImGui(window);
 

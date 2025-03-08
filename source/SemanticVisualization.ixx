@@ -155,7 +155,7 @@ namespace Engine {
 			uint8_t b = static_cast<uint8_t>(depthColor.b * 255.0f);
 			uint8_t a = static_cast<uint8_t>(depthColor.a * 255.0f);
 
-			// Also retrieve this annotation’s overlay color
+			// Also retrieve this annotationï¿½s overlay color
 			const std::vector<uint8_t>& overlayColor = ann.overlayColor;
 
 			// -------------------------------------------------
@@ -219,7 +219,7 @@ namespace Engine {
 								}
 							}
 						}
-						// row-major offset in the global (800×600) image
+						// row-major offset in the global (800ï¿½600) image
 						int rowIndex = (y * ann.width + x) * 4;
 						// 4) Stamp the boundary color if isEdge, else transparent
 						if (isEdge)

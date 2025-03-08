@@ -3,10 +3,11 @@ module;
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+
+export module Billboard;
 import Plane;
 import BillboardTexture;
 
-export module Billboard;
 namespace Engine {
 
 	export class Billboard
