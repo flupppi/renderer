@@ -12,6 +12,7 @@
 #include <cxxopts.hpp>
 #include <fmt/format.h>
 #include <range/v3/view.hpp>
+#include <tiny_gltf.h>
 
 import std;
 import BillboardCloud;
@@ -24,10 +25,11 @@ import PlaneSelector;
 import SemanticVisualization;
 import CombinedInterface;
 
+
 using namespace Engine;
 GameInterface* gUsedInterface;
-const int WIDTH{ 800 };
-const int HEIGHT{ 600 };
+const int WIDTH{ 1920 };
+const int HEIGHT{ 1080 };
 
 
 GLboolean glewExperimental = GL_TRUE;
@@ -243,12 +245,47 @@ void ShutdownSystem()
 int main(int argc, char* argv[])
 {
 	try {
+		// Command-line parsing using cxxopts
+		cxxopts::Options options("Engine", "A simple engine with glTF viewer");
+		options.add_options()
+			("p, program", "Program mode (Application, BillboardCloud, etc.)", cxxopts::value<std::string>()->default_value("Application"))
+			("m, model", "Path to glTF model file", cxxopts::value<std::string>())
+			("s, shader", "path to fragment shader file", cxxopts::value<std::string>())
+			("h, help", "Print usage information");
+
+		auto result = options.parse(argc, argv);
+
+		// Show help message
+		if (result.count("help")) {
+			std::cout << options.help() << std::endl;
+			return 0;
+		}
 
 		// Select the game mode based on some configuration, argument, or state.
-		const std::string mode = argc > 1 ? argv[1] : "Raytracer";
+		const std::string mode = result["program"].as<std::string>();
+		std::string modelPath;
+		std::string shaderPath;
+		if (result.count("shader")) {
+			shaderPath = result["shader"].as<std::string>();
+		}else {
+			std::cout << "Error: Missing parameter for 'shader'" << std::endl;
+			return 0;
+		}
+		if (result.count("model")) {
+			modelPath = result["model"].as<std::string>();
+		}
+		else {
+			std::cout << "Error: Missing parameter for 'model'" << std::endl;
+			return 0;
+		}
 
-		TestLua();
-		TestAssimp();
+		std::cout << "Loading Program: " << mode << "..." << std::endl;
+		std::cout << "Loading Model: " << modelPath << "..." << std::endl;
+		std::cout << "Loading Shader: " << shaderPath << "..." << std::endl;
+
+
+		//TestLua();
+		//TestAssimp();
 		
 
 		// Create the GameInterface instance using the factory function
@@ -256,8 +293,8 @@ int main(int argc, char* argv[])
 
 		// Set the global pointer to the created instance
 		gUsedInterface = gameInterface.get();  // Assign to the global pointer
-
 		GLFWwindow* window = InitializeSystem(mode);
+
 		RunCoreloop(window);
 		ShutdownSystem();
 	}

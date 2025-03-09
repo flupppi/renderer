@@ -63,6 +63,8 @@ find_package(glm CONFIG REQUIRED)
 find_package(assimp CONFIG REQUIRED)
 find_package(Lua REQUIRED MODULE)
 find_package(imgui CONFIG REQUIRED)
+find_package(cxxopts CONFIG REQUIRED)
+find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
 
 message(STATUS "LUA_INCLUDE_DIR = ${LUA_INCLUDE_DIR}")
 message(STATUS "LUA_LIBRARIES = ${LUA_LIBRARIES}")
@@ -140,8 +142,8 @@ if(MSVC)
 endif()
 
 target_compile_definitions(CXXOpenGL PRIVATE GLM_ENABLE_EXPERIMENTAL)
-target_include_directories(CXXOpenGL PRIVATE "${LUA_INCLUDE_DIR}")
-
+target_include_directories(CXXOpenGL PRIVATE "${LUA_INCLUDE_DIR}" "${TINYGLTF_INCLUDE_DIRS}")
+message(STATUS "TINYGLTF_INCLUDE_DIRS = ${TINYGLTF_INCLUDE_DIRS}")
 target_link_libraries(CXXOpenGL PRIVATE
         glfw
         GLEW::GLEW
@@ -152,4 +154,5 @@ target_link_libraries(CXXOpenGL PRIVATE
         "${LUA_LIBRARIES}"
         # Link the newly built std.obj so that 'import std;' resolves actual library code
         "${CMAKE_CURRENT_BINARY_DIR}/std.obj"
+        cxxopts::cxxopts
 )

@@ -32,8 +32,8 @@ namespace Engine {
 
 		// Image buffer for ray tracing output
 		std::vector<uint8_t> m_rayTraceImage;
-		int m_imageWidth{ 1024 };
-		int m_imageHeight{ 768 };
+		int m_imageWidth{ 1920 };
+		int m_imageHeight{ 1080 };
 
 		void GenerateRayTraceImage(); // Ray tracing function
 
