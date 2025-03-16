@@ -1,6 +1,8 @@
 
 cmake-build-debug-visual-studio
 cmake-build-debug
+input
+imgui.ini
 
 #################
 ## Eclipse

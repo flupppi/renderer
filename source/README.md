@@ -1,8 +1,6 @@
 # Semantic Segmentation
 
 
-
-
 # Semantic Visualization
 - Create window.
 - load image of render - stb image 
