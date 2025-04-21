@@ -12,7 +12,6 @@
 #include <cxxopts.hpp>
 #include <fmt/format.h>
 #include <range/v3/view.hpp>
-#include <tiny_gltf.h>
 
 import std;
 import BillboardCloud;
@@ -147,7 +146,7 @@ void TestAssimp() {
 //************************************
 // Initialize GLFW, Load OpenGL with glew and set up the renderer.
 //************************************
-GLFWwindow* InitializeSystem(const std::string& mode)
+GLFWwindow* InitializeSystem()
 {
 	// Setup window
 	glfwInit();
@@ -155,7 +154,7 @@ GLFWwindow* InitializeSystem(const std::string& mode)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
-	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, mode.c_str(), nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, gUsedInterface->mode.c_str(), nullptr, nullptr);
 
 	glfwMakeContextCurrent(window);
 	//glfwSwapInterval(1); // Enable vsync
@@ -202,15 +201,25 @@ void RunCoreloop(GLFWwindow* window)
 	}
 }
 
-std::unique_ptr<GameInterface> CreateGameInterface(const std::string& mode) {
+std::unique_ptr<GameInterface> CreateGameInterface(const cxxopts::ParseResult& results) {
+	// Populate objects depending on the parsed results
+	std::string modelPath;
+	if (results.count("path")) {
+		modelPath = results["path"].as<std::string>();
+	}
+	else {
+		std::cout << "Error: Missing parameter for 'path'" << std::endl;
+		return 0;
+	}
+	// Select the game mode based on some configuration, argument, or state.
+	const std::string mode = results["program"].as<std::string>();
 	if (mode == "BillboardCloud") {
 		// Create specific implementations for generator and selector
 		auto generator = std::make_unique<BillboardGenerator>();
 		auto selector = std::make_unique<PlaneSelector>();
-		return std::make_unique<BillboardCloud>(std::move(generator), std::move(selector));
+		return std::make_unique<BillboardCloud>(std::move(generator), std::move(selector), modelPath);
 	}
 	else if (mode == "Application") {
-
 		return std::make_unique<Application>(true);
 	}
 	else if (mode == "Game") {
@@ -249,52 +258,21 @@ int main(int argc, char* argv[])
 		cxxopts::Options options("Engine", "A simple engine with glTF viewer");
 		options.add_options()
 			("p, program", "Program mode (Application, BillboardCloud, etc.)", cxxopts::value<std::string>()->default_value("Application"))
-			("m, model", "Path to glTF model file", cxxopts::value<std::string>())
-			("s, shader", "path to fragment shader file", cxxopts::value<std::string>())
+			("m, path", "Path to glTF model file", cxxopts::value<std::string>())
 			("h, help", "Print usage information");
-
 		auto result = options.parse(argc, argv);
-
 		// Show help message
 		if (result.count("help")) {
 			std::cout << options.help() << std::endl;
 			return 0;
 		}
-
-		// Select the game mode based on some configuration, argument, or state.
-		const std::string mode = result["program"].as<std::string>();
-		std::string modelPath;
-		std::string shaderPath;
-		if (result.count("shader")) {
-			shaderPath = result["shader"].as<std::string>();
-		}else {
-			std::cout << "Error: Missing parameter for 'shader'" << std::endl;
-			return 0;
-		}
-		if (result.count("model")) {
-			modelPath = result["model"].as<std::string>();
-		}
-		else {
-			std::cout << "Error: Missing parameter for 'model'" << std::endl;
-			return 0;
-		}
-
-		std::cout << "Loading Program: " << mode << "..." << std::endl;
-		std::cout << "Loading Model: " << modelPath << "..." << std::endl;
-		std::cout << "Loading Shader: " << shaderPath << "..." << std::endl;
-
-
 		//TestLua();
 		//TestAssimp();
-		
-
 		// Create the GameInterface instance using the factory function
-		const auto gameInterface = CreateGameInterface(mode);
-
+		const auto gameInterface = CreateGameInterface(result);
 		// Set the global pointer to the created instance
 		gUsedInterface = gameInterface.get();  // Assign to the global pointer
-		GLFWwindow* window = InitializeSystem(mode);
-
+		GLFWwindow* window = InitializeSystem();
 		RunCoreloop(window);
 		ShutdownSystem();
 	}

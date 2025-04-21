@@ -8,6 +8,7 @@ module;
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+#include <tiny_gltf.h>
 
 
 export module BillboardCloud;
@@ -24,17 +25,17 @@ import Model;
 import Plane;
 import Mesh;
 import Face;
-
+import IRenderer;
 
 namespace Engine {
-	
+
 	export class BillboardCloud : public GameInterface
 	{
 	public:
 		BillboardCloud(std::unique_ptr<IBillboardGenerator> generator,
-			std::unique_ptr<IPlaneSelector> selector)
+			std::unique_ptr<IPlaneSelector> selector, std::filesystem::path modelPath)
 			: m_billboardGenerator(std::move(generator)),
-			m_planeSelector(std::move(selector)) {
+			m_planeSelector(std::move(selector)), m_modelPath(modelPath) {
 		}
 		void Initialize(GLFWwindow* window) override;
 		void Render(float aspectRatio) override;
@@ -51,8 +52,12 @@ namespace Engine {
 		std::vector<Quad> m_scene;
 		const std::unique_ptr<IBillboardGenerator> m_billboardGenerator;
 		const std::unique_ptr<IPlaneSelector> m_planeSelector;
+		const std::filesystem::path m_modelPath;
 		
 		Plane generatePlaneFromParams(float d, float theta, float phi);
+
+		bool loadGltfFile(tinygltf::Model &model);
+
 		float computeDensityForPlane(const Plane& plane, const Mesh& mesh, float epsilon);
 		bool isPlaneValidForFace(const Plane& plane, const Face& face, const Mesh& mesh, float epsilon);
 		float calculateProjectedArea(const Plane& plane, const Face& face, const Mesh& mesh);
@@ -65,6 +70,28 @@ namespace Engine {
 		float m_penalty{0.0f};
 
 	};
+
+
+	bool BillboardCloud::loadGltfFile(tinygltf::Model& model) {
+		std::clog << "Loading gltf file: " << m_modelPath << std::endl;
+		tinygltf::TinyGLTF loader;
+		std::string err;
+		std::string warn;
+		bool ret = loader.LoadBinaryFromFile(&model, &err, &warn, m_modelPath.string());
+		if (!warn.empty()) {
+			std::cerr << warn << std::endl;
+		}
+		if (!err.empty()) {
+			std::cerr << err << std::endl;
+		}
+
+		if (!ret) {
+			std::cerr << "Failed to parse glTF file" << std::endl;
+			return false;
+		}
+		return true;
+	}
+
 
 	float BillboardCloud::computeDensityForPlane(const Plane& plane, const Mesh& mesh, float epsilon) {
 		float density = 0.0f;
@@ -223,6 +250,19 @@ namespace Engine {
 		//	m_scene.push_back(quad);
 		//	m_renderer.InitQuad(quad);
 		//}
+		tinygltf::Model model;
+		if (!loadGltfFile(model)) {
+			throw std::runtime_error("Failed to load gltf file");
+		}
+		// TODO Creation of Buffer Objects
+		const auto bufferObjects = m_renderer.createBufferObjects(model);
+
+		// TODO Creation of Vertex Array Objects
+		std::vector<VaoRange> meshToVertexArrays;
+		const auto vertexArrayObjects = m_renderer.createVertexArrayObjects(model, bufferObjects, meshToVertexArrays);
+
+
+
 	}
 	void BillboardCloud::Update(double deltaTime) {
 

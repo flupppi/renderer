@@ -8,6 +8,7 @@ module;
 #include "../vendor/stb_image/stb_image.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include "tiny_gltf.h"
 
 export module BillboardRenderer;
 import std;
@@ -23,35 +24,35 @@ namespace Engine {
 
 	public:
 		void Initialize() override;
+
+		std::vector<GLuint> createBufferObjects(const tinygltf::Model &model);
+
+		std::vector<GLuint> createVertexArrayObjects(const tinygltf::Model &model,
+		                                             const std::vector<GLuint> &bufferObjects,
+		                                             std::vector<VaoRange> &meshToVertexArrays);
+
 		void InitializeGizmo();
 		void InitQuad(const Quad& quad);
 		void Render() override;
 		void RenderQuad(const glm::mat4& transformationMatrix);
 		void RenderPlane(const Plane& plane, const glm::mat4& transformationMatrix);
 		void RenderGizmo(const glm::mat4& mvp);
-
 		void ClearResources();
 		float GetCubieExtension() const { return 2.0f * m_offset; }
-
-
 	private:
 		void LoadShaders();
 		const float m_offset{ 0.5f };
 		const std::chrono::time_point<std::chrono::high_resolution_clock> startTime{ std::chrono::high_resolution_clock::now() };
-
 		GLuint m_skinTextures[3]{ 0 };
 		GLuint m_eyeTextures[2]{ 0 };
 		GLuint m_arrayBufferObjects[8]{ 0 };
 		GLuint m_skeletonVertexBufferObject{ 0 };
 		GLuint m_skeletonIndexBufferObject{ 0 };
-
 		// For world coordinate system gizmo
 		GLuint m_gizmoVAO{ 0 };
 		GLuint m_gizmoVBO{ 0 };
 		GLuint m_gizmoShaderProgram{ 0 };
 		GLuint m_gizmoMVPUniform{ 0 };
-
-
 		GLuint m_quadVertexBufferObject{ 0 };
 		GLuint m_quadIndexBufferObject{ 0 };
 		GLuint m_vertexBufferObject{ 0 };
@@ -60,10 +61,8 @@ namespace Engine {
 		GLint  m_transformLocation{ 0 }, m_eyeTransformLocation{ 0 }, m_eyeTranspTransformLocation{ 0 }, m_teethTransformLocation{ 0 }, m_skeletonTransformLocation{ 0 };
 		GLuint m_vertexArraySize{ 0 };
 		GLuint m_jointTransforms{ 0 };
-
 		std::unique_ptr<Shader> m_modelShader;
 		std::unique_ptr<Shader> m_redShader;
-
 		std::unique_ptr<Model> m_model;
 
 	};
@@ -89,6 +88,133 @@ namespace Engine {
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 		InitializeGizmo();
+	}
+
+	std::vector<GLuint> BillboardRenderer::createBufferObjects(const tinygltf::Model &model) {
+		std::vector<GLuint> bufferObjects(model.buffers.size(), 0);
+
+		glGenBuffers(GLsizei(model.buffers.size()), bufferObjects.data());
+		for (size_t i = 0; i < model.buffers.size(); ++i) {
+			glBindBuffer(GL_ARRAY_BUFFER, bufferObjects[i]);
+			glBufferStorage(GL_ARRAY_BUFFER, model.buffers[i].data.size(),
+				model.buffers[i].data.data(), 0);
+		}
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		return bufferObjects;
+	}
+
+	std::vector<GLuint> BillboardRenderer::createVertexArrayObjects(const tinygltf::Model &model, const std::vector<GLuint> &bufferObjects, std::vector<VaoRange> &meshToVertexArrays) {
+	  std::vector<GLuint> vertexArrayObjects; // We don't know the size yet
+
+	  // For each mesh of model we keep its range of VAOs
+	  meshToVertexArrays.resize(model.meshes.size());
+
+	  const GLuint VERTEX_ATTRIB_POSITION_IDX = 0;
+	  const GLuint VERTEX_ATTRIB_NORMAL_IDX = 1;
+	  const GLuint VERTEX_ATTRIB_TEXCOORD0_IDX = 2;
+
+	  for (size_t i = 0; i < model.meshes.size(); ++i) {
+	    const auto &mesh = model.meshes[i];
+
+	    auto &vaoRange = meshToVertexArrays[i];
+	    vaoRange.begin =
+	        GLsizei(vertexArrayObjects.size()); // Range for this mesh will be at
+	                                            // the end of vertexArrayObjects
+	    vaoRange.count =
+	        GLsizei(mesh.primitives.size()); // One VAO for each primitive
+
+	    // Add enough elements to store our VAOs identifiers
+	    vertexArrayObjects.resize(
+	        vertexArrayObjects.size() + mesh.primitives.size());
+
+	    glGenVertexArrays(vaoRange.count, &vertexArrayObjects[vaoRange.begin]);
+	    for (size_t pIdx = 0; pIdx < mesh.primitives.size(); ++pIdx) {
+	      const auto vao = vertexArrayObjects[vaoRange.begin + pIdx];
+	      const auto &primitive = mesh.primitives[pIdx];
+	      glBindVertexArray(vao);
+	      { // POSITION attribute
+	        // scope, so we can declare const variable with the same name on each
+	        // scope
+	        const auto iterator = primitive.attributes.find("POSITION");
+	        if (iterator != end(primitive.attributes)) {
+	          const auto accessorIdx = (*iterator).second;
+	          const auto &accessor = model.accessors[accessorIdx];
+	          const auto &bufferView = model.bufferViews[accessor.bufferView];
+	          const auto bufferIdx = bufferView.buffer;
+
+	          glEnableVertexAttribArray(VERTEX_ATTRIB_POSITION_IDX);
+	          assert(GL_ARRAY_BUFFER == bufferView.target);
+	          // Theorically we could also use bufferView.target, but it is safer
+	          // Here it is important to know that the next call
+	          // (glVertexAttribPointer) use what is currently bound
+	          glBindBuffer(GL_ARRAY_BUFFER, bufferObjects[bufferIdx]);
+
+	          // tinygltf converts strings type like "VEC3, "VEC2" to the number of
+	          // components, stored in accessor.type
+	          const auto byteOffset = accessor.byteOffset + bufferView.byteOffset;
+	          glVertexAttribPointer(VERTEX_ATTRIB_POSITION_IDX, accessor.type,
+	              accessor.componentType, GL_FALSE, GLsizei(bufferView.byteStride),
+	              (const GLvoid *)byteOffset);
+	        }
+	      }
+	      // todo Refactor to remove code duplication (loop over "POSITION",
+	      // "NORMAL" and their corresponding VERTEX_ATTRIB_*)
+	      { // NORMAL attribute
+	        const auto iterator = primitive.attributes.find("NORMAL");
+	        if (iterator != end(primitive.attributes)) {
+	          const auto accessorIdx = (*iterator).second;
+	          const auto &accessor = model.accessors[accessorIdx];
+	          const auto &bufferView = model.bufferViews[accessor.bufferView];
+	          const auto bufferIdx = bufferView.buffer;
+
+	          glEnableVertexAttribArray(VERTEX_ATTRIB_NORMAL_IDX);
+	          assert(GL_ARRAY_BUFFER == bufferView.target);
+	          glBindBuffer(GL_ARRAY_BUFFER, bufferObjects[bufferIdx]);
+	          glVertexAttribPointer(VERTEX_ATTRIB_NORMAL_IDX, accessor.type,
+	              accessor.componentType, GL_FALSE, GLsizei(bufferView.byteStride),
+	              (const GLvoid *)(accessor.byteOffset + bufferView.byteOffset));
+	        }
+	      }
+	      { // TEXCOORD_0 attribute
+	        const auto iterator = primitive.attributes.find("TEXCOORD_0");
+	        if (iterator != end(primitive.attributes)) {
+	          const auto accessorIdx = (*iterator).second;
+	          const auto &accessor = model.accessors[accessorIdx];
+	          const auto &bufferView = model.bufferViews[accessor.bufferView];
+	          const auto bufferIdx = bufferView.buffer;
+
+	          glEnableVertexAttribArray(VERTEX_ATTRIB_TEXCOORD0_IDX);
+	          assert(GL_ARRAY_BUFFER == bufferView.target);
+	          glBindBuffer(GL_ARRAY_BUFFER, bufferObjects[bufferIdx]);
+	          glVertexAttribPointer(VERTEX_ATTRIB_TEXCOORD0_IDX, accessor.type,
+	              accessor.componentType, GL_FALSE, GLsizei(bufferView.byteStride),
+	              (const GLvoid *)(accessor.byteOffset + bufferView.byteOffset));
+	        }
+	      }
+	      // Index array if defined
+	      if (primitive.indices >= 0) {
+	        const auto accessorIdx = primitive.indices;
+	        const auto &accessor = model.accessors[accessorIdx];
+	        const auto &bufferView = model.bufferViews[accessor.bufferView];
+	        const auto bufferIdx = bufferView.buffer;
+
+	        assert(GL_ELEMENT_ARRAY_BUFFER == bufferView.target);
+	        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,
+	            bufferObjects[bufferIdx]); // Binding the index buffer to
+	                                       // GL_ELEMENT_ARRAY_BUFFER while the VAO
+	                                       // is bound is enough to tell OpenGL we
+	                                       // want to use that index buffer for that
+	                                       // VAO
+	      }
+	    }
+	  }
+	  glBindVertexArray(0);
+
+	  std::clog << "Number of VAOs: " << vertexArrayObjects.size() << std::endl;
+
+	  return vertexArrayObjects;
+
 	}
 
 	void BillboardRenderer::InitializeGizmo() {
@@ -216,13 +342,9 @@ namespace Engine {
 	void BillboardRenderer::LoadShaders()
 	{
 		stbi_set_flip_vertically_on_load(true);
-
 		m_modelShader = std::make_unique<Shader>("shaders/VBasic.glsl", "shaders/FBasic.glsl");
 		m_model = std::make_unique<Model>("input/Trees/SingleTree/Tree.obj");
-
-		
 		m_redShader = std::make_unique<Shader>("shaders/VJoint.glsl", "shaders/FJoint.glsl");
-
 		m_shaderProgram[0] = ShaderUtil::CreateShaderProgram("shaders/VJoint.glsl", "shaders/FJoint.glsl", nullptr);
 		m_skeletonTransformLocation = glGetUniformLocation(m_shaderProgram[0], "transformation");
 		// Load gizmo shader program

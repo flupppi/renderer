@@ -5,7 +5,7 @@
 module;
 #pragma once
 export module GameInterface;
-
+import std;
 export struct GLFWwindow;
 
 namespace Engine {
@@ -13,6 +13,8 @@ namespace Engine {
 	export class GameInterface
 	{
 	public:
+		virtual ~GameInterface() = default;
+
 		virtual void Initialize() {};
 		virtual void Initialize(GLFWwindow* window) { Initialize(); }
 
@@ -20,5 +22,7 @@ namespace Engine {
 		virtual void Render(float aspectRatio) {};
 
 		virtual void ClearResources() {};
+
+		std::string mode = "Application";
 	};
 }

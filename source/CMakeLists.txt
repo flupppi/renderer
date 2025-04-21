@@ -14,7 +14,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # 0) Locate or define the path to MSVC's std.ixx from your local Visual Studio install
 #    E.g. check your actual MSVC version, or detect automatically
 # ----------------------------------------------------------------------------------------
-set(VCToolsInstallDir "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.42.34433")
+set(VCToolsInstallDir "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.43.34808")
 set(STD_IXX_FILE "${VCToolsInstallDir}/modules/std.ixx")
 
 # ----------------------------------------------------------------------------------------
@@ -75,6 +75,7 @@ set(SOURCE_FILES
         2DGame/GameRenderer.cpp
         Raytracer/RaytracerRenderer.cpp
         vendor/stb_image/stb_image.cpp
+        tiny_gltf_impl.cpp
 )
 
 add_executable(CXXOpenGL ${SOURCE_FILES})

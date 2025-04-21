@@ -20,9 +20,20 @@ namespace Engine {
 		virtual void Initialize() = 0;
 		virtual void Render() = 0;
 		virtual void ClearResources() = 0;
+
 	protected:
 		virtual void LoadShaders() = 0;
 
+
+
+
+	};
+
+	// A range of indices in a vector containing Vertex Array Objects
+	export struct VaoRange
+	{
+		GLsizei begin; // Index of first element in vertexArrayObjects
+		GLsizei count; // Number of elements in range
 	};
 
 
