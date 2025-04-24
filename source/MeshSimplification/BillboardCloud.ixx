@@ -65,6 +65,9 @@ namespace Engine {
 
         std::vector<GLuint> m_bufferObjects;
         std::vector<GLuint> m_vertexArrayObjects;
+        std::vector<GLuint> m_textureObjects;
+
+
 
         Plane generatePlaneFromParams(float d, float theta, float phi);
 
@@ -299,11 +302,16 @@ namespace Engine {
         if (!loadGltfFile(m_model)) {
             throw std::runtime_error("Failed to load gltf file");
         }
+
         // TODO Creation of Buffer Objects
         m_bufferObjects = m_renderer.createBufferObjects(m_model);
 
         // TODO Creation of Vertex Array Objects
         m_vertexArrayObjects = m_renderer.createVertexArrayObjects(m_model, m_bufferObjects, meshToVertexArrays);
+        m_textureObjects = m_renderer.createTextureObjects(m_model);
+
+
+
     }
 
     void BillboardCloud::Update(double deltaTime) {
