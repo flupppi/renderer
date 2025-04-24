@@ -54,6 +54,8 @@ namespace Engine {
 		// Init light parameters
 		glm::vec3 lightDirection{1, 1, 1};
 		glm::vec3 lightIntensity{1, 1, 1};
+		bool lightFromCamera = false;
+
 
 	private:
 		void LoadShaders();
@@ -119,11 +121,7 @@ namespace Engine {
 									  node.matrix[11], node.matrix[12], node.matrix[13],
 									  node.matrix[14], node.matrix[15]);
 		}
-		const auto T = node.translation.empty()
-						   ? parentMatrix
-						   : glm::translate(parentMatrix,
-								 glm::vec3(node.translation[0], node.translation[1],
-									 node.translation[2]));
+		const auto T = node.translation.empty() ? parentMatrix : glm::translate(parentMatrix, glm::vec3(node.translation[0], node.translation[1], node.translation[2]));
 		const auto rotationQuat =
 			node.rotation.empty()
 				? glm::quat(1, 0, 0, 0)
@@ -165,8 +163,14 @@ void BillboardRenderer::RenderScene(const tinygltf::Model& model,
             	if (normalMatrixLocation > 0)
 					m_glslProgram->setMat4("uNormalMatrix",        norm);
             	if (uLightDirectionLocation >= 0) {
-            		const auto lightDirectionInViewSpace = glm::normalize(glm::vec3(view * glm::vec4(lightDirection, 0.)));
-            		glUniform3f(uLightDirectionLocation, lightDirectionInViewSpace[0], lightDirectionInViewSpace[1], lightDirectionInViewSpace[2]);
+            		if (lightFromCamera) {
+            			glUniform3f(uLightDirectionLocation, 0, 0, 1);
+            		} else {
+            			const auto lightDirectionInViewSpace = glm::normalize(
+							glm::vec3(view * glm::vec4(lightDirection, 0.)));
+            			glUniform3f(uLightDirectionLocation, lightDirectionInViewSpace[0], lightDirectionInViewSpace[1], lightDirectionInViewSpace[2]);
+
+            		}
             	}
             	if (uLightIntensity >= 0)
             		glUniform3f(uLightIntensity, lightIntensity[0], lightIntensity[1], lightIntensity[2]);
@@ -390,10 +394,7 @@ void BillboardRenderer::RenderScene(const tinygltf::Model& model,
 
 
 
-	void BillboardRenderer::Render()
-	{
-
-	}
+	void BillboardRenderer::Render(){}
 
 	//************************************
 	// Render one red square for each joint in the skeleton.
@@ -456,7 +457,7 @@ void BillboardRenderer::RenderScene(const tinygltf::Model& model,
 
 		stbi_set_flip_vertically_on_load(true);
 		// Loader shaders
-		m_glslProgram = std::make_unique<Shader>("shaders/forward.vs.glsl", "shaders/normals.fs.glsl");
+		m_glslProgram = std::make_unique<Shader>("shaders/forward.vs.glsl", "shaders/diffuse_directional_light.fs.glsl");
 		modelViewProjMatrixLocation = glGetUniformLocation(m_glslProgram->ID, "uModelViewProjMatrix");
 		modelViewMatrixLocation = glGetUniformLocation(m_glslProgram->ID, "uModelViewMatrix");
 		normalMatrixLocation = glGetUniformLocation(m_glslProgram->ID, "uNormalMatrix");
