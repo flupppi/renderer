@@ -90,7 +90,7 @@ namespace Engine {
         tinygltf::TinyGLTF loader;
         std::string err;
         std::string warn;
-        bool ret = loader.LoadBinaryFromFile(&model, &err, &warn, m_modelPath.string());
+        bool ret = loader.LoadASCIIFromFile(&model, &err, &warn, m_modelPath.string());
         if (!warn.empty()) {
             std::cerr << warn << std::endl;
         }
@@ -187,107 +187,10 @@ namespace Engine {
         return {normal, d};
     }
 
-    glm::mat4 getLocalToWorldMatrix(
-        const tinygltf::Node &node, const glm::mat4 &parentMatrix)
-    {
-        // Extract model matrix
-        // https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#transformations
-        if (!node.matrix.empty()) {
-            return parentMatrix * glm::mat4(node.matrix[0], node.matrix[1],
-                                      node.matrix[2], node.matrix[3], node.matrix[4],
-                                      node.matrix[5], node.matrix[6], node.matrix[7],
-                                      node.matrix[8], node.matrix[9], node.matrix[10],
-                                      node.matrix[11], node.matrix[12], node.matrix[13],
-                                      node.matrix[14], node.matrix[15]);
-        }
-        const auto T = node.translation.empty()
-                           ? parentMatrix
-                           : glm::translate(parentMatrix,
-                                 glm::vec3(node.translation[0], node.translation[1],
-                                     node.translation[2]));
-        const auto rotationQuat =
-            node.rotation.empty()
-                ? glm::quat(1, 0, 0, 0)
-                : glm::quat(float(node.rotation[3]), float(node.rotation[0]),
-                      float(node.rotation[1]),
-                      float(node.rotation[2])); // prototype is w, x, y, z
-        const auto TR = T * glm::mat4_cast(rotationQuat);
-        return node.scale.empty() ? TR
-                                  : glm::scale(TR, glm::vec3(node.scale[0],
-                                                       node.scale[1], node.scale[2]));
-    };
-
 
     void BillboardCloud::Render(float aspectRatio) {
         glm::mat4 Projection{m_camera.GetProjectionMatrix(aspectRatio)};
         glm::mat4 View{m_camera.GetViewMatrix()};
-        // Lambda function to draw the scene
-        const auto drawScene = [&](const Camera &camera) {
-            const glm::mat4 projMatrix{camera.GetProjectionMatrix(aspectRatio)};
-
-            const auto viewMatrix = m_camera.GetViewMatrix();
-
-            // The recursive function that should draw a node
-            // We use a std::function because a simple lambda cannot be recursive
-            const std::function<void(int, const glm::mat4 &)> drawNode =
-                    [&](int nodeIdx, const glm::mat4 &parentMatrix) {
-                const auto &node = m_model.nodes[nodeIdx];
-                const glm::mat4 modelMatrix =
-                        getLocalToWorldMatrix(node, parentMatrix);
-
-                // If the node references a mesh (a node can also reference a
-                // camera, or a light)
-                if (node.mesh >= 0) {
-                    const auto mvMatrix =
-                            viewMatrix * modelMatrix; // Also called localToCamera matrix
-                    const auto mvpMatrix = projMatrix * mvMatrix; // Also called localToScreen matrix
-                    // Normal matrix is necessary to maintain normal vectors
-                    // orthogonal to tangent vectors
-                    // https://www.lighthouse3d.com/tutorials/glsl-12-tutorial/the-normal-matrix/
-                    const auto normalMatrix = glm::transpose(glm::inverse(mvMatrix));
-
-                    m_renderer.m_glslProgram->setMat4("uModelViewProjMatrix",
-                                       mvpMatrix);
-                    if (m_renderer.modelViewMatrixLocation > 0)
-                    m_renderer.m_glslProgram->setMat4("uModelViewMatrix", mvMatrix);
-                    m_renderer.m_glslProgram->setMat4("uNormalMatrix", normalMatrix);
-
-                    const auto &mesh = m_model.meshes[node.mesh];
-                    const auto &vaoRange = meshToVertexArrays[node.mesh];
-                    for (size_t pIdx = 0; pIdx < mesh.primitives.size(); ++pIdx) {
-                        const auto vao = m_vertexArrayObjects[vaoRange.begin + pIdx];
-                        const auto &primitive = mesh.primitives[pIdx];
-                        glBindVertexArray(vao);
-                        if (primitive.indices >= 0) {
-                            const auto &accessor = m_model.accessors[primitive.indices];
-                            const auto &bufferView = m_model.bufferViews[accessor.bufferView];
-                            const auto byteOffset =
-                                    accessor.byteOffset + bufferView.byteOffset;
-                            glDrawElements(primitive.mode, GLsizei(accessor.count),
-                                           accessor.componentType, (const GLvoid *) byteOffset);
-                        } else {
-                            // Take first accessor to get the count
-                            const auto accessorIdx = (*begin(primitive.attributes)).second;
-                            const auto &accessor = m_model.accessors[accessorIdx];
-                            glDrawArrays(primitive.mode, 0, GLsizei(accessor.count));
-                        }
-                    }
-                }
-
-                // Draw children
-                for (const auto childNodeIdx: node.children) {
-                    drawNode(childNodeIdx, modelMatrix);
-                }
-            };
-
-            // Draw the scene referenced by gltf file
-            if (m_model.defaultScene >= 0) {
-                for (const auto nodeIdx: m_model.scenes[m_model.defaultScene].nodes) {
-                    drawNode(nodeIdx, glm::mat4(1));
-                }
-            }
-        };
-
         // Use the transform matrix from the TransformComponent
         for (auto model: m_scene) {
             glm::mat4 Model{model.trans.GetTransform()};
@@ -298,8 +201,11 @@ namespace Engine {
 
         glm::mat4 Model{glm::mat4(1.0f)};
         glm::mat4 transformation_model = Projection * View * Model;
-        m_renderer.m_glslProgram->use();
-        drawScene(m_camera);
+        m_renderer.RenderScene(m_model,
+                               meshToVertexArrays,
+                               m_vertexArrayObjects,
+                               m_camera,
+                               aspectRatio);
 
 
         glm::mat4 mvp_plane = Projection * View * Model;

@@ -34,6 +34,12 @@ namespace Engine {
 		void InitializeGizmo();
 		void InitQuad(const Quad& quad);
 		void Render() override;
+
+		void RenderScene(const tinygltf::Model& model,
+				 const std::vector<VaoRange>& meshToVAOs,
+				 const std::vector<GLuint>& vaos,
+				 const Camera& camera,
+				 float aspectRatio);
 		void RenderQuad(const glm::mat4& transformationMatrix);
 		void RenderPlane(const Plane& plane, const glm::mat4& transformationMatrix);
 		void RenderGizmo(const glm::mat4& mvp);
@@ -43,6 +49,12 @@ namespace Engine {
 		GLint modelViewProjMatrixLocation;
 		GLint modelViewMatrixLocation;
 		GLint normalMatrixLocation;
+		GLint uLightDirectionLocation;
+		GLint uLightIntensity;
+		// Init light parameters
+		glm::vec3 lightDirection{1, 1, 1};
+		glm::vec3 lightIntensity{1, 1, 1};
+
 	private:
 		void LoadShaders();
 		const float m_offset{ 0.5f };
@@ -92,6 +104,111 @@ namespace Engine {
 
 		InitializeGizmo();
 	}
+
+
+	glm::mat4 getLocalToWorldMatrix(
+		const tinygltf::Node &node, const glm::mat4 &parentMatrix)
+	{
+		// Extract model matrix
+		// https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#transformations
+		if (!node.matrix.empty()) {
+			return parentMatrix * glm::mat4(node.matrix[0], node.matrix[1],
+									  node.matrix[2], node.matrix[3], node.matrix[4],
+									  node.matrix[5], node.matrix[6], node.matrix[7],
+									  node.matrix[8], node.matrix[9], node.matrix[10],
+									  node.matrix[11], node.matrix[12], node.matrix[13],
+									  node.matrix[14], node.matrix[15]);
+		}
+		const auto T = node.translation.empty()
+						   ? parentMatrix
+						   : glm::translate(parentMatrix,
+								 glm::vec3(node.translation[0], node.translation[1],
+									 node.translation[2]));
+		const auto rotationQuat =
+			node.rotation.empty()
+				? glm::quat(1, 0, 0, 0)
+				: glm::quat(float(node.rotation[3]), float(node.rotation[0]),
+					  float(node.rotation[1]),
+					  float(node.rotation[2])); // prototype is w, x, y, z
+		const auto TR = T * glm::mat4_cast(rotationQuat);
+		return node.scale.empty() ? TR
+								  : glm::scale(TR, glm::vec3(node.scale[0],
+													   node.scale[1], node.scale[2]));
+	};
+
+void BillboardRenderer::RenderScene(const tinygltf::Model& model,
+                                    const std::vector<VaoRange>& meshToVAOs,
+                                    const std::vector<GLuint>& vaos,
+                                    const Camera& camera,
+                                    float aspectRatio)
+{
+    // Bind your mesh‐rendering shader once
+    m_glslProgram->use();
+
+    glm::mat4 proj = camera.GetProjectionMatrix(aspectRatio);
+    glm::mat4 view = camera.GetViewMatrix();
+
+    std::function<void(int, const glm::mat4&)> drawNode =
+        [&](int nodeIdx, const glm::mat4& parentMatrix) {
+            const tinygltf::Node& node = model.nodes[nodeIdx];
+            glm::mat4 modelMatrix = getLocalToWorldMatrix(node, parentMatrix);
+
+            if (node.mesh >= 0) {
+                // compute MVP & normal matrices
+                glm::mat4 mv   = view * modelMatrix;
+                glm::mat4 mvp  = proj * mv;
+                glm::mat4 norm = glm::transpose(glm::inverse(mv));
+				if (modelViewProjMatrixLocation >= 0)
+					m_glslProgram->setMat4("uModelViewProjMatrix", mvp);
+                if (modelViewMatrixLocation > 0)
+                	m_glslProgram->setMat4("uModelViewMatrix",     mv);
+            	if (normalMatrixLocation > 0)
+					m_glslProgram->setMat4("uNormalMatrix",        norm);
+            	if (uLightDirectionLocation >= 0) {
+            		const auto lightDirectionInViewSpace = glm::normalize(glm::vec3(view * glm::vec4(lightDirection, 0.)));
+            		glUniform3f(uLightDirectionLocation, lightDirectionInViewSpace[0], lightDirectionInViewSpace[1], lightDirectionInViewSpace[2]);
+            	}
+            	if (uLightIntensity >= 0)
+            		glUniform3f(uLightIntensity, lightIntensity[0], lightIntensity[1], lightIntensity[2]);
+                auto const& mesh      = model.meshes[node.mesh];
+                auto const& vaoRange  = meshToVAOs[node.mesh];
+
+                for (int prim = 0; prim < vaoRange.count; ++prim) {
+                    GLuint vao = vaos[vaoRange.begin + prim];
+                    glBindVertexArray(vao);
+
+                    const auto& primitive = mesh.primitives[prim];
+                    if (primitive.indices >= 0) {
+                        auto const& acc    = model.accessors[primitive.indices];
+                        auto const& bv     = model.bufferViews[acc.bufferView];
+                        auto const  offset = acc.byteOffset + bv.byteOffset;
+                        glDrawElements(primitive.mode,
+                                       GLsizei(acc.count),
+                                       acc.componentType,
+                                       (void*)(intptr_t)offset);
+                    } else {
+                        // no indices: draw arrays
+                        int posAcc = primitive.attributes.begin()->second;
+                        auto const& acc = model.accessors[posAcc];
+                        glDrawArrays(primitive.mode, 0, GLsizei(acc.count));
+                    }
+                }
+            }
+
+            for (int child : node.children)
+                drawNode(child, modelMatrix);
+        };
+
+    // pick the scene index
+    int sceneIdx = (model.defaultScene >= 0) ? model.defaultScene : 0;
+    if (sceneIdx < int(model.scenes.size())) {
+        for (int rootNode : model.scenes[sceneIdx].nodes)
+            drawNode(rootNode, glm::mat4(1.0f));
+    }
+
+    glBindVertexArray(0);
+    glUseProgram(0);
+}
 
 	std::vector<GLuint> BillboardRenderer::createBufferObjects(const tinygltf::Model &model) {
 		std::vector<GLuint> bufferObjects(model.buffers.size(), 0);
@@ -343,6 +460,12 @@ namespace Engine {
 		modelViewProjMatrixLocation = glGetUniformLocation(m_glslProgram->ID, "uModelViewProjMatrix");
 		modelViewMatrixLocation = glGetUniformLocation(m_glslProgram->ID, "uModelViewMatrix");
 		normalMatrixLocation = glGetUniformLocation(m_glslProgram->ID, "uNormalMatrix");
+
+	 uLightDirectionLocation =
+		glGetUniformLocation(m_glslProgram->ID, "uLightDirection");
+	 uLightIntensity =
+		glGetUniformLocation(m_glslProgram->ID, "uLightIntensity");
+
 
 
 		m_modelShader = std::make_unique<Shader>("shaders/VBasic.glsl", "shaders/FBasic.glsl");
