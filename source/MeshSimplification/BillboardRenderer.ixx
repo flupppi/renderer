@@ -17,6 +17,7 @@ import Quad;
 import ShaderUtil;
 import Model;
 import Plane;
+import Camera;
 namespace Engine {
 
 	export class BillboardRenderer : IRenderer
@@ -30,7 +31,6 @@ namespace Engine {
 		std::vector<GLuint> createVertexArrayObjects(const tinygltf::Model &model,
 		                                             const std::vector<GLuint> &bufferObjects,
 		                                             std::vector<VaoRange> &meshToVertexArrays);
-
 		void InitializeGizmo();
 		void InitQuad(const Quad& quad);
 		void Render() override;
@@ -39,6 +39,10 @@ namespace Engine {
 		void RenderGizmo(const glm::mat4& mvp);
 		void ClearResources();
 		float GetCubieExtension() const { return 2.0f * m_offset; }
+		std::unique_ptr<Shader> m_glslProgram;
+		GLint modelViewProjMatrixLocation;
+		GLint modelViewMatrixLocation;
+		GLint normalMatrixLocation;
 	private:
 		void LoadShaders();
 		const float m_offset{ 0.5f };
@@ -64,7 +68,6 @@ namespace Engine {
 		std::unique_ptr<Shader> m_modelShader;
 		std::unique_ptr<Shader> m_redShader;
 		std::unique_ptr<Model> m_model;
-
 	};
 
 
@@ -268,6 +271,8 @@ namespace Engine {
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	}
 
+
+
 	void BillboardRenderer::Render()
 	{
 
@@ -341,8 +346,18 @@ namespace Engine {
 	//************************************
 	void BillboardRenderer::LoadShaders()
 	{
+
+
 		stbi_set_flip_vertically_on_load(true);
+		// Loader shaders
+		m_glslProgram = std::make_unique<Shader>("shaders/VBasic.glsl", "shaders/FBasic.glsl");
+		modelViewProjMatrixLocation = glGetUniformLocation(m_glslProgram->ID, "uModelViewProjMatrix");
+		modelViewMatrixLocation = glGetUniformLocation(m_glslProgram->ID, "uModelViewMatrix");
+		normalMatrixLocation = glGetUniformLocation(m_glslProgram->ID, "uNormalMatrix");
+
+
 		m_modelShader = std::make_unique<Shader>("shaders/VBasic.glsl", "shaders/FBasic.glsl");
+
 		m_model = std::make_unique<Model>("input/Trees/SingleTree/Tree.obj");
 		m_redShader = std::make_unique<Shader>("shaders/VJoint.glsl", "shaders/FJoint.glsl");
 		m_shaderProgram[0] = ShaderUtil::CreateShaderProgram("shaders/VJoint.glsl", "shaders/FJoint.glsl", nullptr);
