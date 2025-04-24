@@ -65,7 +65,6 @@ namespace Engine {
 
         std::vector<GLuint> m_bufferObjects;
         std::vector<GLuint> m_vertexArrayObjects;
-        std::vector<GLuint> m_textureObjects;
 
 
 
@@ -308,10 +307,7 @@ namespace Engine {
 
         // TODO Creation of Vertex Array Objects
         m_vertexArrayObjects = m_renderer.createVertexArrayObjects(m_model, m_bufferObjects, meshToVertexArrays);
-        m_textureObjects = m_renderer.createTextureObjects(m_model);
-
-
-
+        m_renderer.createTextureObjects(m_model);
     }
 
     void BillboardCloud::Update(double deltaTime) {

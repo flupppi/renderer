@@ -54,13 +54,16 @@ namespace Engine {
 		GLint normalMatrixLocation;
 		GLint uLightDirectionLocation;
 		GLint uLightIntensity;
+		GLint uBaseColorTexture;
+		std::vector<GLuint> m_textureObjects;
+
 		// Init light parameters
 		glm::vec3 lightDirection{1, 1, 1};
 		glm::vec3 lightIntensity{1, 1, 1};
 		bool lightFromCamera = false;
 		GLuint whiteTexture = 0;
 
-		std::vector<GLuint> createTextureObjects(const tinygltf::Model &model) const;
+		void createTextureObjects(const tinygltf::Model &model);
 
 
 	private:
@@ -156,8 +159,8 @@ namespace Engine {
 	};
 
 
-	std::vector<GLuint> BillboardRenderer::createTextureObjects(
-	const tinygltf::Model &model) const
+	void BillboardRenderer::createTextureObjects(
+	const tinygltf::Model &model)
 	{
 		std::vector<GLuint> textureObjects(model.textures.size(), 0);
 
@@ -199,8 +202,7 @@ namespace Engine {
 				}
 		}
 		glBindTexture(GL_TEXTURE_2D, 0);
-
-		return textureObjects;
+		m_textureObjects.assign(textureObjects.begin(), textureObjects.end());
 	}
 
 
@@ -212,6 +214,37 @@ void BillboardRenderer::RenderScene(const tinygltf::Model& model,
 {
     // Bind your mesh‐rendering shader once
     m_glslProgram->use();
+		const auto bindMaterial = [&](const auto materialIndex) {
+			if (materialIndex >= 0) {
+				const auto &material = model.materials[materialIndex];
+				const auto &pbrMetallicRoughness = material.pbrMetallicRoughness;
+				if (uBaseColorTexture >= 0) {
+					auto textureObject = whiteTexture;
+					if (pbrMetallicRoughness.baseColorTexture.index >= 0) {
+						const auto &texture =
+							model.textures[pbrMetallicRoughness.baseColorTexture.index];
+						if (texture.source >= 0) {
+							textureObject = m_textureObjects[texture.source];
+						}
+					}
+
+					glActiveTexture(GL_TEXTURE0);
+					glBindTexture(GL_TEXTURE_2D, textureObject);
+					glUniform1i(uBaseColorTexture, 0);
+				}
+			} else {
+				// Apply default material
+				// Defined here:
+				// https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#reference-material
+				// https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#reference-pbrmetallicroughness3
+				if (uBaseColorTexture >= 0) {
+					glActiveTexture(GL_TEXTURE0);
+					glBindTexture(GL_TEXTURE_2D, whiteTexture);
+					glUniform1i(uBaseColorTexture, 0);
+				}
+			}
+		};
+
 
     glm::mat4 proj = camera.GetProjectionMatrix(aspectRatio);
     glm::mat4 view = camera.GetViewMatrix();
@@ -252,6 +285,7 @@ void BillboardRenderer::RenderScene(const tinygltf::Model& model,
                     glBindVertexArray(vao);
 
                     const auto& primitive = mesh.primitives[prim];
+                	bindMaterial(primitive.material);
                     if (primitive.indices >= 0) {
                         auto const& acc    = model.accessors[primitive.indices];
                         auto const& bv     = model.bufferViews[acc.bufferView];
@@ -525,9 +559,9 @@ void BillboardRenderer::RenderScene(const tinygltf::Model& model,
 	{
 
 
-		stbi_set_flip_vertically_on_load(true);
+		//stbi_set_flip_vertically_on_load(true);
 		// Loader shaders
-		m_glslProgram = std::make_unique<Shader>("shaders/forward.vs.glsl", "shaders/diffuse_directional_light.fs.glsl");
+		m_glslProgram = std::make_unique<Shader>("shaders/forward.vs.glsl", "shaders/pbr_directional_light.fs.glsl");
 		modelViewProjMatrixLocation = glGetUniformLocation(m_glslProgram->ID, "uModelViewProjMatrix");
 		modelViewMatrixLocation = glGetUniformLocation(m_glslProgram->ID, "uModelViewMatrix");
 		normalMatrixLocation = glGetUniformLocation(m_glslProgram->ID, "uNormalMatrix");
@@ -536,6 +570,8 @@ void BillboardRenderer::RenderScene(const tinygltf::Model& model,
 		glGetUniformLocation(m_glslProgram->ID, "uLightDirection");
 	 uLightIntensity =
 		glGetUniformLocation(m_glslProgram->ID, "uLightIntensity");
+		uBaseColorTexture =
+			glGetUniformLocation(m_glslProgram->ID, "uBaseColorTexture");
 
 
 
