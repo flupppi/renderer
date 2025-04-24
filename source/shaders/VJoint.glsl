@@ -10,7 +10,7 @@ out vec4 vertexColor;
 
 void main()
 {
-	gl_Position = transformation * vec4(aPos, 1.0);
+	gl_Position = transformation * vec4(aPos, 1.0f);
 	vertexColor = vec4(1.0f, 0.0f, 0.0f, 0.5f);
 }
  
