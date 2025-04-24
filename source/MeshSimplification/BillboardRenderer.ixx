@@ -311,17 +311,6 @@ namespace Engine {
 		glBindVertexArray(0);
 
 		glUseProgram(0);
-
-		glm::mat4 model = glm::mat4(1.0f); // Model matrix
-		m_modelShader->use();
-		m_modelShader->setMat4("mvp", mvp); // Set the MVP matrix
-		m_model->Draw(*m_modelShader);
-
-		m_redShader->use();
-		m_redShader->setMat4("transformation", mvp); // Set the MVP matrix
-
-		m_model->boundingBox.Draw(*m_redShader);
-
 	}
 
 	//************************************
@@ -350,7 +339,7 @@ namespace Engine {
 
 		stbi_set_flip_vertically_on_load(true);
 		// Loader shaders
-		m_glslProgram = std::make_unique<Shader>("shaders/VBasic.glsl", "shaders/FBasic.glsl");
+		m_glslProgram = std::make_unique<Shader>("shaders/forward.vs.glsl", "shaders/normals.fs.glsl");
 		modelViewProjMatrixLocation = glGetUniformLocation(m_glslProgram->ID, "uModelViewProjMatrix");
 		modelViewMatrixLocation = glGetUniformLocation(m_glslProgram->ID, "uModelViewMatrix");
 		normalMatrixLocation = glGetUniformLocation(m_glslProgram->ID, "uNormalMatrix");

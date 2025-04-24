@@ -246,12 +246,11 @@ namespace Engine {
                     // https://www.lighthouse3d.com/tutorials/glsl-12-tutorial/the-normal-matrix/
                     const auto normalMatrix = glm::transpose(glm::inverse(mvMatrix));
 
-                    glUniformMatrix4fv(m_renderer.modelViewProjMatrixLocation, 1, GL_FALSE,
-                                       glm::value_ptr(mvpMatrix));
-                    glUniformMatrix4fv(
-                        m_renderer.modelViewMatrixLocation, 1, GL_FALSE, glm::value_ptr(mvMatrix));
-                    glUniformMatrix4fv(m_renderer.normalMatrixLocation, 1, GL_FALSE,
-                                       glm::value_ptr(normalMatrix));
+                    m_renderer.m_glslProgram->setMat4("uModelViewProjMatrix",
+                                       mvpMatrix);
+                    if (m_renderer.modelViewMatrixLocation > 0)
+                    m_renderer.m_glslProgram->setMat4("uModelViewMatrix", mvMatrix);
+                    m_renderer.m_glslProgram->setMat4("uNormalMatrix", normalMatrix);
 
                     const auto &mesh = m_model.meshes[node.mesh];
                     const auto &vaoRange = meshToVertexArrays[node.mesh];
@@ -288,7 +287,7 @@ namespace Engine {
                 }
             }
         };
-        drawScene(m_camera);
+
         // Use the transform matrix from the TransformComponent
         for (auto model: m_scene) {
             glm::mat4 Model{model.trans.GetTransform()};
@@ -296,9 +295,15 @@ namespace Engine {
             glm::mat4 mvp{Projection * View * Model};
             m_renderer.RenderQuad(mvp);
         }
+
         glm::mat4 Model{glm::mat4(1.0f)};
-        glm::mat4 mvp = Projection * View * Model;
-        m_renderer.RenderPlane(m_currentPlane, mvp); // Delegate drawing to the renderer
+        glm::mat4 transformation_model = Projection * View * Model;
+        m_renderer.m_glslProgram->use();
+        drawScene(m_camera);
+
+
+        glm::mat4 mvp_plane = Projection * View * Model;
+        m_renderer.RenderPlane(m_currentPlane, mvp_plane); // Delegate drawing to the renderer
 
 
         // Render the gizmo lines
