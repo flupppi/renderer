@@ -73,7 +73,6 @@ message(STATUS "LUA_LIBRARIES = ${LUA_LIBRARIES}")
 set(SOURCE_FILES
         main.cpp
         2DGame/GameRenderer.cpp
-        Raytracer/RaytracerRenderer.cpp
         vendor/stb_image/stb_image.cpp
         tiny_gltf_impl.cpp
 )
@@ -118,8 +117,8 @@ target_sources(CXXOpenGL PRIVATE
         "MeshSimplification/IPlaneSelector.ixx"
         "MeshSimplification/PlaneSelector.ixx"
         "MeshSimplification/PlaneSpace.ixx"
-        "Raytracer/Raytracer.ixx"
-        "Raytracer/RaytracerRenderer.ixx"
+        "Raytracer.ixx"
+        "RaytracerRenderer.ixx"
         "SkinnedAnimation/Application.ixx"
         "SkinnedAnimation/Joint.ixx"
         "SkinnedAnimation/Mesh.ixx"

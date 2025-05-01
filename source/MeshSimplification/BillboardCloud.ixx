@@ -92,7 +92,12 @@ namespace Engine {
         tinygltf::TinyGLTF loader;
         std::string err;
         std::string warn;
-        bool ret = loader.LoadASCIIFromFile(&model, &err, &warn, m_modelPath.string());
+        bool ret = false;
+        if (m_modelPath.extension()==".glb") {
+            ret = loader.LoadBinaryFromFile(&model, &err, &warn, m_modelPath.string());
+        }else {
+            ret = loader.LoadASCIIFromFile(&model, &err, &warn, m_modelPath.string());
+        }
         if (!warn.empty()) {
             std::cerr << warn << std::endl;
         }
@@ -103,6 +108,33 @@ namespace Engine {
         if (!ret) {
             std::cerr << "Failed to parse glTF file" << std::endl;
             return false;
+        }
+        int sceneIdx = model.defaultScene >= 0
+                         ? model.defaultScene
+                         : 0;
+        if (sceneIdx < int(model.scenes.size())) {
+            const auto &scene = model.scenes[sceneIdx];
+            std::clog
+              << "Scene[" << sceneIdx << "] name=\""
+              << (scene.name.empty() ? "<unnamed>" : scene.name)
+              << "\"  has " << scene.nodes.size() << " root nodes\n";
+
+            for (int nodeIdx : scene.nodes) {
+                const auto &node = model.nodes[nodeIdx];
+                std::clog
+                  << "  Node[" << nodeIdx << "] name=\""
+                  << (node.name.empty() ? "<unnamed>" : node.name)
+                  << "\" mesh=" << node.mesh;
+
+               if (node.mesh >= 0 && node.mesh < int(model.meshes.size())) {
+                    const auto &mesh = model.meshes[node.mesh];
+                    std::clog
+                      << "  meshName=\""
+                      << (mesh.name.empty() ? "<unnamed>" : mesh.name)
+                      << "\" primitives=" << mesh.primitives.size();
+               }
+                std::clog << "\n";
+            }
         }
         return true;
     }

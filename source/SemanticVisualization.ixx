@@ -347,7 +347,7 @@ namespace Engine {
 			: m_isStandalone(standalone)
 		{
 		}
-		void Initialize(GLFWwindow* window) override;
+		void Initialize(GLFWwindow* window);
 		void Render(float aspectRatio) override;
 		void ClearResources() override;
 		void Update(double deltaTime) override;
