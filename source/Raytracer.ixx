@@ -139,12 +139,10 @@ namespace Engine {
 				}
 				else {
 					// Background color
-					float r = float(x) /float(m_imageWidth);
-					float g = float(y) / float(m_imageHeight);
-					float b = 0.2;
-					m_rayTraceImage[index + 0] = (uint8_t)(r * 255);
-					m_rayTraceImage[index + 1] = (uint8_t)(g * 255);
-					m_rayTraceImage[index + 2] = (uint8_t)(b * 255);
+					glm::vec3 color{float(x) /float(m_imageWidth), float(y) / float(m_imageHeight), 0.2};
+					m_rayTraceImage[index + 0] = (uint8_t)(color.r * 255);
+					m_rayTraceImage[index + 1] = (uint8_t)(color.g * 255);
+					m_rayTraceImage[index + 2] = (uint8_t)(color.b * 255);
 					m_rayTraceImage[index + 3] = 255;
 				}
 			}
