@@ -34,7 +34,6 @@ namespace Engine {
 		std::vector<uint8_t> m_rayTraceImage;
 		int m_imageWidth{ 1920 };
 		int m_imageHeight{ 1080 };
-
 		void GenerateRayTraceImage(); // Ray tracing function
 
 
@@ -75,8 +74,6 @@ namespace Engine {
 
 
 		m_renderer.Initialize();
-		Quad quad(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(3.0f, 0.0f, 0.0f), glm::vec3(2.0f, 2.0f, 0.0f), glm::vec3(0.0f, 2.0f, 0.0f));
-		m_renderer.InitQuad(quad);
 	}
 
 	bool IntersectSphere(const Ray& ray, const Sphere& sphere, float& t)
@@ -95,6 +92,7 @@ namespace Engine {
 			return true;
 		}
 	}
+
 	void Raytracer::GenerateRayTraceImage()
 	{
 		m_rayTraceImage.resize(m_imageWidth * m_imageHeight * 4);  // 4 bytes per pixel for RGBA
@@ -141,10 +139,12 @@ namespace Engine {
 				}
 				else {
 					// Background color
-					glm::vec3 color = glm::vec3(0.5f, 0.7f, 1.0f);  // Sky blue
-					m_rayTraceImage[index + 0] = (uint8_t)(color.r * 255);
-					m_rayTraceImage[index + 1] = (uint8_t)(color.g * 255);
-					m_rayTraceImage[index + 2] = (uint8_t)(color.b * 255);
+					float r = float(x) /float(m_imageWidth);
+					float g = float(y) / float(m_imageHeight);
+					float b = 0.2;
+					m_rayTraceImage[index + 0] = (uint8_t)(r * 255);
+					m_rayTraceImage[index + 1] = (uint8_t)(g * 255);
+					m_rayTraceImage[index + 2] = (uint8_t)(b * 255);
 					m_rayTraceImage[index + 3] = 255;
 				}
 			}
@@ -160,15 +160,8 @@ namespace Engine {
 		glm::mat4 View = m_camera.GetViewMatrix();
 		glm::mat4 Model = glm::mat4(1.0f);
 		glm::mat4 mvp = Projection * View * Model;
-
-		glm::mat4 quadTransform = mvp * glm::mat4(1.0f);
-
 		// Render the ray traced texture as a full-screen quad
 		m_renderer.RenderRayTraceTexture();
-
-		m_renderer.RenderQuad(quadTransform);
-		// Render the gizmo lines
-		m_renderer.RenderGizmo(mvp);
 		RenderIMGui();
 	}
 
