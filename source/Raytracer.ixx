@@ -26,12 +26,44 @@ namespace Engine {
 		glm::vec3 point_at_paramter(float t) const {return A + t * B;}
 	};
 
-	struct Sphere {
-		Sphere(){}
+	struct HitRecord {
+		float t;
+		glm::vec3 p;
+		glm::vec3 normal;
+	};
+
+	class Hitable {
+	public:
+		virtual ~Hitable() = default;
+
+		virtual bool hit(const Ray& r, float t_min, float t_max, HitRecord& rec) const = 0;
+	};
+
+	class Sphere : public Hitable {
+	public:
+		Sphere(){center = glm::vec3(0.0f, 0.0f, 0.0f); radius = 0.5f;}
 		Sphere(const glm::vec3& center, float radius) : center(center), radius(radius) {}
-		glm::vec3 center;
+		bool hit(const Ray& r, float t_min, float t_max, HitRecord& rec) const override;
+		glm::vec3 center{};
 		float radius;
 	};
+	bool Sphere::hit(const Ray &ray, float t_min, float t_max, HitRecord &rec) const {
+		glm::vec3 oc = ray.origin() - center;
+		float a = glm::dot(ray.direction(), ray.direction());
+		float b = 2.0f * glm::dot(oc, ray.B);
+		float c = glm::dot(oc, oc) - radius * radius;
+		float discriminant = b * b - 4 * a * c;
+
+		if (discriminant < 0) {
+			rec.t = -1.0f;
+			return false; // No intersection
+		}
+		else {
+			rec.t = (-b - sqrt(discriminant)) / (2.0f * a);
+			return true;
+		}
+	}
+
 
 	export class Raytracer : public GameInterface
 	{
@@ -110,23 +142,7 @@ namespace Engine {
 		m_renderer.Initialize();
 	}
 
-	bool IntersectSphere(const Ray& ray, const Sphere& sphere, float& t)
-	{
-		glm::vec3 oc = ray.origin() - sphere.center;
-		float a = glm::dot(ray.direction(), ray.direction());
-		float b = 2.0f * glm::dot(oc, ray.B);
-		float c = glm::dot(oc, oc) - sphere.radius * sphere.radius;
-		float discriminant = b * b - 4 * a * c;
 
-		if (discriminant < 0) {
-			t = -1.0f;
-			return false; // No intersection
-		}
-		else {
-			t = (-b - sqrt(discriminant)) / (2.0f * a);
-			return true;
-		}
-	}
 
 	void Raytracer::GenerateRayTraceImage()
 	{
@@ -157,12 +173,13 @@ namespace Engine {
 
 	            // Find nearest sphere intersection
 	            for (auto& sphere : scene_spheres) {
-	                float t;
-	                if (IntersectSphere(ray, sphere, t) && t > 0.0f && t < closestSoFar) {
+	            	HitRecord hitRecord;
+
+	                if (sphere.hit(ray, 0, closestSoFar, hitRecord)) {
 	                    hitAnything   = true;
-	                    closestSoFar  = t;
+	                    closestSoFar  = hitRecord.t;
 	                    hitSphere     = &sphere;
-	                    hitT          = t;
+	                    hitT          = hitRecord.t;
 	                }
 	            }
 
