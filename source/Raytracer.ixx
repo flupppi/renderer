@@ -16,6 +16,24 @@ import Quad;
 import InputSystem;
 import RaytracerRenderer;
 namespace Engine {
+	struct Ray {
+		glm::vec3 A;
+		glm::vec3 B;
+		Ray(){}
+		Ray(const glm::vec3& a, const glm::vec3& b){A = a; B = b;}
+		glm::vec3 origin() const {return A;}
+		glm::vec3 direction() const {return B;}
+		glm::vec3 point_at_paramter(float t) const {return A + t * B;}
+	};
+
+	struct Sphere {
+		Sphere(){}
+		Sphere(const glm::vec3& center, float radius) : center(center), radius(radius) {}
+		glm::vec3 center;
+		float radius;
+
+
+	};
 
 	export class Raytracer : public GameInterface
 	{
@@ -32,22 +50,24 @@ namespace Engine {
 
 		// Image buffer for ray tracing output
 		std::vector<uint8_t> m_rayTraceImage;
-		int m_imageWidth{ 1920 };
-		int m_imageHeight{ 1080 };
+		int m_imageWidth{ 1280 };
+		int m_imageHeight{ 720 };
 		void GenerateRayTraceImage(); // Ray tracing function
+		// Define sphere properties
+		Sphere bigSphere;
+		std::vector<Sphere> scene_spheres;
+		// Define camera properties
 
 
+		glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 0.0f);;
+		float viewportHeight = 2.0f;
+		float viewportWidth {};
+		float focalLength = 2.0f;
+		glm::vec3 horizontal {};
+		glm::vec3 vertical{};
+		glm::vec3 lowerLeftCorner{};
 	};
 
-	struct Ray {
-		glm::vec3 origin;
-		glm::vec3 direction;
-	};
-
-	struct Sphere {
-		glm::vec3 center;
-		float radius;
-	};
 
 	//************************************
 // Set up Keyboard Observer, Initialize the Renderer and Initialize the Skeleton.
@@ -72,19 +92,33 @@ namespace Engine {
 		m_input.ObserveKey(GLFW_KEY_R);
 		m_input.ObserveKey(GLFW_KEY_LEFT_SHIFT);
 
+		bigSphere = Sphere(glm::vec3(-0.5f, -1.5f, -4.0f), 1.0f);
+
+		// Calculate the image plane
+		scene_spheres ={
+			Sphere(glm::vec3(1.0f, 0.0f, -2.0f), 0.5f),
+			Sphere(glm::vec3(-4.0f, 2.0f, -10.0f), 5.0f),
+			bigSphere,
+		};
+
+		viewportWidth = (float)m_imageWidth / m_imageHeight * viewportHeight;
+		horizontal= glm::vec3(viewportWidth, 0.0f, 0.0f);
+		vertical  = glm::vec3(0.0f, viewportHeight, 0.0f);
+		lowerLeftCorner = cameraPosition - horizontal / 2.0f - vertical / 2.0f + glm::vec3(0.0f, 0.0f, -focalLength);
 
 		m_renderer.Initialize();
 	}
 
 	bool IntersectSphere(const Ray& ray, const Sphere& sphere, float& t)
 	{
-		glm::vec3 oc = ray.origin - sphere.center;
-		float a = glm::dot(ray.direction, ray.direction);
-		float b = 2.0f * glm::dot(oc, ray.direction);
+		glm::vec3 oc = ray.origin() - sphere.center;
+		float a = glm::dot(ray.direction(), ray.direction());
+		float b = 2.0f * glm::dot(oc, ray.B);
 		float c = glm::dot(oc, oc) - sphere.radius * sphere.radius;
 		float discriminant = b * b - 4 * a * c;
 
 		if (discriminant < 0) {
+			t = -1.0f;
 			return false; // No intersection
 		}
 		else {
@@ -95,59 +129,61 @@ namespace Engine {
 
 	void Raytracer::GenerateRayTraceImage()
 	{
-		m_rayTraceImage.resize(m_imageWidth * m_imageHeight * 4);  // 4 bytes per pixel for RGBA
+	    m_rayTraceImage.resize(m_imageWidth * m_imageHeight * 4);  // RGBA
 
-		// Define camera properties
-		glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, -5.0f);  // Camera is 5 units back along z-axis
-		float viewportHeight = 2.0f;
-		float viewportWidth = (float)m_imageWidth / m_imageHeight * viewportHeight;
-		float focalLength = 1.0f;
+	    // Loop through each pixel
+	    for (int y = 0; y < m_imageHeight; ++y) {
+	        for (int x = 0; x < m_imageWidth; ++x) {
+	            int index = (y * m_imageWidth + x) * 4;
 
-		// Define sphere properties
-		Sphere sphere;
-		sphere.center = glm::vec3(0.0f, 0.0f, 0.0f); // Sphere at the origin
-		sphere.radius = 0.5f;
+	            // Compute ray direction
+	            float u = float(x) / (m_imageWidth  - 1);
+	            float v = float(y) / (m_imageHeight - 1);
+	            glm::vec3 dir = glm::normalize(lowerLeftCorner + u*horizontal + v*vertical - cameraPosition);
+	            Ray ray(cameraPosition, dir);
 
-		// Calculate the image plane
-		glm::vec3 horizontal = glm::vec3(viewportWidth, 0.0f, 0.0f);
-		glm::vec3 vertical = glm::vec3(0.0f, viewportHeight, 0.0f);
-		glm::vec3 lowerLeftCorner = cameraPosition - horizontal / 2.0f - vertical / 2.0f + glm::vec3(0.0f, 0.0f, focalLength);
+	            // Track the closest intersection
+	            bool hitAnything   = false;
+	            float closestSoFar = std::numeric_limits<float>::infinity();
+	            const Sphere* hitSphere = nullptr;
+	            float hitT = 0.0f;
 
-		// Loop through each pixel
-		for (int y = 0; y < m_imageHeight; ++y) {
-			for (int x = 0; x < m_imageWidth; ++x) {
-				int index = (y * m_imageWidth + x) * 4;
+	            // Find nearest sphere intersection
+	            for (auto& sphere : scene_spheres) {
+	                float t;
+	                if (IntersectSphere(ray, sphere, t) && t > 0.0f && t < closestSoFar) {
+	                    hitAnything   = true;
+	                    closestSoFar  = t;
+	                    hitSphere     = &sphere;
+	                    hitT          = t;
+	                }
+	            }
 
-				// Compute ray direction
-				float u = (float)x / (m_imageWidth - 1);
-				float v = (float)y / (m_imageHeight - 1);
-				glm::vec3 direction = glm::normalize(lowerLeftCorner + u * horizontal + v * vertical - cameraPosition);
+	            if (hitAnything) {
+	                // Compute normal at hit point
+	                glm::vec3 hitPoint = ray.point_at_paramter(hitT);
+	                glm::vec3 normal   = glm::normalize(hitPoint - hitSphere->center);
+	                glm::vec3 col      = 0.5f * glm::vec3(normal.x + 1.0f,
+	                                                    normal.y + 1.0f,
+	                                                    normal.z + 1.0f);
 
-				Ray ray;
-				ray.origin = cameraPosition;
-				ray.direction = direction;
-
-				// Test for intersection with the sphere
-				float t;
-				if (IntersectSphere(ray, sphere, t)) {
-					// If the ray hits the sphere, color the pixel
-					glm::vec3 color = glm::vec3(1.0f, 0.0f, 0.0f);  // Red color for the sphere
-					m_rayTraceImage[index + 0] = (uint8_t)(color.r * 255);
-					m_rayTraceImage[index + 1] = (uint8_t)(color.g * 255);
-					m_rayTraceImage[index + 2] = (uint8_t)(color.b * 255);
-					m_rayTraceImage[index + 3] = 255;
-				}
-				else {
-					// Background color
-					glm::vec3 color{float(x) /float(m_imageWidth), float(y) / float(m_imageHeight), 0.2};
-					m_rayTraceImage[index + 0] = (uint8_t)(color.r * 255);
-					m_rayTraceImage[index + 1] = (uint8_t)(color.g * 255);
-					m_rayTraceImage[index + 2] = (uint8_t)(color.b * 255);
-					m_rayTraceImage[index + 3] = 255;
-				}
-			}
-		}
+	                m_rayTraceImage[index + 0] = uint8_t(col.r * 255);
+	                m_rayTraceImage[index + 1] = uint8_t(col.g * 255);
+	                m_rayTraceImage[index + 2] = uint8_t(col.b * 255);
+	                m_rayTraceImage[index + 3] = 255;
+	            }
+	            else {
+	                // No hit → draw background
+	                glm::vec3 bg = glm::vec3(1.0f); // white
+	                m_rayTraceImage[index + 0] = uint8_t(bg.r * 255);
+	                m_rayTraceImage[index + 1] = uint8_t(bg.g * 255);
+	                m_rayTraceImage[index + 2] = uint8_t(bg.b * 255);
+	                m_rayTraceImage[index + 3] = 255;
+	            }
+	        }
+	    }
 	}
+
 
 	//************************************
 	// Calculate mvp matrix, calculate and render joint transforms and calculate and render skin using the boneModelMatrices.
@@ -205,6 +241,11 @@ namespace Engine {
 			ImGui::Begin("Raytracing Stats");
 
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+
+			ImGui::SliderFloat("X-Position", &scene_spheres.at(0).center.x, -10.0f, 10.0f);
+			ImGui::SliderFloat("Y-Position", &scene_spheres.at(0).center.y, -6.0f, 6.0f);
+			ImGui::SliderFloat("Z-Position", &scene_spheres.at(0).center.z, -25.0f, 5.0f);
 		}
 		ImGui::End();
 		ImGui::Render();
