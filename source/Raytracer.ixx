@@ -177,7 +177,7 @@ namespace Engine {
 	            bool hitAnything   = false;
 	            float closestSoFar = std::numeric_limits<float>::infinity();
 	            const Sphere* hitSphere = nullptr;
-	            float hitT = 0.0f;
+	            HitRecord hitT {};
 
 	            // Find nearest sphere intersection
 	            for (auto& sphere : scene_spheres) {
@@ -187,17 +187,15 @@ namespace Engine {
 	                    hitAnything   = true;
 	                    closestSoFar  = hitRecord.t;
 	                    hitSphere     = &sphere;
-	                    hitT          = hitRecord.t;
+	                    hitT          = hitRecord;
 	                }
 	            }
 
 	            if (hitAnything) {
 	                // Compute normal at hit point
-	                glm::vec3 hitPoint = ray.point_at_paramter(hitT);
-	                glm::vec3 normal   = glm::normalize(hitPoint - hitSphere->center);
-	                glm::vec3 col      = 0.5f * glm::vec3(normal.x + 1.0f,
-	                                                    normal.y + 1.0f,
-	                                                    normal.z + 1.0f);
+	                glm::vec3 col      = 0.5f * glm::vec3(hitT.normal.x + 1.0f,
+	                                                    hitT.normal.y + 1.0f,
+	                                                    hitT.normal.z + 1.0f);
 
 	                m_rayTraceImage[index + 0] = uint8_t(col.r * 255);
 	                m_rayTraceImage[index + 1] = uint8_t(col.g * 255);
