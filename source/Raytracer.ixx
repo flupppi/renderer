@@ -21,7 +21,17 @@ import InputSystem;
 import RaytracerRenderer;
 namespace Engine {
 
+	// Returns a random double in [0,1)
+	inline double rand01()
+	{
+		// 1) a thread‐local engine so calls from different functions/threads
+		//    don’t race each other and performance is OK
+		static thread_local std::mt19937_64 engine{ std::random_device{}() };
 
+		// 2) use generate_canonical to get full precision in [0,1)
+		return std::generate_canonical<double,
+									   std::numeric_limits<double>::digits>(engine);
+	}
 	struct HitRecord {
 		float t;
 		glm::vec3 p;
@@ -168,23 +178,45 @@ namespace Engine {
 
 	void Raytracer::GenerateRayTraceImage()
 	{
-	    m_rayTraceImage.resize(m_imageWidth * m_imageHeight * 4);  // RGBA
+		// at file scope:
+		static const std::vector<glm::vec2> stratified = {
+			{0.25f, 0.25f},
+			{0.75f, 0.25f},
+			{0.25f, 0.75f},
+			{0.75f, 0.75f},
+		};
+		const int ns = 4;  // number of anti-aliasing samples per pixel
+		m_rayTraceImage.resize(m_imageWidth * m_imageHeight * 4);  // RGBA
 
-	    // Loop through each pixel
-	    for (int y = 0; y < m_imageHeight; ++y) {
-	        for (int x = 0; x < m_imageWidth; ++x) {
-	            int index = (y * m_imageWidth + x) * 4;
-	        	float u = float(x) / (m_imageWidth  - 1);
-	            float v = float(y) / (m_imageHeight - 1);
-	            Ray ray = m_camera.getRay(u, v);
-				glm::vec3 col = color(ray);
-                m_rayTraceImage[index + 0] = uint8_t(col.r * 255);
-                m_rayTraceImage[index + 1] = uint8_t(col.g * 255);
-                m_rayTraceImage[index + 2] = uint8_t(col.b * 255);
-                m_rayTraceImage[index + 3] = 255;
+		// Precompute denominators as floats:
+		float invW = 1.0f / float(m_imageWidth);
+		float invH = 1.0f / float(m_imageHeight);
 
-	        }
-	    }
+		for (int y = 0; y < m_imageHeight; ++y) {
+			for (int x = 0; x < m_imageWidth; ++x) {
+				glm::vec3 col(0.0f);
+				// accumulate ns samples
+				for (int s = 0; s < ns; ++s) {
+					// jittered sample in [0,1)
+					auto off = stratified[s % stratified.size()];
+
+					float u = (x + off.x) * invW;
+					float v = (y + off.y) * invH;
+
+					Ray ray = m_camera.getRay(u, v);
+					col += color(ray);
+				}
+				// average & gamma-correct (gamma=2.0)
+				col /= float(ns);
+				col = glm::sqrt(col);
+
+				int index = (y * m_imageWidth + x) * 4;
+				m_rayTraceImage[index + 0] = uint8_t(glm::clamp(col.r, 0.0f, 1.0f) * 255);
+				m_rayTraceImage[index + 1] = uint8_t(glm::clamp(col.g, 0.0f, 1.0f) * 255);
+				m_rayTraceImage[index + 2] = uint8_t(glm::clamp(col.b, 0.0f, 1.0f) * 255);
+				m_rayTraceImage[index + 3] = 255;
+			}
+		}
 	}
 
 
