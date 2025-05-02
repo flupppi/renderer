@@ -8,6 +8,10 @@ module;
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+#include <list>
+#include <glm/detail/_noise.hpp>
+#include <glm/detail/_noise.hpp>
+#include <meta/meta.hpp>
 export module Raytracer;
 import std;
 import GameInterface;
@@ -72,7 +76,30 @@ namespace Engine {
 		return false;
 	}
 
+	class HitableList: public Hitable {
+	public:
+		template<typename T, typename... Args>
+		void emplace(Args&&... args) {
+			objects_.emplace_back(std::make_unique<T>(std::forward<Args>(args)...));
+		}
+		bool hit(const Ray& r, float t_min, float t_max, HitRecord& rec) const override;
+	private:
+		std::vector<std::unique_ptr<Hitable>> objects_;
+	};
 
+	bool HitableList::hit(const Ray &ray, float t_min, float t_max, HitRecord &rec) const {
+		HitRecord temp_rec{};
+		bool hit_anything = false;
+		float closest_so_far = t_max;
+		for (auto const& obj : objects_) {
+			if (obj->hit(ray, t_min, closest_so_far, temp_rec)) {
+				hit_anything = true;
+				closest_so_far = temp_rec.t;
+				rec = temp_rec;
+			}
+		}
+		return hit_anything;
+	}
 	export class Raytracer : public GameInterface
 	{
 	public:
@@ -85,15 +112,14 @@ namespace Engine {
 		RaytracerRenderer m_renderer;
 		InputSystem m_input;
 		Camera m_camera;
+		glm::vec3 color(const Ray &r);
+		HitableList world{};
 
 		// Image buffer for ray tracing output
 		std::vector<uint8_t> m_rayTraceImage;
 		int m_imageWidth{ 1280 };
 		int m_imageHeight{ 720 };
 		void GenerateRayTraceImage(); // Ray tracing function
-		// Define sphere properties
-		Sphere bigSphere;
-		std::vector<Sphere> scene_spheres;
 		// Define camera properties
 
 
@@ -138,19 +164,24 @@ namespace Engine {
 		m_input.ObserveKey(GLFW_KEY_LEFT_SHIFT);
 		m_input.ObserveKey(GLFW_KEY_LEFT_ALT);
 
-		bigSphere = Sphere(glm::vec3(-0.5f, -1.5f, -4.0f), 1.0f);
 
-		// Calculate the image plane
-		scene_spheres ={
-			Sphere(glm::vec3(1.0f, 0.0f, -2.0f), 0.5f),
-			Sphere(glm::vec3(-4.0f, 2.0f, -10.0f), 5.0f),
-			bigSphere,
-		};
+		world.emplace<Sphere>(glm::vec3(0.0f, 0.0f, -1.0f), 0.5f);
+		world.emplace<Sphere>(glm::vec3(0.0f, -100.5f, -1.0f), 100.0f);
+		world.emplace<Sphere>(glm::vec3(1.0f, 0.0f, -10.0f), 5.0f);
+
 
 		m_renderer.Initialize();
 	}
 
 
+	glm::vec3 Raytracer::color(const Ray& r) {
+		HitRecord rec;
+		if (world.hit(r, 0.001f, std::numeric_limits<float>::infinity(), rec)) {
+			return 0.5f * (rec.normal + glm::vec3{1.0f});
+		}else{
+			return glm::vec3{0.0f};
+		}
+	}
 
 	void Raytracer::GenerateRayTraceImage()
 	{
@@ -172,44 +203,12 @@ namespace Engine {
 	            float v = float(y) / (m_imageHeight - 1);
 	            glm::vec3 dir = glm::normalize(lowerLeftCorner + u*horizontal + v*vertical - m_camera.getPosition());
 	            Ray ray(m_camera.getPosition(), dir);
+				glm::vec3 col = color(ray);
+                m_rayTraceImage[index + 0] = uint8_t(col.r * 255);
+                m_rayTraceImage[index + 1] = uint8_t(col.g * 255);
+                m_rayTraceImage[index + 2] = uint8_t(col.b * 255);
+                m_rayTraceImage[index + 3] = 255;
 
-	            // Track the closest intersection
-	            bool hitAnything   = false;
-	            float closestSoFar = std::numeric_limits<float>::infinity();
-	            const Sphere* hitSphere = nullptr;
-	            HitRecord hitT {};
-
-	            // Find nearest sphere intersection
-	            for (auto& sphere : scene_spheres) {
-	            	HitRecord hitRecord;
-
-	                if (sphere.hit(ray, 0, closestSoFar, hitRecord)) {
-	                    hitAnything   = true;
-	                    closestSoFar  = hitRecord.t;
-	                    hitSphere     = &sphere;
-	                    hitT          = hitRecord;
-	                }
-	            }
-
-	            if (hitAnything) {
-	                // Compute normal at hit point
-	                glm::vec3 col      = 0.5f * glm::vec3(hitT.normal.x + 1.0f,
-	                                                    hitT.normal.y + 1.0f,
-	                                                    hitT.normal.z + 1.0f);
-
-	                m_rayTraceImage[index + 0] = uint8_t(col.r * 255);
-	                m_rayTraceImage[index + 1] = uint8_t(col.g * 255);
-	                m_rayTraceImage[index + 2] = uint8_t(col.b * 255);
-	                m_rayTraceImage[index + 3] = 255;
-	            }
-	            else {
-	                // No hit → draw background
-	                glm::vec3 bg = glm::vec3(1.0f); // white
-	                m_rayTraceImage[index + 0] = uint8_t(bg.r * 255);
-	                m_rayTraceImage[index + 1] = uint8_t(bg.g * 255);
-	                m_rayTraceImage[index + 2] = uint8_t(bg.b * 255);
-	                m_rayTraceImage[index + 3] = 255;
-	            }
 	        }
 	    }
 	}
@@ -288,11 +287,6 @@ namespace Engine {
 			ImGui::Text("Render Mode: %s", m_camera.DebugMode().c_str());
 
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-
-
-			ImGui::SliderFloat("X-Position", &scene_spheres.at(0).center.x, -10.0f, 10.0f);
-			ImGui::SliderFloat("Y-Position", &scene_spheres.at(0).center.y, -6.0f, 6.0f);
-			ImGui::SliderFloat("Z-Position", &scene_spheres.at(0).center.z, -25.0f, 5.0f);
 		}
 		ImGui::End();
 		ImGui::Render();
