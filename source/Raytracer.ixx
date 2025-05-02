@@ -31,8 +31,6 @@ namespace Engine {
 		Sphere(const glm::vec3& center, float radius) : center(center), radius(radius) {}
 		glm::vec3 center;
 		float radius;
-
-
 	};
 
 	export class Raytracer : public GameInterface
@@ -90,7 +88,15 @@ namespace Engine {
 		m_input.ObserveKey(GLFW_KEY_2);
 		m_input.ObserveKey(GLFW_KEY_1);
 		m_input.ObserveKey(GLFW_KEY_R);
+		m_input.ObserveKey(GLFW_KEY_W);
+		m_input.ObserveKey(GLFW_KEY_D);
+		m_input.ObserveKey(GLFW_KEY_A);
+		m_input.ObserveKey(GLFW_KEY_S);
+		m_input.ObserveKey(GLFW_KEY_E);
+		m_input.ObserveKey(GLFW_KEY_Q);
+
 		m_input.ObserveKey(GLFW_KEY_LEFT_SHIFT);
+		m_input.ObserveKey(GLFW_KEY_LEFT_ALT);
 
 		bigSphere = Sphere(glm::vec3(-0.5f, -1.5f, -4.0f), 1.0f);
 
@@ -100,11 +106,6 @@ namespace Engine {
 			Sphere(glm::vec3(-4.0f, 2.0f, -10.0f), 5.0f),
 			bigSphere,
 		};
-
-		viewportWidth = (float)m_imageWidth / m_imageHeight * viewportHeight;
-		horizontal= glm::vec3(viewportWidth, 0.0f, 0.0f);
-		vertical  = glm::vec3(0.0f, viewportHeight, 0.0f);
-		lowerLeftCorner = cameraPosition - horizontal / 2.0f - vertical / 2.0f + glm::vec3(0.0f, 0.0f, -focalLength);
 
 		m_renderer.Initialize();
 	}
@@ -131,6 +132,12 @@ namespace Engine {
 	{
 	    m_rayTraceImage.resize(m_imageWidth * m_imageHeight * 4);  // RGBA
 
+		viewportWidth = (float)m_imageWidth / m_imageHeight * viewportHeight;
+		horizontal= glm::vec3(viewportWidth, 0.0f, 0.0f);
+		vertical  = glm::vec3(0.0f, viewportHeight, 0.0f);
+
+		lowerLeftCorner = m_camera.getPosition() - horizontal / 2.0f - vertical / 2.0f + glm::vec3(0.0f, 0.0f, -focalLength);
+
 	    // Loop through each pixel
 	    for (int y = 0; y < m_imageHeight; ++y) {
 	        for (int x = 0; x < m_imageWidth; ++x) {
@@ -139,8 +146,8 @@ namespace Engine {
 	            // Compute ray direction
 	            float u = float(x) / (m_imageWidth  - 1);
 	            float v = float(y) / (m_imageHeight - 1);
-	            glm::vec3 dir = glm::normalize(lowerLeftCorner + u*horizontal + v*vertical - cameraPosition);
-	            Ray ray(cameraPosition, dir);
+	            glm::vec3 dir = glm::normalize(lowerLeftCorner + u*horizontal + v*vertical - m_camera.getPosition());
+	            Ray ray(m_camera.getPosition(), dir);
 
 	            // Track the closest intersection
 	            bool hitAnything   = false;
@@ -217,6 +224,22 @@ namespace Engine {
 		bool rotateRight = m_input.IsKeyDown(GLFW_KEY_RIGHT);
 		bool zoomIn = m_input.IsKeyDown(GLFW_KEY_UP);
 		bool zoomOut = m_input.IsKeyDown(GLFW_KEY_DOWN);
+		if (m_input.WasKeyPressed(GLFW_KEY_LEFT_ALT)) {
+			m_camera.ToggleMode();
+		}
+		if (m_camera.GetCameraMode() == Camera::CameraMode::FPS) {
+			if (m_input.IsRightMouseButtonDown())
+				m_camera.UpdateDirection(m_input.GetMouseDeltaX(), m_input.GetMouseDeltaY());
+			else
+				m_camera.UpdateDirection(0, 0);
+		}
+
+		m_camera.HandleInput(deltaTime,
+							 m_input.IsKeyDown(GLFW_KEY_W), m_input.IsKeyDown(GLFW_KEY_S),
+							 m_input.IsKeyDown(GLFW_KEY_A), m_input.IsKeyDown(GLFW_KEY_D),
+							 m_input.IsKeyDown(GLFW_KEY_Q), m_input.IsKeyDown(GLFW_KEY_E),
+							 rotateLeft, rotateRight,
+							 zoomIn, zoomOut);
 
 		// Update the camera with input flags
 		m_camera.Update(deltaTime, rotateLeft, rotateRight, zoomIn, zoomOut);
@@ -239,6 +262,7 @@ namespace Engine {
 		// 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
 		{
 			ImGui::Begin("Raytracing Stats");
+			ImGui::Text("Render Mode: %s", m_camera.DebugMode().c_str());
 
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 

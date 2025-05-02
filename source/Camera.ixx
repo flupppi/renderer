@@ -81,6 +81,10 @@ namespace Engine {
             float camZ = cameraDistance * cos(cameraAngle);
             return glm::vec3(camX, 3.0f, camZ);
         }
+
+        glm::vec3 getPosition() const {
+            return position;
+        }
         void ToggleMode() {
             if (mode == CameraMode::FPS)
                 mode = CameraMode::Orbit;
