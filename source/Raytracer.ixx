@@ -20,15 +20,7 @@ import Quad;
 import InputSystem;
 import RaytracerRenderer;
 namespace Engine {
-	struct Ray {
-		glm::vec3 A;
-		glm::vec3 B;
-		Ray(){}
-		Ray(const glm::vec3& a, const glm::vec3& b){A = a; B = b;}
-		glm::vec3 origin() const {return A;}
-		glm::vec3 direction() const {return B;}
-		glm::vec3 point_at_paramter(float t) const {return A + t * B;}
-	};
+
 
 	struct HitRecord {
 		float t;
@@ -121,15 +113,6 @@ namespace Engine {
 		int m_imageHeight{ 720 };
 		void GenerateRayTraceImage(); // Ray tracing function
 		// Define camera properties
-
-
-		glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 0.0f);;
-		float viewportHeight = 2.0f;
-		float viewportWidth {};
-		float focalLength = 2.0f;
-		glm::vec3 horizontal {};
-		glm::vec3 vertical{};
-		glm::vec3 lowerLeftCorner{};
 	};
 
 
@@ -175,7 +158,7 @@ namespace Engine {
 
 
 	glm::vec3 Raytracer::color(const Ray& r) {
-		HitRecord rec;
+		HitRecord rec{};
 		if (world.hit(r, 0.001f, std::numeric_limits<float>::infinity(), rec)) {
 			return 0.5f * (rec.normal + glm::vec3{1.0f});
 		}else{
@@ -187,22 +170,13 @@ namespace Engine {
 	{
 	    m_rayTraceImage.resize(m_imageWidth * m_imageHeight * 4);  // RGBA
 
-		viewportWidth = (float)m_imageWidth / m_imageHeight * viewportHeight;
-		horizontal= glm::vec3(viewportWidth, 0.0f, 0.0f);
-		vertical  = glm::vec3(0.0f, viewportHeight, 0.0f);
-
-		lowerLeftCorner = m_camera.getPosition() - horizontal / 2.0f - vertical / 2.0f + glm::vec3(0.0f, 0.0f, -focalLength);
-
 	    // Loop through each pixel
 	    for (int y = 0; y < m_imageHeight; ++y) {
 	        for (int x = 0; x < m_imageWidth; ++x) {
 	            int index = (y * m_imageWidth + x) * 4;
-
-	            // Compute ray direction
-	            float u = float(x) / (m_imageWidth  - 1);
+	        	float u = float(x) / (m_imageWidth  - 1);
 	            float v = float(y) / (m_imageHeight - 1);
-	            glm::vec3 dir = glm::normalize(lowerLeftCorner + u*horizontal + v*vertical - m_camera.getPosition());
-	            Ray ray(m_camera.getPosition(), dir);
+	            Ray ray = m_camera.getRay(u, v);
 				glm::vec3 col = color(ray);
                 m_rayTraceImage[index + 0] = uint8_t(col.r * 255);
                 m_rayTraceImage[index + 1] = uint8_t(col.g * 255);
