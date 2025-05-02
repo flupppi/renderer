@@ -53,15 +53,23 @@ namespace Engine {
 		float b = 2.0f * glm::dot(oc, ray.B);
 		float c = glm::dot(oc, oc) - radius * radius;
 		float discriminant = b * b - 4 * a * c;
-
-		if (discriminant < 0) {
-			rec.t = -1.0f;
-			return false; // No intersection
+		if (discriminant > 0.0f) {
+			float temp{(-b - sqrt(discriminant)) / (2.0f * a)};
+			if (temp < t_max && temp > t_min) {
+				rec.t = temp;
+				rec.p = ray.point_at_paramter(rec.t);
+				rec.normal = (rec.p - center) / radius;
+				return true;
+			}
+			temp = {(-b + sqrt(discriminant)) / (2.0f * a)};
+			if (temp < t_max && temp > t_min) {
+				rec.t = temp;
+				rec.p = ray.point_at_paramter(rec.t);
+				rec.normal = (rec.p - center) / radius;
+				return true;
+			}
 		}
-		else {
-			rec.t = (-b - sqrt(discriminant)) / (2.0f * a);
-			return true;
-		}
+		return false;
 	}
 
 
