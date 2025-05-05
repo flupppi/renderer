@@ -11,7 +11,10 @@ module;
 #include <list>
 #include <glm/detail/_noise.hpp>
 #include <glm/detail/_noise.hpp>
+#include <glm/detail/_noise.hpp>
+#include <glm/detail/_noise.hpp>
 #include <meta/meta.hpp>
+#include <utility>
 export module Raytracer;
 import std;
 import GameInterface;
@@ -38,11 +41,33 @@ namespace Engine {
 		return std::generate_canonical<double,
 									   std::numeric_limits<double>::digits>(engine);
 	}
+	glm::vec3 random_in_unit_sphere(){
+		glm::vec3 p;
+		do {
+			p = 2.0*glm::vec3(rand01(), rand01(), rand01()) - glm::vec3(1.0f, 1.0f, 1.0f);
+		}while (length2(p) >= 1.0);
+		return p;
+	}
+
+	struct HitRecord;
+	class Material {
+	public:
+		virtual ~Material() = default;
+
+		virtual bool scatter(const Ray& r_in, const HitRecord& rec, glm::vec3& attenuation, Ray& scattered) const = 0;
+	};
+
 	struct HitRecord {
 		float t;
 		glm::vec3 p;
 		glm::vec3 normal;
+		std::shared_ptr<Material> mat_ptr;
 	};
+
+
+
+
+
 
 	class Hitable {
 	public:
@@ -51,16 +76,27 @@ namespace Engine {
 		virtual bool hit(const Ray& r, float t_min, float t_max, HitRecord& rec) const = 0;
 	};
 
-	class Sphere : public Hitable {
+	class Lambertian final : public Material {
 	public:
-		Sphere(){center = glm::vec3(0.0f, 0.0f, 0.0f); radius = 0.5f;}
-		Sphere(const glm::vec3& center, float radius) : center(center), radius(radius) {}
+		explicit Lambertian(const glm::vec3& a): albedo(a) {}
+		bool scatter(const Ray& r_in, const HitRecord& rec, glm::vec3& attenuation, Ray& scattered) const override {
+			glm::vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+			scattered = Ray(rec.p, target - rec.p);
+			attenuation = albedo;
+			return true;
+		}
+		glm::vec3 albedo;
+	};
+	class Sphere final : public Hitable {
+	public:
+		Sphere(const glm::vec3& center, std::shared_ptr<Material> mat, float radius) : center(center), mat(std::move(mat)),radius(radius) {}
 		bool hit(const Ray& r, float t_min, float t_max, HitRecord& rec) const override;
 		glm::vec3 center{};
 		float radius;
+		std::shared_ptr<Material> mat;
 	};
 	bool Sphere::hit(const Ray &ray, float t_min, float t_max, HitRecord &rec) const {
-		glm::vec3 oc = ray.origin() - center;
+		const glm::vec3 oc = ray.origin() - center;
 		float a = glm::dot(ray.direction(), ray.direction());
 		float b = 2.0f * glm::dot(oc, ray.B);
 		float c = glm::dot(oc, oc) - radius * radius;
@@ -71,6 +107,7 @@ namespace Engine {
 				rec.t = temp;
 				rec.p = ray.point_at_paramter(rec.t);
 				rec.normal = (rec.p - center) / radius;
+				rec.mat_ptr = mat;
 				return true;
 			}
 			temp = {(-b + sqrt(discriminant)) / (2.0f * a)};
@@ -78,6 +115,7 @@ namespace Engine {
 				rec.t = temp;
 				rec.p = ray.point_at_paramter(rec.t);
 				rec.normal = (rec.p - center) / radius;
+				rec.mat_ptr = mat;
 				return true;
 			}
 		}
@@ -120,7 +158,7 @@ namespace Engine {
 		RaytracerRenderer m_renderer;
 		InputSystem m_input;
 		Camera m_camera;
-		glm::vec3 color(const Ray &r);
+		glm::vec3 color(const Ray &r, int depth);
 		HitableList world{};
 
 		RenderMode m_renderMode = RenderMode::diffuse;
@@ -166,27 +204,27 @@ namespace Engine {
 		m_input.ObserveKey(GLFW_KEY_LEFT_SHIFT);
 		m_input.ObserveKey(GLFW_KEY_LEFT_ALT);
 
-
-		world.emplace<Sphere>(glm::vec3(0.0f, 0.0f, -1.0f), 0.5f);
-		world.emplace<Sphere>(glm::vec3(0.0f, -100.5f, -1.0f), 100.0f);
-		world.emplace<Sphere>(glm::vec3(1.0f, 0.0f, -10.0f), 5.0f);
+		auto diffuse = std::make_shared<Lambertian>(glm::vec3(0.5f, 0.5f, 0.5f));
+		auto diffuse2 = std::make_shared<Lambertian>(glm::vec3(0.2f, 0.5f, 0.2f));
+		auto diffuse4 = std::make_shared<Lambertian>(glm::vec3(0.5f, 0.8f, 0.8f));
+		world.emplace<Sphere>(glm::vec3(0.0f, 0.0f, -1.0f), diffuse, 0.5f);
+		world.emplace<Sphere>(glm::vec3(0.0f, -100.5f, -1.0f),diffuse2, 100.0f);
+		world.emplace<Sphere>(glm::vec3(1.0f, 0.0f, -10.0f),diffuse4, 5.0f);
 
 
 		m_renderer.Initialize();
 	}
-	glm::vec3 random_in_unit_sphere(){
-		glm::vec3 p;
-		do {
-			p = 2.0*glm::vec3(rand01(), rand01(), rand01()) - glm::vec3(1.0f, 1.0f, 1.0f);
-		}while (length2(p) >= 1.0);
-		return p;
-	}
 
-	glm::vec3 Raytracer::color(const Ray& r) {
+	glm::vec3 Raytracer::color(const Ray& r, int depth) {
 		HitRecord rec{};
 		if (world.hit(r, 0.001f, std::numeric_limits<float>::infinity(), rec)) {
-			glm::vec3 target = rec.p + rec.normal + random_in_unit_sphere();
-			return 0.5f * color(Ray(rec.p, target-rec.p));
+			Ray scattered{};
+			glm::vec3 attenuation{};
+			if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
+				return attenuation * color(scattered, depth+1);
+			}else {
+				return {0.0f, 0.0f, 0.0f};
+			}
 		}else{
 			glm::vec3 unit_direction = glm::normalize(r.direction());
 			float t = 0.5f * (unit_direction.y + 1.0f);
@@ -197,7 +235,6 @@ namespace Engine {
 	glm::vec3 Raytracer::colorModeNormal(const Ray& r) {
 		HitRecord rec{};
 		if (world.hit(r, 0.001f, std::numeric_limits<float>::infinity(), rec)) {
-			//glm::vec3 target = rec.p + rec.normal + random_in_unit_sphere();
 			return 0.5f * (rec.normal +glm::vec3(1.0f));
 		}else{
 			glm::vec3 unit_direction = glm::normalize(r.direction());
@@ -229,10 +266,10 @@ namespace Engine {
 							col += colorModeNormal(ray);
 							break;
 						case diffuse:
-							col += color(ray);
+							col += color(ray, 0);
 							break;
 						default:
-							col += color(ray);
+							col += color(ray, 0);
 					}
 				}
 				// average & gamma-correct (gamma=2.0)
