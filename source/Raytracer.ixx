@@ -117,6 +117,9 @@ namespace Engine {
 		glm::vec3 color(const Ray &r);
 		HitableList world{};
 
+
+		int samples = 100;
+
 		// Image buffer for ray tracing output
 		std::vector<uint8_t> m_rayTraceImage;
 		int m_imageWidth{ 1280 };
@@ -165,27 +168,28 @@ namespace Engine {
 
 		m_renderer.Initialize();
 	}
-
+	glm::vec3 random_in_unit_sphere(){
+		glm::vec3 p;
+		do {
+			p = 2.0*glm::vec3(rand01(), rand01(), rand01()) - glm::vec3(1.0f, 1.0f, 1.0f);
+		}while (length2(p) >= 1.0);
+		return p;
+	}
 
 	glm::vec3 Raytracer::color(const Ray& r) {
 		HitRecord rec{};
 		if (world.hit(r, 0.001f, std::numeric_limits<float>::infinity(), rec)) {
-			return 0.5f * (rec.normal + glm::vec3{1.0f});
+			glm::vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+			return 0.5f * color(Ray(rec.p, target-rec.p));
 		}else{
-			return glm::vec3{0.0f};
+			glm::vec3 unit_direction = glm::normalize(r.direction());
+			float t = 0.5f * (unit_direction.y + 1.0f);
+			return (1.0f-t)*glm::vec3(1.0f, 1.0f, 1.0f) + t * glm::vec3(0.5f, 0.7f, 1.0f);
 		}
 	}
 
 	void Raytracer::GenerateRayTraceImage()
 	{
-		// at file scope:
-		static const std::vector<glm::vec2> stratified = {
-			{0.25f, 0.25f},
-			{0.75f, 0.25f},
-			{0.25f, 0.75f},
-			{0.75f, 0.75f},
-		};
-		const int ns = 4;  // number of anti-aliasing samples per pixel
 		m_rayTraceImage.resize(m_imageWidth * m_imageHeight * 4);  // RGBA
 
 		// Precompute denominators as floats:
@@ -196,18 +200,16 @@ namespace Engine {
 			for (int x = 0; x < m_imageWidth; ++x) {
 				glm::vec3 col(0.0f);
 				// accumulate ns samples
-				for (int s = 0; s < ns; ++s) {
+				for (int s = 0; s < samples; ++s) {
 					// jittered sample in [0,1)
-					auto off = stratified[s % stratified.size()];
-
-					float u = (x + off.x) * invW;
-					float v = (y + off.y) * invH;
+					float u = (x + rand01()) * invW;
+					float v = (y + rand01()) * invH;
 
 					Ray ray = m_camera.getRay(u, v);
 					col += color(ray);
 				}
 				// average & gamma-correct (gamma=2.0)
-				col /= float(ns);
+				col /= float(samples);
 				col = glm::sqrt(col);
 
 				int index = (y * m_imageWidth + x) * 4;
@@ -229,7 +231,7 @@ namespace Engine {
 		glm::mat4 View = m_camera.GetViewMatrix();
 		glm::mat4 Model = glm::mat4(1.0f);
 		glm::mat4 mvp = Projection * View * Model;
-		// Render the ray traced texture as a full-screen quad
+		// Render the ray-traced texture as a full-screen quad
 		m_renderer.RenderRayTraceTexture();
 		RenderIMGui();
 	}
@@ -291,7 +293,7 @@ namespace Engine {
 		{
 			ImGui::Begin("Raytracing Stats");
 			ImGui::Text("Render Mode: %s", m_camera.DebugMode().c_str());
-
+			ImGui::SliderInt("Samples per Pixel", &samples, 1, 8);
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		}
 		ImGui::End();
