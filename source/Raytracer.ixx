@@ -87,6 +87,27 @@ namespace Engine {
 		}
 		glm::vec3 albedo;
 	};
+
+	glm::vec3 reflect(const glm::vec3& v, const glm::vec3& n) {
+		return v - 2.0f * glm::dot(v, n ) * n;
+	}
+
+
+
+	class Metal final : public Material {
+	public:
+		explicit Metal(const glm::vec3& a): albedo(a){}
+		bool scatter(const Ray& r_in, const HitRecord& rec, glm::vec3& attenuation, Ray& scattered) const override {
+			glm::vec3 reflected = reflect(glm::normalize(r_in.direction()), rec.normal);
+			scattered = Ray(rec.p, reflected);
+			attenuation = albedo;
+			return (dot(scattered.direction(), rec.normal) > 0.0f);
+		}
+		glm::vec3 albedo;
+	};
+
+
+
 	class Sphere final : public Hitable {
 	public:
 		Sphere(const glm::vec3& center, std::shared_ptr<Material> mat, float radius) : center(center), mat(std::move(mat)),radius(radius) {}
@@ -206,10 +227,10 @@ namespace Engine {
 
 		auto diffuse = std::make_shared<Lambertian>(glm::vec3(0.5f, 0.5f, 0.5f));
 		auto diffuse2 = std::make_shared<Lambertian>(glm::vec3(0.2f, 0.5f, 0.2f));
-		auto diffuse4 = std::make_shared<Lambertian>(glm::vec3(0.5f, 0.8f, 0.8f));
+		auto metal = std::make_shared<Metal>(glm::vec3(0.5f, 0.8f, 0.8f));
 		world.emplace<Sphere>(glm::vec3(0.0f, 0.0f, -1.0f), diffuse, 0.5f);
-		world.emplace<Sphere>(glm::vec3(0.0f, -100.5f, -1.0f),diffuse2, 100.0f);
-		world.emplace<Sphere>(glm::vec3(1.0f, 0.0f, -10.0f),diffuse4, 5.0f);
+		world.emplace<Sphere>(glm::vec3(0.0f, -100.5f, -1.0f),metal, 100.0f);
+		world.emplace<Sphere>(glm::vec3(1.0f, 0.0f, -10.0f), diffuse2, 5.0f);
 
 
 		m_renderer.Initialize();
