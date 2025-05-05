@@ -96,14 +96,15 @@ namespace Engine {
 
 	class Metal final : public Material {
 	public:
-		explicit Metal(const glm::vec3& a): albedo(a){}
+		explicit Metal(const glm::vec3& a, float f): albedo(a){if (f<1.0f) fuzz = f; else fuzz = 1.0f;}
 		bool scatter(const Ray& r_in, const HitRecord& rec, glm::vec3& attenuation, Ray& scattered) const override {
 			glm::vec3 reflected = reflect(glm::normalize(r_in.direction()), rec.normal);
-			scattered = Ray(rec.p, reflected);
+			scattered = Ray(rec.p, reflected + fuzz * random_in_unit_sphere());
 			attenuation = albedo;
 			return (dot(scattered.direction(), rec.normal) > 0.0f);
 		}
 		glm::vec3 albedo;
+		float fuzz;
 	};
 
 
@@ -183,7 +184,7 @@ namespace Engine {
 		HitableList world{};
 
 		RenderMode m_renderMode = RenderMode::diffuse;
-		int samples = 1;
+		int samples = 100;
 		glm::vec3 colorModeNormal(const Ray& r);
 		// Image buffer for ray tracing output
 		std::vector<uint8_t> m_rayTraceImage;
@@ -227,8 +228,12 @@ namespace Engine {
 
 		auto diffuse = std::make_shared<Lambertian>(glm::vec3(0.5f, 0.5f, 0.5f));
 		auto diffuse2 = std::make_shared<Lambertian>(glm::vec3(0.2f, 0.5f, 0.2f));
-		auto metal = std::make_shared<Metal>(glm::vec3(0.5f, 0.8f, 0.8f));
+		auto metal = std::make_shared<Metal>(glm::vec3(0.5f, 0.8f, 0.8f), 0.3f);
+		auto metal2 = std::make_shared<Metal>(glm::vec3(0.5f, 0.8f, 0.8f), 0.05f);
+		auto metal3 = std::make_shared<Metal>(glm::vec3(0.5f, 0.8f, 0.8f), 0.7f);
 		world.emplace<Sphere>(glm::vec3(0.0f, 0.0f, -1.0f), diffuse, 0.5f);
+		world.emplace<Sphere>(glm::vec3(2.0f, 0.0f, -1.0f), metal2, 0.5f);
+		world.emplace<Sphere>(glm::vec3(-2.0f, 0.0f, -1.0f), metal3, 0.5f);
 		world.emplace<Sphere>(glm::vec3(0.0f, -100.5f, -1.0f),metal, 100.0f);
 		world.emplace<Sphere>(glm::vec3(1.0f, 0.0f, -10.0f), diffuse2, 5.0f);
 
