@@ -21,6 +21,12 @@ import InputSystem;
 import RaytracerRenderer;
 namespace Engine {
 
+	enum RenderMode {
+		diffuse,
+		normals,
+	};
+	static const char* renderModeNames[] = { "Diffuse", "Normals" };
+
 	// Returns a random double in [0,1)
 	inline double rand01()
 	{
@@ -117,9 +123,9 @@ namespace Engine {
 		glm::vec3 color(const Ray &r);
 		HitableList world{};
 
-
-		int samples = 100;
-
+		RenderMode m_renderMode = RenderMode::diffuse;
+		int samples = 1;
+		glm::vec3 colorModeNormal(const Ray& r);
 		// Image buffer for ray tracing output
 		std::vector<uint8_t> m_rayTraceImage;
 		int m_imageWidth{ 1280 };
@@ -188,6 +194,18 @@ namespace Engine {
 		}
 	}
 
+	glm::vec3 Raytracer::colorModeNormal(const Ray& r) {
+		HitRecord rec{};
+		if (world.hit(r, 0.001f, std::numeric_limits<float>::infinity(), rec)) {
+			//glm::vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+			return 0.5f * (rec.normal +glm::vec3(1.0f));
+		}else{
+			glm::vec3 unit_direction = glm::normalize(r.direction());
+			float t = 0.5f * (unit_direction.y + 1.0f);
+			return (1.0f-t)*glm::vec3(1.0f, 1.0f, 1.0f) + t * glm::vec3(0.5f, 0.7f, 1.0f);
+		}
+	}
+
 	void Raytracer::GenerateRayTraceImage()
 	{
 		m_rayTraceImage.resize(m_imageWidth * m_imageHeight * 4);  // RGBA
@@ -206,7 +224,16 @@ namespace Engine {
 					float v = (y + rand01()) * invH;
 
 					Ray ray = m_camera.getRay(u, v);
-					col += color(ray);
+					switch (m_renderMode) {
+						case normals:
+							col += colorModeNormal(ray);
+							break;
+						case diffuse:
+							col += color(ray);
+							break;
+						default:
+							col += color(ray);
+					}
 				}
 				// average & gamma-correct (gamma=2.0)
 				col /= float(samples);
@@ -294,6 +321,11 @@ namespace Engine {
 			ImGui::Begin("Raytracing Stats");
 			ImGui::Text("Render Mode: %s", m_camera.DebugMode().c_str());
 			ImGui::SliderInt("Samples per Pixel", &samples, 1, 8);
+
+			int mode = static_cast<int>(m_renderMode);
+			if (ImGui::Combo("Render Mode", &mode, renderModeNames, IM_ARRAYSIZE(renderModeNames))) {
+				m_renderMode = static_cast<RenderMode>(mode);
+			}
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		}
 		ImGui::End();
