@@ -5,7 +5,9 @@
   }, {
     "name" : "tinygltf",
     "version>=" : "2.9.4"
-  } ],
+  },
+    "catch2"
+  ],
   "version" : "1.0.0",
   "name" : "main"
 }

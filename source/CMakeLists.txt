@@ -77,10 +77,10 @@ set(SOURCE_FILES
         tiny_gltf_impl.cpp
 )
 
-add_executable(CXXOpenGL ${SOURCE_FILES})
 
+add_library(MyModules STATIC)
 # This FILE_SET approach requires CMake >= 3.26
-target_sources(CXXOpenGL PRIVATE
+target_sources(MyModules PUBLIC
         FILE_SET cxx_modules TYPE CXX_MODULES
         BASE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}"
         FILES
@@ -126,11 +126,8 @@ target_sources(CXXOpenGL PRIVATE
         "SkinnedAnimation/Skeleton.ixx"
 )
 
-# Make sure we build std_modules_target (std.ifc/std.obj) BEFORE compiling your modules
-add_dependencies(CXXOpenGL std_modules_target)
-
 if(MSVC)
-    target_compile_options(CXXOpenGL PRIVATE
+    target_compile_options(MyModules PRIVATE
             # Many MSVC versions still need /experimental:module to properly treat .ixx as modules
             /experimental:module
             /std:c++latest
@@ -141,10 +138,13 @@ if(MSVC)
     )
 endif()
 
-target_compile_definitions(CXXOpenGL PRIVATE GLM_ENABLE_EXPERIMENTAL)
-target_include_directories(CXXOpenGL PRIVATE "${LUA_INCLUDE_DIR}" "${TINYGLTF_INCLUDE_DIRS}")
+
+# Make sure we build std_modules_target (std.ifc/std.obj) BEFORE compiling your modules
+add_dependencies(MyModules std_modules_target)
+target_compile_definitions(MyModules PRIVATE GLM_ENABLE_EXPERIMENTAL)
+target_include_directories(MyModules PRIVATE "${LUA_INCLUDE_DIR}" "${TINYGLTF_INCLUDE_DIRS}")
 message(STATUS "TINYGLTF_INCLUDE_DIRS = ${TINYGLTF_INCLUDE_DIRS}")
-target_link_libraries(CXXOpenGL PRIVATE
+target_link_libraries(MyModules PRIVATE
         glfw
         GLEW::GLEW
         OpenGL::GL
@@ -156,3 +156,42 @@ target_link_libraries(CXXOpenGL PRIVATE
         "${CMAKE_CURRENT_BINARY_DIR}/std.obj"
         cxxopts::cxxopts
 )
+
+add_executable(CXXOpenGL ${SOURCE_FILES})
+target_link_libraries(CXXOpenGL
+        PRIVATE
+        MyModules
+)
+target_compile_definitions(CXXOpenGL PRIVATE GLM_ENABLE_EXPERIMENTAL)
+target_include_directories(CXXOpenGL PRIVATE "${LUA_INCLUDE_DIR}" "${TINYGLTF_INCLUDE_DIRS}")
+if(MSVC)
+    target_compile_options(CXXOpenGL PRIVATE
+            /utf-8
+            /std:c++latest
+            /experimental:module
+            /Zi
+    )
+endif()
+# --------------------------
+# Tests
+# --------------------------
+enable_testing()
+find_package(Catch2 CONFIG REQUIRED)
+
+add_executable(raytracer_tests
+        tests/test_raytracer.cpp
+)
+
+# Link with Catch2 and anything the test needs from your project
+target_link_libraries(raytracer_tests
+        PRIVATE
+        Catch2::Catch2WithMain
+        glm::glm
+        MyModules
+        # Optionally, shared code like Raytracer or modules
+)
+
+# Optional: add test discovery with CTest
+include(CTest)
+include(Catch)
+catch_discover_tests(raytracer_tests)
