@@ -1,0 +1,9 @@
+project:
+  output-dir: _docs
+
+website:
+  title: "renderer"
+  site-url: "https://flupppi.github.io/renderer"
+  description: "c++ 23 + opengl rendering projects"
+  repo-branch: master
+  repo-url: "https://github.com/flupppi/renderer"
