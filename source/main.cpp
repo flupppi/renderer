@@ -255,7 +255,7 @@ int main(int argc, char* argv[])
 {
 	try {
 		// Command-line parsing using cxxopts
-		cxxopts::Options options("Engine", "A simple engine with glTF viewer");
+		cxxopts::Options options("Engine", "A simple engine with different modes:");
 		options.add_options()
 			("p, program", "Program mode (Application, BillboardCloud, etc.)", cxxopts::value<std::string>()->default_value("Application"))
 			("m, path", "Path to glTF model file", cxxopts::value<std::string>())

@@ -139,9 +139,12 @@ namespace Engine {
         glBindVertexArray(0);
     }
 
+    // TODO Implement this
     void Plane::calculateSize()
     {
     }
+
+    // TODO Implement this
     void Plane::updatePriority(float weight)
     {
     }
