@@ -7,7 +7,6 @@ module;
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 #include <meta/meta.hpp>
-#include <utility>
 export module Raytracer;
 import std;
 import GameInterface;
@@ -346,7 +345,7 @@ namespace Engine {
 	public:
 		template<typename T, typename... Args>
 		void emplace(Args&&... args) {
-			objects_.emplace_back(std::make_unique<T>(forward<Args>(args)...));
+			objects_.emplace_back(std::make_unique<T>(std::forward<Args>(args)...));
 		}
 		bool hit(const Ray& r, float t_min, float t_max, HitRecord& rec) const override;
 	private:

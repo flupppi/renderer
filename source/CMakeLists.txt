@@ -1,18 +1,22 @@
-cmake_minimum_required(VERSION 3.30)
-project(CXXOpenGL LANGUAGES CXX)
+cmake_minimum_required(VERSION 4.0.0)
+set(CMAKE_CXX_COMPILER /usr/bin/clang++)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "a9e1cf81-9932-4810-974b-6eccaf14e457")
+set(CMAKE_CXX_MODULE_STD 1)
+
+project(CXXOpenGL VERSION 0.1.0 LANGUAGES CXX)
 
 # --- vcpkg ---
 set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
 set(VCPKG_FEATURE_FLAGS "manifests" CACHE STRING "")
 
 
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
 
-# --- Experimental Modules Support ---
-set(CMAKE_EXPERIMENTAL_CXX_MODULE_CMAKE_API ON)
-set(CMAKE_EXPERIMENTAL_CXX_MODULE_DYNDEP ON)
 
 
 # --- Dependencies ---
@@ -36,43 +40,15 @@ message(STATUS "TINYGLTF_INCLUDE_DIRS = ${TINYGLTF_INCLUDE_DIRS}")
 if(MSVC)
         message(STATUS "MSVC handles std module automatically.")
         # MSVC needs only flags
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-        add_custom_command(
-                OUTPUT std.pcm
-                COMMAND ${CMAKE_CXX_COMPILER} -std=c++23 -stdlib=libc++
-            -Wno-reserved-identifier -Wno-reserved-module-identifier
-            --precompile -o std.pcm /usr/share/libc++/v1/std.cppm
-        DEPENDS /usr/share/libc++/v1/std.cppm
-        VERBATIM
-    )
-    add_custom_target(precompile_std_module DEPENDS std.pcm)
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    add_custom_command(
-        OUTPUT gcm.cache/std.gcm
-        COMMAND ${CMAKE_CXX_COMPILER} -std=c++23 -fmodules -fsearch-include-path -c bits/std.cc
-        VERBATIM
-    )
-    add_custom_target(precompile_std_module DEPENDS gcm.cache/std.gcm)
-else()
-    message(FATAL_ERROR "Unsupported compiler: ${CMAKE_CXX_COMPILER_ID}")
 endif()
 
 
 
 # --- MyModules (C++23 Modules) ---
 add_library(MyModules STATIC)
-if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    add_dependencies(MyModules precompile_std_module)
-    target_sources(MyModules PRIVATE std.pcm)
+if(MSVC)
     target_compile_options(MyModules PRIVATE
-        -stdlib=libc++
-        -fmodule-file=std=std.pcm
-    )
-    target_link_options(MyModules PRIVATE -stdlib=libc++)
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    add_dependencies(MyModules precompile_std_module)
-    target_compile_options(MyModules PRIVATE
-        -fmodules
+            /utf-8 /experimental:module /std:c++latest /Zi
     )
 endif()
 
@@ -157,19 +133,7 @@ set(SOURCE_FILES
 
 add_executable(CXXOpenGL ${SOURCE_FILES})
 
-if(MSVC)
-    target_compile_options(MyModules PRIVATE
-            /utf-8 /experimental:module /std:c++latest /Zi
-    )
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    add_dependencies(CXXOpenGL precompile_std_module)
-    target_sources(CXXOpenGL PRIVATE std.pcm)
-    target_compile_options(CXXOpenGL PRIVATE -stdlib=libc++ -fmodule-file=std=std.pcm)
-    target_link_options(CXXOpenGL PRIVATE -stdlib=libc++)
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    add_dependencies(CXXOpenGL precompile_std_module)
-    target_compile_options(CXXOpenGL PRIVATE -fmodules)
-endif()
+
 
 target_link_libraries(CXXOpenGL PRIVATE MyModules)
 target_include_directories(CXXOpenGL PRIVATE
@@ -178,7 +142,6 @@ target_include_directories(CXXOpenGL PRIVATE
     "${VCPKG_INCLUDE_DIR}"
 )
 target_compile_definitions(CXXOpenGL PRIVATE GLM_ENABLE_EXPERIMENTAL)
-
 # --- Tests ---
 add_executable(raytracer_tests tests/test_raytracer.cpp)
 target_link_libraries(raytracer_tests PRIVATE Catch2::Catch2WithMain glm::glm MyModules)

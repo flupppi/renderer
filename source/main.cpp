@@ -1,4 +1,3 @@
-#pragma once
 #define GLEW_STATIC
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -31,7 +30,6 @@ const int WIDTH{ 1280 };
 const int HEIGHT{ 720 };
 
 
-GLboolean glewExperimental = GL_TRUE;
 // Helper to display a little (?) mark which shows a tooltip when hovered.
 // In your own code you may want to display an actual icon if you are using a merged icon fonts (see docs/FONTS.md)
 static void HelpMarker(const char* desc)

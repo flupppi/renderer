@@ -3,7 +3,7 @@
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
 module;
-#include <GLFW/glfw3.h>;
+#include <GLFW/glfw3.h>
 
 export module GameInterface;
 import std;
