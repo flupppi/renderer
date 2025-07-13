@@ -21,7 +21,7 @@ namespace Engine {    // Base Vertex Structure
 	};
 
 	// Extended Vertex for Tangent-Space Lighting
-	export struct Vertex : public BaseVertex {
+	export struct Vertex final : public BaseVertex {
 		glm::vec3 tangent;                  // Optional: Tangent for lighting
 		glm::vec3 bitangent;                // Optional: Bitangent for lighting
 		std::array<int, MAX_BONE_INFLUENCE> m_BoneIDs = { 0 };  // Bone indices
@@ -42,7 +42,7 @@ namespace Engine {    // Base Vertex Structure
 
 
 	// Specialized Vertex for Skinning
-	export struct SkinnedMeshVertex : public BaseVertex {
+	export struct SkinnedMeshVertex: public BaseVertex {
 		glm::vec4 boneIndex;               // Bone indices for skinning
 		glm::vec4 skinWeights;             // Bone weights for skinning
 		glm::vec3 blendIndex;              // Additional blending data
@@ -176,8 +176,8 @@ namespace Engine {    // Base Vertex Structure
 
 	};
 	std::pair<glm::vec3, glm::vec3> Mesh::calculateBoundingBox() const {
-		glm::vec3 minExtents(FLT_MAX);
-		glm::vec3 maxExtents(-FLT_MAX);
+		glm::vec3 minExtents{std::numeric_limits<float>::max()};
+		glm::vec3 maxExtents{-std::numeric_limits<float>::max()};
 
 		for (const Vertex& vertex : vertices) {
 			minExtents = glm::min(minExtents, vertex.position);

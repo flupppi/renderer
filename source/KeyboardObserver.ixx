@@ -4,7 +4,6 @@
 module;
 #include "GLFW/glfw3.h"
 export module KeyboardObserver;
-struct GLFWwindow;
 namespace Engine {
 
 	export class KeyboardObserver {

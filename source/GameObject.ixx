@@ -3,6 +3,7 @@ module;
 export module GameObject;
 import std;
 import IGameObject;
+import IComponent;
 namespace Engine {
 
 	export class GameObject : public IGameObject
