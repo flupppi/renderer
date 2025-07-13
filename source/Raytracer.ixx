@@ -1,5 +1,4 @@
 module;
-#pragma once
 #include <glm/ext/quaternion_float.hpp>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>

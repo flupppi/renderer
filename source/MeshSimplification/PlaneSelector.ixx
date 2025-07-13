@@ -1,6 +1,5 @@
 module;
 #include<glm/glm.hpp>
-#pragma once
 export module PlaneSelector;
 import std;
 import IPlaneSelector;

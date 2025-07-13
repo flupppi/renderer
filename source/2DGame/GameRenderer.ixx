@@ -2,7 +2,6 @@
 
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 module;
-#pragma once
 #include <glm/mat4x4.hpp>
 #include <GL/glew.h>
 #include "../vendor/stb_image/stb_image.h"

@@ -1,6 +1,5 @@
 module;
 #include<glm/glm.hpp>
-#pragma once
 export module BillboardGenerator;
 import std;
 import Plane;

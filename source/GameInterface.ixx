@@ -3,7 +3,6 @@
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
 module;
-#pragma once
 export module GameInterface;
 import std;
 export struct GLFWwindow;

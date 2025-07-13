@@ -31,8 +31,51 @@ message(STATUS "LUA_INCLUDE_DIR = ${LUA_INCLUDE_DIR}")
 message(STATUS "LUA_LIBRARIES = ${LUA_LIBRARIES}")
 message(STATUS "TINYGLTF_INCLUDE_DIRS = ${TINYGLTF_INCLUDE_DIRS}")
 
+
+# --- std module precompilation ---
+if(MSVC)
+        message(STATUS "MSVC handles std module automatically.")
+        # MSVC needs only flags
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        add_custom_command(
+                OUTPUT std.pcm
+                COMMAND ${CMAKE_CXX_COMPILER} -std=c++23 -stdlib=libc++
+            -Wno-reserved-identifier -Wno-reserved-module-identifier
+            --precompile -o std.pcm /usr/share/libc++/v1/std.cppm
+        DEPENDS /usr/share/libc++/v1/std.cppm
+        VERBATIM
+    )
+    add_custom_target(precompile_std_module DEPENDS std.pcm)
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_custom_command(
+        OUTPUT gcm.cache/std.gcm
+        COMMAND ${CMAKE_CXX_COMPILER} -std=c++23 -fmodules -fsearch-include-path -c bits/std.cc
+        VERBATIM
+    )
+    add_custom_target(precompile_std_module DEPENDS gcm.cache/std.gcm)
+else()
+    message(FATAL_ERROR "Unsupported compiler: ${CMAKE_CXX_COMPILER_ID}")
+endif()
+
+
+
 # --- MyModules (C++23 Modules) ---
 add_library(MyModules STATIC)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    add_dependencies(MyModules precompile_std_module)
+    target_sources(MyModules PRIVATE std.pcm)
+    target_compile_options(MyModules PRIVATE
+        -stdlib=libc++
+        -fmodule-file=std=std.pcm
+    )
+    target_link_options(MyModules PRIVATE -stdlib=libc++)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_dependencies(MyModules precompile_std_module)
+    target_compile_options(MyModules PRIVATE
+        -fmodules
+    )
+endif()
+
 target_sources(MyModules PUBLIC
         FILE_SET cxx_modules TYPE CXX_MODULES
         BASE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -79,7 +122,13 @@ target_sources(MyModules PUBLIC
         "SkinnedAnimation/Skeleton.ixx"
 )
 
-target_include_directories(MyModules PRIVATE "${LUA_INCLUDE_DIR}" "${TINYGLTF_INCLUDE_DIRS}")
+set(VCPKG_INCLUDE_DIR "${CMAKE_BINARY_DIR}/vcpkg_installed/x64-linux/include")
+
+target_include_directories(MyModules PUBLIC
+    "${LUA_INCLUDE_DIR}"
+    "${TINYGLTF_INCLUDE_DIRS}"
+    "${VCPKG_INCLUDE_DIR}"
+)
 target_compile_definitions(MyModules PRIVATE GLM_ENABLE_EXPERIMENTAL)
 
 
@@ -95,30 +144,6 @@ target_link_libraries(MyModules PRIVATE
         cxxopts::cxxopts
 )
 
-# --- std module precompilation ---
-if(MSVC)
-        message(STATUS "MSVC handles std module automatically.")
-        # MSVC needs only flags
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-        add_custom_command(
-                OUTPUT std.pcm
-                COMMAND ${CMAKE_CXX_COMPILER} -std=c++23 -stdlib=libc++
-            -Wno-reserved-identifier -Wno-reserved-module-identifier
-            --precompile -o std.pcm /usr/share/libc++/v1/std.cppm
-        DEPENDS /usr/share/libc++/v1/std.cppm
-        VERBATIM
-    )
-    add_custom_target(precompile_std_module DEPENDS std.pcm)
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    add_custom_command(
-        OUTPUT gcm.cache/std.gcm
-        COMMAND ${CMAKE_CXX_COMPILER} -std=c++23 -fmodules -fsearch-include-path -c bits/std.cc
-        VERBATIM
-    )
-    add_custom_target(precompile_std_module DEPENDS gcm.cache/std.gcm)
-else()
-    message(FATAL_ERROR "Unsupported compiler: ${CMAKE_CXX_COMPILER_ID}")
-endif()
 
 
 
@@ -147,7 +172,11 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 endif()
 
 target_link_libraries(CXXOpenGL PRIVATE MyModules)
-target_include_directories(CXXOpenGL PRIVATE "${LUA_INCLUDE_DIR}" "${TINYGLTF_INCLUDE_DIRS}")
+target_include_directories(CXXOpenGL PRIVATE
+    "${LUA_INCLUDE_DIR}"
+    "${TINYGLTF_INCLUDE_DIRS}"
+    "${VCPKG_INCLUDE_DIR}"
+)
 target_compile_definitions(CXXOpenGL PRIVATE GLM_ENABLE_EXPERIMENTAL)
 
 # --- Tests ---

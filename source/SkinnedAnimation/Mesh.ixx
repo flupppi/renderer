@@ -1,5 +1,4 @@
 module;
-#pragma once
 #define MAX_BONE_INFLUENCE 4
 #include <glm/mat4x4.hpp>
 #include <GL/glew.h>

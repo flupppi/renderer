@@ -1,5 +1,4 @@
 module;
-#pragma once
 #include <glm/ext/quaternion_float.hpp>
 #include <GL/glew.h>
 

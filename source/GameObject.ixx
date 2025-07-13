@@ -1,6 +1,5 @@
 
 module;
-#pragma once
 export module GameObject;
 import std;
 import IGameObject;

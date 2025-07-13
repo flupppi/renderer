@@ -1,5 +1,4 @@
 module;
-#pragma once
 #include<glm/glm.hpp>
 /**
  * Four sided polygon class. Represents a cut plane in the Billboard cloud.

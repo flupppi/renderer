@@ -2,7 +2,6 @@
 
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 module;
-#pragma once
 #include "GLFW/glfw3.h"
 export module KeyboardObserver;
 struct GLFWwindow;
