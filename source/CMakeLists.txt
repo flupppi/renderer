@@ -1,18 +1,21 @@
 cmake_minimum_required(VERSION 3.30)
+project(CXXOpenGL LANGUAGES CXX)
 
-set(CMAKE_TOOLCHAIN_FILE "C:/Users/feli-/.vcpkg-clion/vcpkg/scripts/buildsystems/vcpkg.cmake"
-        CACHE STRING "")
+# --- vcpkg ---
+set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
 set(VCPKG_FEATURE_FLAGS "manifests" CACHE STRING "")
 
-project(CXXOpenGL LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# ----------------------------------------------------------------------------------------
-# 2) Now define your main project/executable
-# ----------------------------------------------------------------------------------------
+# --- Experimental Modules Support ---
+set(CMAKE_EXPERIMENTAL_CXX_MODULE_CMAKE_API ON)
+set(CMAKE_EXPERIMENTAL_CXX_MODULE_DYNDEP ON)
+
+
+# --- Dependencies ---
 find_package(OpenGL REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(GLEW CONFIG REQUIRED)
@@ -21,22 +24,15 @@ find_package(assimp CONFIG REQUIRED)
 find_package(Lua REQUIRED MODULE)
 find_package(imgui CONFIG REQUIRED)
 find_package(cxxopts CONFIG REQUIRED)
+find_package(Catch2 CONFIG REQUIRED)
 find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
 
 message(STATUS "LUA_INCLUDE_DIR = ${LUA_INCLUDE_DIR}")
 message(STATUS "LUA_LIBRARIES = ${LUA_LIBRARIES}")
+message(STATUS "TINYGLTF_INCLUDE_DIRS = ${TINYGLTF_INCLUDE_DIRS}")
 
-# Source files for your normal .cpp code:
-set(SOURCE_FILES
-        main.cpp
-        2DGame/GameRenderer.cpp
-        vendor/stb_image/stb_image.cpp
-        tiny_gltf_impl.cpp
-)
-
-
+# --- MyModules (C++23 Modules) ---
 add_library(MyModules STATIC)
-# This FILE_SET approach requires CMake >= 3.26
 target_sources(MyModules PUBLIC
         FILE_SET cxx_modules TYPE CXX_MODULES
         BASE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -83,20 +79,11 @@ target_sources(MyModules PUBLIC
         "SkinnedAnimation/Skeleton.ixx"
 )
 
-
-
-
-target_compile_definitions(MyModules PRIVATE GLM_ENABLE_EXPERIMENTAL)
 target_include_directories(MyModules PRIVATE "${LUA_INCLUDE_DIR}" "${TINYGLTF_INCLUDE_DIRS}")
-message(STATUS "TINYGLTF_INCLUDE_DIRS = ${TINYGLTF_INCLUDE_DIRS}")
-if(MSVC)
-    target_compile_options(MyModules PRIVATE
-            /utf-8
-            /experimental:module
-            /std:c++latest
-            /Zi
-    )
-endif()
+target_compile_definitions(MyModules PRIVATE GLM_ENABLE_EXPERIMENTAL)
+
+
+
 target_link_libraries(MyModules PRIVATE
         glfw
         GLEW::GLEW
@@ -108,38 +95,66 @@ target_link_libraries(MyModules PRIVATE
         cxxopts::cxxopts
 )
 
-add_executable(CXXOpenGL ${SOURCE_FILES})
-target_link_libraries(CXXOpenGL
-        PRIVATE
-        MyModules
-)
-target_compile_definitions(CXXOpenGL PRIVATE GLM_ENABLE_EXPERIMENTAL)
-target_include_directories(CXXOpenGL PRIVATE "${LUA_INCLUDE_DIR}" "${TINYGLTF_INCLUDE_DIRS}")
+# --- std module precompilation ---
 if(MSVC)
-    target_compile_options(CXXOpenGL PRIVATE
-            /utf-8
-            /std:c++latest
-            /experimental:module
-            /Zi
+        message(STATUS "MSVC handles std module automatically.")
+        # MSVC needs only flags
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        add_custom_command(
+                OUTPUT std.pcm
+                COMMAND ${CMAKE_CXX_COMPILER} -std=c++23 -stdlib=libc++
+            -Wno-reserved-identifier -Wno-reserved-module-identifier
+            --precompile -o std.pcm /usr/share/libc++/v1/std.cppm
+        DEPENDS /usr/share/libc++/v1/std.cppm
+        VERBATIM
     )
+    add_custom_target(precompile_std_module DEPENDS std.pcm)
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_custom_command(
+        OUTPUT gcm.cache/std.gcm
+        COMMAND ${CMAKE_CXX_COMPILER} -std=c++23 -fmodules -fsearch-include-path -c bits/std.cc
+        VERBATIM
+    )
+    add_custom_target(precompile_std_module DEPENDS gcm.cache/std.gcm)
+else()
+    message(FATAL_ERROR "Unsupported compiler: ${CMAKE_CXX_COMPILER_ID}")
 endif()
-# --------------------------
-# Tests
-# --------------------------
+
+
+
+# --- Main executable ---
+set(SOURCE_FILES
+        main.cpp
+        2DGame/GameRenderer.cpp
+        vendor/stb_image/stb_image.cpp
+        tiny_gltf_impl.cpp
+)
+
+add_executable(CXXOpenGL ${SOURCE_FILES})
+
+if(MSVC)
+    target_compile_options(MyModules PRIVATE
+            /utf-8 /experimental:module /std:c++latest /Zi
+    )
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    add_dependencies(CXXOpenGL precompile_std_module)
+    target_sources(CXXOpenGL PRIVATE std.pcm)
+    target_compile_options(CXXOpenGL PRIVATE -stdlib=libc++ -fmodule-file=std=std.pcm)
+    target_link_options(CXXOpenGL PRIVATE -stdlib=libc++)
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_dependencies(CXXOpenGL precompile_std_module)
+    target_compile_options(CXXOpenGL PRIVATE -fmodules)
+endif()
+
+target_link_libraries(CXXOpenGL PRIVATE MyModules)
+target_include_directories(CXXOpenGL PRIVATE "${LUA_INCLUDE_DIR}" "${TINYGLTF_INCLUDE_DIRS}")
+target_compile_definitions(CXXOpenGL PRIVATE GLM_ENABLE_EXPERIMENTAL)
+
+# --- Tests ---
+add_executable(raytracer_tests tests/test_raytracer.cpp)
+target_link_libraries(raytracer_tests PRIVATE Catch2::Catch2WithMain glm::glm MyModules)
+
 enable_testing()
-find_package(Catch2 CONFIG REQUIRED)
-
-add_executable(raytracer_tests
-        tests/test_raytracer.cpp
-)
-
-target_link_libraries(raytracer_tests
-        PRIVATE
-        Catch2::Catch2WithMain
-        glm::glm
-        MyModules
-)
-
 include(CTest)
 include(Catch)
 catch_discover_tests(raytracer_tests)
