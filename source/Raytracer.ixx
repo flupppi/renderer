@@ -16,6 +16,9 @@ import Camera;
 import Quad;
 import InputSystem;
 import RaytracerRenderer;
+
+using namespace std;
+
 namespace Engine {
 #pragma region Helper Functions
 	/**
@@ -55,11 +58,10 @@ namespace Engine {
 	{
 		// 1) a thread‐local engine so calls from different functions/threads
 		//    don’t race each other and performance is OK
-		static thread_local std::mt19937_64 engine{ std::random_device{}() };
+		static thread_local mt19937_64 engine{ random_device{}() };
 
 		// 2) use generate_canonical to get full precision in [0,1)
-		return std::generate_canonical<double,
-									   std::numeric_limits<double>::digits>(engine);
+		return generate_canonical<double, numeric_limits<double>::digits>(engine);
 	}
 
 	/**
@@ -113,7 +115,7 @@ namespace Engine {
 		float t;
 		glm::vec3 p;
 		glm::vec3 normal;
-		std::shared_ptr<Material> mat_ptr;
+		shared_ptr<Material> mat_ptr;
 	};
 
 	/**
@@ -305,11 +307,11 @@ namespace Engine {
 
 	class Sphere final : public Hitable {
 	public:
-		Sphere(const glm::vec3& center, std::shared_ptr<Material> mat, float radius) : center(center), mat(std::move(mat)),radius(radius) {}
+		Sphere(const glm::vec3& center, shared_ptr<Material> mat, float radius) : center(center), mat(std::move(mat)),radius(radius) {}
 		bool hit(const Ray& r, float t_min, float t_max, HitRecord& rec) const override;
 		glm::vec3 center{};
 		float radius;
-		std::shared_ptr<Material> mat;
+		shared_ptr<Material> mat;
 	};
 
 
@@ -345,11 +347,11 @@ namespace Engine {
 	public:
 		template<typename T, typename... Args>
 		void emplace(Args&&... args) {
-			objects_.emplace_back(std::make_unique<T>(std::forward<Args>(args)...));
+			objects_.emplace_back(std::make_unique<T>(forward<Args>(args)...));
 		}
 		bool hit(const Ray& r, float t_min, float t_max, HitRecord& rec) const override;
 	private:
-		std::vector<std::unique_ptr<Hitable>> objects_;
+		vector<unique_ptr<Hitable>> objects_;
 	};
 
 	bool HitableList::hit(const Ray &ray, float t_min, float t_max, HitRecord &rec) const {
@@ -387,7 +389,7 @@ namespace Engine {
 		int samples = 1;
 		glm::vec3 colorModeNormal(const Ray& r);
 		// Image buffer for ray tracing output
-		std::vector<uint8_t> m_rayTraceImage;
+		vector<uint8_t> m_rayTraceImage;
 		int m_imageWidth{ 1280 };
 		int m_imageHeight{ 720 };
 		void GenerateRayTraceImage(); // Ray tracing function
@@ -436,12 +438,12 @@ namespace Engine {
 		m_input.ObserveKey(GLFW_KEY_LEFT_SHIFT);
 		m_input.ObserveKey(GLFW_KEY_LEFT_ALT);
 
-		auto diffuse = std::make_shared<Lambertian>(glm::vec3(0.5f, 0.5f, 0.5f));
-		auto diffuse2 = std::make_shared<Lambertian>(glm::vec3(0.2f, 0.5f, 0.2f));
-		auto metal = std::make_shared<Metal>(glm::vec3(0.5f, 0.8f, 0.8f), 0.3f);
-		auto metal2 = std::make_shared<Metal>(glm::vec3(0.5f, 0.8f, 0.8f), 0.05f);
-		auto metal3 = std::make_shared<Metal>(glm::vec3(0.5f, 0.8f, 0.8f), 0.7f);
-		auto glass = std::make_shared<Dielectric>(1.5f);
+		auto diffuse = make_shared<Lambertian>(glm::vec3(0.5f, 0.5f, 0.5f));
+		auto diffuse2 = make_shared<Lambertian>(glm::vec3(0.2f, 0.5f, 0.2f));
+		auto metal = make_shared<Metal>(glm::vec3(0.5f, 0.8f, 0.8f), 0.3f);
+		auto metal2 = make_shared<Metal>(glm::vec3(0.5f, 0.8f, 0.8f), 0.05f);
+		auto metal3 = make_shared<Metal>(glm::vec3(0.5f, 0.8f, 0.8f), 0.7f);
+		auto glass = make_shared<Dielectric>(1.5f);
 		world.emplace<Sphere>(glm::vec3(0.0f, 0.0f, -1.0f), diffuse, 0.5f);
 		world.emplace<Sphere>(glm::vec3(2.0f, 0.0f, -1.0f), metal2, 0.5f);
 		world.emplace<Sphere>(glm::vec3(1.0f, 0.0f, -0.5f), glass, 0.3f);
@@ -533,7 +535,7 @@ namespace Engine {
 #pragma region Ray Tracing
 	glm::vec3 Raytracer::color(const Ray& r, int depth) {
 		HitRecord rec{};
-		if (world.hit(r, 0.001f, std::numeric_limits<float>::infinity(), rec)) {
+		if (world.hit(r, 0.001f, numeric_limits<float>::infinity(), rec)) {
 			Ray scattered{};
 			glm::vec3 attenuation{};
 			if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
@@ -550,7 +552,7 @@ namespace Engine {
 
 	glm::vec3 Raytracer::colorModeNormal(const Ray& r) {
 		HitRecord rec{};
-		if (world.hit(r, 0.001f, std::numeric_limits<float>::infinity(), rec)) {
+		if (world.hit(r, 0.001f, numeric_limits<float>::infinity(), rec)) {
 			return 0.5f * (rec.normal +glm::vec3(1.0f));
 		}else{
 			glm::vec3 unit_direction = glm::normalize(r.direction());
@@ -601,7 +603,4 @@ namespace Engine {
 		}
 	}
 #pragma endregion
-
-
-
 }
