@@ -4,11 +4,25 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_FLAGS_INIT "-stdlib=libc++ -Weverything -Wno-c++98-compat")
+set(CMAKE_CXX_SCAN_FOR_MODULES ON)
+set(CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS "/usr/bin/clang-scan-deps-20")
+
 
 set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "a9e1cf81-9932-4810-974b-6eccaf14e457")
 set(CMAKE_CXX_MODULE_STD 1)
 
 project(CXXOpenGL VERSION 0.1.0 LANGUAGES CXX)
+
+
+# these lines below here are needed to resolve
+# false errors in source files when Nova engine enabled
+add_library(unused_std_target STATIC)
+target_sources(unused_std_target
+        PRIVATE
+        FILE_SET unused_files TYPE CXX_MODULES
+        BASE_DIRS /usr/share/libc++/v1/
+        FILES /usr/share/libc++/v1/std.cppm /usr/share/libc++/v1/std.compat.cppm)
 
 # --- Dependencies ---
 find_package(OpenGL REQUIRED)
