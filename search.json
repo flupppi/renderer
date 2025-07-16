@@ -1,0 +1,72 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "renderer",
+    "section": "",
+    "text": "This file will become your README and also the index of your documentation.",
+    "crumbs": [
+      "renderer"
+    ]
+  },
+  {
+    "objectID": "index.html#developer-guide",
+    "href": "index.html#developer-guide",
+    "title": "renderer",
+    "section": "Developer Guide",
+    "text": "Developer Guide\nIf you are new to using nbdev here are some useful pointers to get you started.\n\nInstall renderer in Development mode\n# make sure renderer package is installed in development mode\n$ pip install -e .\n\n# make changes under nbs/ directory\n# ...\n\n# compile to have changes apply to renderer\n$ nbdev_prepare",
+    "crumbs": [
+      "renderer"
+    ]
+  },
+  {
+    "objectID": "index.html#usage",
+    "href": "index.html#usage",
+    "title": "renderer",
+    "section": "Usage",
+    "text": "Usage\n\nInstallation\nInstall latest from the GitHub repository:\n$ pip install git+https://github.com/flupppi/renderer.git\nor from conda\n$ conda install -c flupppi renderer\nor from pypi\n$ pip install renderer\n\n\nDocumentation\nDocumentation can be found hosted on this GitHub repository’s pages. Additionally you can find package manager specific guidelines on conda and pypi respectively.",
+    "crumbs": [
+      "renderer"
+    ]
+  },
+  {
+    "objectID": "index.html#how-to-use",
+    "href": "index.html#how-to-use",
+    "title": "renderer",
+    "section": "How to use",
+    "text": "How to use\nFill me in please! Don’t forget code examples:\n\n1+1\n\n2",
+    "crumbs": [
+      "renderer"
+    ]
+  },
+  {
+    "objectID": "core.html",
+    "href": "core.html",
+    "title": "core",
+    "section": "",
+    "text": "Switch to the source folder of the project.\ncreate a folder to store the build in, e.g. mkdir cmake-build-debug-visual-studio and navigate to it. From there run cmake to configura the project and generate a native build system.\ncd cmake-build-debug-visual-studio\ncmake ..\nThen we can call the build system again from the source folder to compile and link the project.\ncmake --build .\\cmake-build-debug-visual-studio\\ --target CXXOpenGL\nThis creates a CXXOpenGL.exe that we can run using its different command line parameters.\nSimply run .\\cmake-build-debug-visual-studio\\Debug\\CXXOpenGL.exe --help to print the different options available.\nA simple engine with glTF viewer\nUsage:\n  Engine [OPTION...]\n\n  -p, --program arg  Program mode (Application, BillboardCloud, etc.)\n                     (default: Application)\n  -m, --path arg     Path to glTF model file\n  -h, --help         Print usage information\nThe different program options available at the moment are: * Application * BillboardCloud\nEach of these will get a detailed explanation in the following sections.",
+    "crumbs": [
+      "core"
+    ]
+  },
+  {
+    "objectID": "core.html#build",
+    "href": "core.html#build",
+    "title": "core",
+    "section": "",
+    "text": "Switch to the source folder of the project.\ncreate a folder to store the build in, e.g. mkdir cmake-build-debug-visual-studio and navigate to it. From there run cmake to configura the project and generate a native build system.\ncd cmake-build-debug-visual-studio\ncmake ..\nThen we can call the build system again from the source folder to compile and link the project.\ncmake --build .\\cmake-build-debug-visual-studio\\ --target CXXOpenGL\nThis creates a CXXOpenGL.exe that we can run using its different command line parameters.\nSimply run .\\cmake-build-debug-visual-studio\\Debug\\CXXOpenGL.exe --help to print the different options available.\nA simple engine with glTF viewer\nUsage:\n  Engine [OPTION...]\n\n  -p, --program arg  Program mode (Application, BillboardCloud, etc.)\n                     (default: Application)\n  -m, --path arg     Path to glTF model file\n  -h, --help         Print usage information\nThe different program options available at the moment are: * Application * BillboardCloud\nEach of these will get a detailed explanation in the following sections.",
+    "crumbs": [
+      "core"
+    ]
+  },
+  {
+    "objectID": "core.html#raytracer",
+    "href": "core.html#raytracer",
+    "title": "core",
+    "section": "Raytracer",
+    "text": "Raytracer\nCurrently, the simplest call to start the program is .\\cmake-build-debug-visual-studio\\Debug\\CXXOpenGL.exe -p Raytracer -m \"\"\n\nsource\n\nfoo\n\n foo ()",
+    "crumbs": [
+      "core"
+    ]
+  }
+]
