@@ -219,24 +219,22 @@ std::unique_ptr<GameInterface> CreateGameInterface(const cxxopts::ParseResult& r
 		auto selector = std::make_unique<PlaneSelector>();
 		return std::make_unique<BillboardCloud>(std::move(generator), std::move(selector), modelPath);
 	}
-	else if (mode == "Application") {
+	if (mode == "Application") {
 		return std::make_unique<Application>(true);
 	}
-	else if (mode == "Game") {
+	if (mode == "Game") {
 		return std::make_unique<Game>();
 	}
-	else if (mode == "Raytracer") {
+	if (mode == "Raytracer") {
 		return std::make_unique<Raytracer>();
 	}
-	else if (mode == "SemanticVisualization") {
+	if (mode == "SemanticVisualization") {
 		return std::make_unique<SemanticVisualization>(true);
 	}
-	else if (mode == "CombinedInterface") {
+	if (mode == "CombinedInterface") {
 		return std::make_unique<CombinedInterface>();
 	}
-	else {
-		throw std::runtime_error("Unknown game mode: " + mode);
-	}
+	throw std::runtime_error("Unknown game mode: " + mode);
 }
 
 //************************************
