@@ -81,6 +81,18 @@ target_include_directories(CXXOpenGL PRIVATE
 )
 target_compile_definitions(CXXOpenGL PRIVATE GLM_ENABLE_EXPERIMENTAL)
 
+
+# --- Copy assets (shaders and input) ---
+add_custom_command(
+        TARGET CXXOpenGL POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/shaders" "${CMAKE_CURRENT_BINARY_DIR}/shaders"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/input" "${CMAKE_CURRENT_BINARY_DIR}/input"
+        COMMENT "📦 Copying assets to output directory..."
+)
+
+
 # --- Tests ---
 add_executable(raytracer_tests tests/test_raytracer.cpp)
 target_link_libraries(raytracer_tests PRIVATE Catch2::Catch2WithMain glm::glm MyModules)
