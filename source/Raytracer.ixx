@@ -369,6 +369,30 @@ namespace Engine {
         return true;
     }
 
+    class Quadrilateral final : public Hitable {
+    public:
+        Quadrilateral(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, const glm::vec3& d, std::shared_ptr<Material> mat) {
+            tri1 = std::make_unique<Triangle>(a, b, c, mat);
+            tri2 = std::make_unique<Triangle>(a, c, d, mat);
+        }
+
+        bool hit(const Ray& r, float t_min, float t_max, HitRecord& rec) const override {
+            HitRecord temp;
+            bool hit1 = tri1->hit(r, t_min, t_max, temp);
+            bool hit2 = tri2->hit(r, t_min, hit1 ? temp.t : t_max, temp);
+            if (hit1 || hit2) {
+                rec = temp;
+                return true;
+            }
+            return false;
+        }
+
+    private:
+        std::unique_ptr<Triangle> tri1;
+        std::unique_ptr<Triangle> tri2;
+    };
+
+
     class Sphere final : public Hitable {
     public:
         Sphere(const glm::vec3 &center, shared_ptr<Material> mat, float radius) : center(center), mat(std::move(mat)),
@@ -437,6 +461,42 @@ namespace Engine {
         return hit_anything;
     }
 
+    class Cube final : public Hitable {
+    public:
+        explicit Cube(std::shared_ptr<Material> mat) {
+            addFace({ 0, 0, 1}, mat);  // front
+            addFace({ 0, 0,-1}, mat);  // back
+            addFace({ 0, 1, 0}, mat);  // top
+            addFace({ 0,-1, 0}, mat);  // bottom
+            addFace({ 1, 0, 0}, mat);  // right
+            addFace({-1, 0, 0}, mat);  // left
+
+        }
+
+        bool hit(const Ray& r, float t_min, float t_max, HitRecord& rec) const override {
+            return faces.hit(r, t_min, t_max, rec);
+        }
+
+    private:
+        HitableList faces;
+
+        void addFace(const glm::vec3& normal, std::shared_ptr<Material> mat) {
+            // Right-handed system: build a quad with normal and two tangent vectors
+            glm::vec3 up = (std::abs(normal.y) > 0.99f) ? glm::vec3(0, 0, 1) : glm::vec3(0, 1, 0);
+            glm::vec3 tangent = glm::normalize(glm::cross(normal, up));
+            glm::vec3 bitangent = glm::normalize(glm::cross(tangent, normal));
+
+            glm::vec3 center = 0.5f * normal;
+
+            glm::vec3 p1 = center + 0.5f * (-tangent - bitangent);
+            glm::vec3 p2 = center + 0.5f * ( tangent - bitangent);
+            glm::vec3 p3 = center + 0.5f * ( tangent + bitangent);
+            glm::vec3 p4 = center + 0.5f * (-tangent + bitangent);
+
+            faces.emplace<Triangle>(p3, p2, p1, mat);
+            faces.emplace<Triangle>(p4, p3, p1, mat);
+        }
+    };
 
 #pragma endregion
 #pragma region Scene Loading
@@ -619,6 +679,19 @@ namespace Engine {
             glm::vec3(0, 2, -1),
             metal3
         );
+
+        world.emplace<Quadrilateral>(
+            glm::vec3(-1, 0, 0), // a
+            glm::vec3( 0, 0, 0), // b
+            glm::vec3( 0, 1, 0), // c
+            glm::vec3(-1, 1, 0), // d
+            metal3
+        );
+
+        world.emplace<Cube>(
+            metal3
+            );
+
         LoadSceneFromYaml(m_scenePath, world, m_camera);
 
         m_renderer.Initialize();
