@@ -26,8 +26,8 @@ import CombinedInterface;
 
 using namespace Engine;
 GameInterface* gUsedInterface;
-const int WIDTH{ 1280 };
-const int HEIGHT{ 720 };
+const int WIDTH{ 800 };
+const int HEIGHT{ 600 };
 
 
 // Helper to display a little (?) mark which shows a tooltip when hovered.

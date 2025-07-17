@@ -26,6 +26,7 @@ target_sources(unused_std_target
 
 # --- Dependencies ---
 find_package(OpenGL REQUIRED)
+find_package(OpenMP REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(GLEW CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
@@ -39,7 +40,7 @@ find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
 message(STATUS "LUA_INCLUDE_DIR = ${LUA_INCLUDE_DIR}")
 message(STATUS "LUA_LIBRARIES = ${LUA_LIBRARIES}")
 message(STATUS "TINYGLTF_INCLUDE_DIRS = ${TINYGLTF_INCLUDE_DIRS}")
-
+message(STATUS "OpenMP found: ${OpenMP_CXX_LIBRARIES}")
 # --- MyModules (C++23 Modules) ---
 add_library(MyModules STATIC)
 if(MSVC)
@@ -78,6 +79,7 @@ target_link_libraries(MyModules PRIVATE
         imgui::imgui
         "${LUA_LIBRARIES}"
         cxxopts::cxxopts
+        OpenMP::OpenMP_CXX
 )
 
 # --- Main executable ---

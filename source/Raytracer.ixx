@@ -7,6 +7,7 @@ module;
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 #include <meta/meta.hpp>
+#include <omp.h>
 export module Raytracer;
 import std;
 import GameInterface;
@@ -56,7 +57,7 @@ namespace Engine {
 	{
 		// 1) a thread‐local engine so calls from different functions/threads
 		//    don’t race each other and performance is OK
-		static thread_local mt19937_64 engine{ random_device{}() };
+		static thread_local mt19937_64 engine{ uint64_t(1337 + omp_get_thread_num()) };
 
 		// 2) use generate_canonical to get full precision in [0,1)
 		return generate_canonical<double, numeric_limits<double>::digits>(engine);
@@ -366,6 +367,8 @@ namespace Engine {
 		return hit_anything;
 	}
 
+
+
 #pragma endregion
 
 	export class Raytracer : public GameInterface
@@ -388,8 +391,8 @@ namespace Engine {
 		glm::vec3 colorModeNormal(const Ray& r);
 		// Image buffer for ray tracing output
 		vector<uint8_t> m_rayTraceImage;
-		int m_imageWidth{ 1280 };
-		int m_imageHeight{ 720 };
+		int m_imageWidth{ 800 };
+		int m_imageHeight{ 600 };
 		void GenerateRayTraceImage(); // Ray tracing function
 		// Define camera properties
 	};
@@ -498,7 +501,7 @@ namespace Engine {
 		// Update the camera with input flags
 		m_camera.Update(deltaTime, rotateLeft, rotateRight, zoomIn, zoomOut);
 		// Generate the ray traced image on the CPU
-		GenerateRayTraceImage();
+		//GenerateRayTraceImage();
 
 		// Update the GPU texture with the new image
 		m_renderer.UpdateTexture(m_rayTraceImage, m_imageWidth, m_imageHeight);
@@ -515,9 +518,17 @@ namespace Engine {
 		ImGui::NewFrame();
 		// 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
 		{
+
 			ImGui::Begin("Raytracing Stats");
 			ImGui::Text("Render Mode: %s", m_camera.DebugMode().c_str());
 			ImGui::SliderInt("Samples per Pixel", &samples, 1, 8);
+
+			ImGui::Separator();
+
+			ImGui::InputInt("Image width",  &m_imageWidth);
+			ImGui::InputInt("Image height", &m_imageHeight);
+			if (ImGui::Button("Export"))
+				GenerateRayTraceImage();
 
 			int mode = static_cast<int>(m_renderMode);
 			if (ImGui::Combo("Render Mode", &mode, renderModeNames, IM_ARRAYSIZE(renderModeNames))) {
@@ -566,7 +577,7 @@ namespace Engine {
 		// Precompute denominators as floats:
 		float invW = 1.0f / float(m_imageWidth);
 		float invH = 1.0f / float(m_imageHeight);
-
+		#pragma omp parallel for
 		for (int y = 0; y < m_imageHeight; ++y) {
 			for (int x = 0; x < m_imageWidth; ++x) {
 				glm::vec3 col(0.0f);
