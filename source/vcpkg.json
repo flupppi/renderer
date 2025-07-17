@@ -1,13 +1,27 @@
 {
-  "dependencies" : [ "assimp", "cxxopts", "fmt", "glfw3", "glew", "glm", "lua", "range-v3", "nlohmann-json", {
-    "name" : "imgui",
-    "features" : [ "glfw-binding", "opengl3-binding" ]
-  }, {
-    "name" : "tinygltf",
-    "version>=" : "2.9.4"
-  },
-    "catch2"
-  ],
-  "version" : "1.0.0",
-  "name" : "main"
+  "name": "main",
+  "version": "1.0.0",
+  "dependencies": [
+    "assimp",
+    "catch2",
+    "cxxopts",
+    "fmt",
+    "glew",
+    "glfw3",
+    "glm",
+    {
+      "name": "imgui",
+      "features": [
+        "glfw-binding",
+        "opengl3-binding"
+      ]
+    },
+    "lua",
+    "nlohmann-json",
+    "range-v3",
+    {
+      "name": "tinygltf",
+      "version>=": "2.9.4"
+    }
+  ]
 }

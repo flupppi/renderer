@@ -208,9 +208,11 @@ std::unique_ptr<GameInterface> CreateGameInterface(const cxxopts::ParseResult& r
 		modelPath = results["path"].as<std::string>();
 	}
 	else {
-		std::cout << "Error: Missing parameter for 'path'" << std::endl;
+		std::println("Error: Missing parameter for 'path'");
 		return 0;
 	}
+
+
 	// Select the game mode based on some configuration, argument, or state.
 	const std::string mode = results["program"].as<std::string>();
 	if (mode == "BillboardCloud") {
@@ -226,7 +228,11 @@ std::unique_ptr<GameInterface> CreateGameInterface(const cxxopts::ParseResult& r
 		return std::make_unique<Game>();
 	}
 	if (mode == "Raytracer") {
-		return std::make_unique<Raytracer>();
+		std::string scenePath;
+		scenePath = results["scene"].as<std::string>();
+
+
+		return std::make_unique<Raytracer>(scenePath);
 	}
 	if (mode == "SemanticVisualization") {
 		return std::make_unique<SemanticVisualization>(true);
@@ -257,6 +263,7 @@ int main(int argc, char* argv[])
 		options.add_options()
 			("p, program", "Program mode (Application, BillboardCloud, etc.)", cxxopts::value<std::string>()->default_value("Application"))
 			("m, path", "Path to glTF model file", cxxopts::value<std::string>())
+			("s, scene",  "Path to scene file", cxxopts::value<std::string>()->default_value("./Scenes/BasicScene.yaml"))
 			("h, help", "Print usage information");
 		auto result = options.parse(argc, argv);
 		// Show help message

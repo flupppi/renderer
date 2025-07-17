@@ -7,7 +7,9 @@ module;
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 #include <meta/meta.hpp>
+#include <utility>
 #include <omp.h>
+#include <yaml-cpp/yaml.h>
 export module Raytracer;
 import std;
 import GameInterface;
@@ -79,6 +81,7 @@ namespace Engine {
 		}while (length2(p) >= 1.0);
 		return p;
 	}
+
 #pragma endregion
 #pragma region Material Definition
 	/**
@@ -370,10 +373,64 @@ namespace Engine {
 
 
 #pragma endregion
+#pragma region Scene Loading
 
+	void LoadSceneFromYaml(const std::filesystem::path& path, HitableList& world ) {
+		YAML::Node scene = YAML::LoadFile(path.string());
+
+		// Check if file can be parsed
+		if (!scene["objects"]) {
+			std::cerr << "⚠️ No `objects` found in scene file.\n";
+		}
+
+		std::println("🏞️ Loading Scene from File {}",path.string());
+
+
+		auto diffuse = make_shared<Lambertian>(glm::vec3(0.5f, 0.5f, 0.5f));
+		auto diffuse2 = make_shared<Lambertian>(glm::vec3(0.2f, 0.5f, 0.2f));
+		auto metal = make_shared<Metal>(glm::vec3(0.5f, 0.8f, 0.8f), 0.3f);
+		auto metal2 = make_shared<Metal>(glm::vec3(0.5f, 0.8f, 0.8f), 0.05f);
+		auto metal3 = make_shared<Metal>(glm::vec3(0.5f, 0.8f, 0.8f), 0.7f);
+		auto glass = make_shared<Dielectric>(1.5f);
+
+		for (const auto& obj : scene["objects"]) {
+			// For every object a name, type, material, position and other type specific properties are defined.
+			auto name = obj["name"].as<std::string>();
+			auto type = obj["type"].as<std::string>();
+			auto materialName = obj["material"].as<std::string>();
+			auto pos = obj["position"].as<std::vector<float>>();
+			float radius = obj["radius"] ? obj["radius"].as<float>() : 1.0f;
+
+			std::shared_ptr<Material> mat;
+			if (materialName == "diffuse") mat = diffuse;
+			if (materialName == "metal") mat = metal;
+			if (materialName == "glass") mat = glass;
+
+			if (type == "sphere"){
+				world.emplace<Sphere>(
+					glm::vec3(pos[0], pos[1], pos[2]),
+					mat,
+					radius
+				);
+			}
+
+
+			std::println("- {} ({}, mat={}, pos={}, r={}) ", name, type, materialName, pos, radius);
+
+
+
+		}
+
+
+	}
+#pragma endregion
 	export class Raytracer : public GameInterface
 	{
 	public:
+		explicit Raytracer(std::filesystem::path scenePath)
+			: m_scenePath(std::move(scenePath)) {
+		}
+
 		void Initialize(GLFWwindow* window) override;
 		void Render(float aspectRatio) override;
 		void ClearResources() override;
@@ -385,6 +442,7 @@ namespace Engine {
 		Camera m_camera;
 		glm::vec3 color(const Ray &r, int depth);
 		HitableList world{};
+		std::filesystem::path m_scenePath;
 
 		RenderMode m_renderMode = RenderMode::diffuse;
 		int samples = 1;
@@ -439,18 +497,20 @@ namespace Engine {
 		m_input.ObserveKey(GLFW_KEY_LEFT_SHIFT);
 		m_input.ObserveKey(GLFW_KEY_LEFT_ALT);
 
-		auto diffuse = make_shared<Lambertian>(glm::vec3(0.5f, 0.5f, 0.5f));
-		auto diffuse2 = make_shared<Lambertian>(glm::vec3(0.2f, 0.5f, 0.2f));
-		auto metal = make_shared<Metal>(glm::vec3(0.5f, 0.8f, 0.8f), 0.3f);
-		auto metal2 = make_shared<Metal>(glm::vec3(0.5f, 0.8f, 0.8f), 0.05f);
-		auto metal3 = make_shared<Metal>(glm::vec3(0.5f, 0.8f, 0.8f), 0.7f);
-		auto glass = make_shared<Dielectric>(1.5f);
-		world.emplace<Sphere>(glm::vec3(0.0f, 0.0f, -1.0f), diffuse, 0.5f);
-		world.emplace<Sphere>(glm::vec3(2.0f, 0.0f, -1.0f), metal2, 0.5f);
-		world.emplace<Sphere>(glm::vec3(1.0f, 0.0f, -0.5f), glass, 0.3f);
-		world.emplace<Sphere>(glm::vec3(-2.0f, 0.0f, -1.0f), metal3, 0.5f);
-		world.emplace<Sphere>(glm::vec3(0.0f, -100.5f, -1.0f),metal, 100.0f);
-		world.emplace<Sphere>(glm::vec3(1.0f, 0.0f, -10.0f), diffuse2, 5.0f);
+		LoadSceneFromYaml(m_scenePath, world);
+		//
+		// auto diffuse = make_shared<Lambertian>(glm::vec3(0.5f, 0.5f, 0.5f));
+		// auto diffuse2 = make_shared<Lambertian>(glm::vec3(0.2f, 0.5f, 0.2f));
+		// auto metal = make_shared<Metal>(glm::vec3(0.5f, 0.8f, 0.8f), 0.3f);
+		// auto metal2 = make_shared<Metal>(glm::vec3(0.5f, 0.8f, 0.8f), 0.05f);
+		// auto metal3 = make_shared<Metal>(glm::vec3(0.5f, 0.8f, 0.8f), 0.7f);
+		// auto glass = make_shared<Dielectric>(1.5f);
+		// world.emplace<Sphere>(glm::vec3(0.0f, 0.0f, -1.0f), diffuse, 0.5f);
+		// world.emplace<Sphere>(glm::vec3(2.0f, 0.0f, -1.0f), metal2, 0.5f);
+		// world.emplace<Sphere>(glm::vec3(1.0f, 0.0f, -0.5f), glass, 0.3f);
+		// world.emplace<Sphere>(glm::vec3(-2.0f, 0.0f, -1.0f), metal3, 0.5f);
+		// world.emplace<Sphere>(glm::vec3(0.0f, -100.5f, -1.0f),metal, 100.0f);
+		// world.emplace<Sphere>(glm::vec3(1.0f, 0.0f, -10.0f), diffuse2, 5.0f);
 
 
 

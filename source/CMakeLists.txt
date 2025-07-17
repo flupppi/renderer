@@ -41,6 +41,18 @@ message(STATUS "LUA_INCLUDE_DIR = ${LUA_INCLUDE_DIR}")
 message(STATUS "LUA_LIBRARIES = ${LUA_LIBRARIES}")
 message(STATUS "TINYGLTF_INCLUDE_DIRS = ${TINYGLTF_INCLUDE_DIRS}")
 message(STATUS "OpenMP found: ${OpenMP_CXX_LIBRARIES}")
+
+include(FetchContent)
+
+FetchContent_Declare(
+        yaml-cpp
+        GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
+        GIT_TAG 0.8.0 # Can be a tag (yaml-cpp-x.x.x), a commit hash, or a branch name (master)
+)
+# To build this just update the cmake version to 4.0.0 whenever you pull this library new
+FetchContent_MakeAvailable(yaml-cpp)
+
+
 # --- MyModules (C++23 Modules) ---
 add_library(MyModules STATIC)
 if(MSVC)
@@ -80,6 +92,7 @@ target_link_libraries(MyModules PRIVATE
         "${LUA_LIBRARIES}"
         cxxopts::cxxopts
         OpenMP::OpenMP_CXX
+        yaml-cpp::yaml-cpp
 )
 
 # --- Main executable ---
@@ -105,6 +118,8 @@ add_custom_command(
         "${CMAKE_SOURCE_DIR}/shaders" "${CMAKE_CURRENT_BINARY_DIR}/shaders"
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_SOURCE_DIR}/input" "${CMAKE_CURRENT_BINARY_DIR}/input"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/Scenes" "${CMAKE_CURRENT_BINARY_DIR}/Scenes"
         COMMENT "📦 Copying assets to output directory..."
 )
 
