@@ -525,6 +525,50 @@ namespace Engine {
 
     };
 
+    class Cone final : public Hitable {
+    public:
+        explicit Cone(int resolution, float radius, float height, shared_ptr<Material> mat)
+        {
+            std::vector<glm::vec3> vertices;
+            std::vector<glm::vec3> base_vertices;
+            // add vertices subdividing a circle
+            for (int i = 0; i < resolution; i++) {
+                float ratio = static_cast<float>(i) / (resolution);
+                float r = ratio * (M_PI * 2.0);
+                float x = std::cos(r) * radius;
+                float z = std::sin(r) * radius;
+                auto v = vertices.emplace_back(glm::vec3(x, 0.0, z));
+                base_vertices.emplace_back(v);
+            }
+
+            // add the tip of the cone
+            auto v0 = vertices.emplace_back(glm::vec3(0.0, height, 0.0));
+
+            // generate triangular faces
+            for (int i = 0; i < resolution; i++) {
+                auto ii = (i + 1) % resolution;
+                surfaceMesh.emplace<Triangle>(v0, vertices[ii], vertices[i], mat);
+            }
+
+            // reverse order for consistent face orientation
+            std::reverse(base_vertices.begin(), base_vertices.end());
+
+            glm::vec3 base_center(0.0f, 0.0f, 0.0f);
+            for (int i = 0; i < resolution; ++i) {
+                int j = (i + 1) % resolution;
+                surfaceMesh.emplace<Triangle>(base_center, base_vertices[j], base_vertices[i], mat);
+            }
+
+
+        }
+        bool hit(const Ray& r, float t_min, float t_max, HitRecord& rec) const override {
+            return surfaceMesh.hit(r, t_min, t_max, rec);
+        }
+    private:
+        HitableList surfaceMesh;
+
+
+    };
 
     class Cube final : public Hitable {
     public:
@@ -757,8 +801,9 @@ namespace Engine {
         //     metal3
         //     );
 
-        world.emplace<UVSphere>(10, 10,  metal3);
+        //world.emplace<UVSphere>(10, 10,  metal3);
 
+        world.emplace<Cone>(20, 1, 1.5, metal3);
         LoadSceneFromYaml(m_scenePath, world, m_camera);
 
         m_renderer.Initialize();
