@@ -1,24 +1,47 @@
 objects:
   - name: "Ground"
-    type: "sphere"
+    type: sphere
     position: [0.0, -100.5, -1.0]
     radius: 100.0
-    material: "metal"
+    material: diffuse_grey
 
   - name: "Ball1"
-    type: "sphere"
+    type: sphere
     position: [0.0, 0.0, -1.0]
     radius: 0.5
-    material: "diffuse"
+    material: green_diffuse
 
   - name: "Ball2"
-    type: "sphere"
+    type: sphere
     position: [2.0, 0.0, -1.0]
     radius: 0.5
-    material: "glass"
+    material: shiny_metal
 
   - name: "Ball3"
-    type: "sphere"
+    type: sphere
     position: [ -2.0, 0.0, -1.0 ]
     radius: 0.3
-    material: "metal"
+    material: green_diffuse
+
+  - name: "Ball4"
+    type: sphere
+    position: [ 1.0, 0.0, -30.0 ]
+    radius: 20.0
+    material: glassy
+
+
+materials:
+  - name: shiny_metal
+    type: metal
+    albedo: [0.5, 0.8, 0.8]
+    fuzz: 0.05
+
+  - name: green_diffuse
+    type: diffuse
+    albedo: [0.2, 0.5, 0.2]
+  - name: diffuse_grey
+    type: diffuse
+    albedo: [0.8, 0.8, 0.8]
+  - name: glassy
+    type: glass
+    ref_idx: 1.5

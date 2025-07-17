@@ -377,21 +377,37 @@ namespace Engine {
 
 	void LoadSceneFromYaml(const std::filesystem::path& path, HitableList& world ) {
 		YAML::Node scene = YAML::LoadFile(path.string());
-
-		// Check if file can be parsed
-		if (!scene["objects"]) {
-			std::cerr << "⚠️ No `objects` found in scene file.\n";
-		}
-
 		std::println("🏞️ Loading Scene from File {}",path.string());
 
+		// Check if file can be parsed
+		if (!scene["materials"] || !scene["objects"]) {
+			std::cerr << "⚠️  Invalid scene file: must contain 'materials' and 'objects'\n";
+			return;
+		}
+		std::unordered_map<std::string, std::shared_ptr<Material>> materials;
 
-		auto diffuse = make_shared<Lambertian>(glm::vec3(0.5f, 0.5f, 0.5f));
-		auto diffuse2 = make_shared<Lambertian>(glm::vec3(0.2f, 0.5f, 0.2f));
-		auto metal = make_shared<Metal>(glm::vec3(0.5f, 0.8f, 0.8f), 0.3f);
-		auto metal2 = make_shared<Metal>(glm::vec3(0.5f, 0.8f, 0.8f), 0.05f);
-		auto metal3 = make_shared<Metal>(glm::vec3(0.5f, 0.8f, 0.8f), 0.7f);
-		auto glass = make_shared<Dielectric>(1.5f);
+		// --- Load Materials ---
+		for (const auto& matNode : scene["materials"]) {
+			auto name = matNode["name"].as<std::string>();
+			auto type = matNode["type"].as<std::string>();
+
+			if (type == "diffuse") {
+				auto albedo = matNode["albedo"].as<std::vector<float>>();
+				materials[name] = std::make_shared<Lambertian>(
+					glm::vec3(albedo[0], albedo[1], albedo[2]));
+			} else if (type == "metal") {
+				auto albedo = matNode["albedo"].as<std::vector<float>>();
+				auto fuzz = matNode["fuzz"].as<float>();
+				materials[name] = std::make_shared<Metal>(
+					glm::vec3(albedo[0], albedo[1], albedo[2]), fuzz);
+			} else if (type == "glass") {
+				auto ref_idx = matNode["ref_idx"].as<float>();
+				materials[name] = std::make_shared<Dielectric>(ref_idx);
+			} else {
+				std::cerr << "⚠️  Unknown material type: " << type << "\n";
+			}
+		}
+
 
 		for (const auto& obj : scene["objects"]) {
 			// For every object a name, type, material, position and other type specific properties are defined.
@@ -401,17 +417,21 @@ namespace Engine {
 			auto pos = obj["position"].as<std::vector<float>>();
 			float radius = obj["radius"] ? obj["radius"].as<float>() : 1.0f;
 
-			std::shared_ptr<Material> mat;
-			if (materialName == "diffuse") mat = diffuse;
-			if (materialName == "metal") mat = metal;
-			if (materialName == "glass") mat = glass;
 
+			auto it = materials.find(materialName);
+			if (it == materials.end()) {
+				std::cerr << "⚠️  Material '" << materialName << "' not found for object " << name << "\n";
+				continue;
+			}
+			auto mat = it->second;
 			if (type == "sphere"){
 				world.emplace<Sphere>(
 					glm::vec3(pos[0], pos[1], pos[2]),
 					mat,
 					radius
 				);
+			} else {
+				std::cerr << "⚠️  Unsupported object type: " << type << "\n";
 			}
 
 
@@ -498,21 +518,6 @@ namespace Engine {
 		m_input.ObserveKey(GLFW_KEY_LEFT_ALT);
 
 		LoadSceneFromYaml(m_scenePath, world);
-		//
-		// auto diffuse = make_shared<Lambertian>(glm::vec3(0.5f, 0.5f, 0.5f));
-		// auto diffuse2 = make_shared<Lambertian>(glm::vec3(0.2f, 0.5f, 0.2f));
-		// auto metal = make_shared<Metal>(glm::vec3(0.5f, 0.8f, 0.8f), 0.3f);
-		// auto metal2 = make_shared<Metal>(glm::vec3(0.5f, 0.8f, 0.8f), 0.05f);
-		// auto metal3 = make_shared<Metal>(glm::vec3(0.5f, 0.8f, 0.8f), 0.7f);
-		// auto glass = make_shared<Dielectric>(1.5f);
-		// world.emplace<Sphere>(glm::vec3(0.0f, 0.0f, -1.0f), diffuse, 0.5f);
-		// world.emplace<Sphere>(glm::vec3(2.0f, 0.0f, -1.0f), metal2, 0.5f);
-		// world.emplace<Sphere>(glm::vec3(1.0f, 0.0f, -0.5f), glass, 0.3f);
-		// world.emplace<Sphere>(glm::vec3(-2.0f, 0.0f, -1.0f), metal3, 0.5f);
-		// world.emplace<Sphere>(glm::vec3(0.0f, -100.5f, -1.0f),metal, 100.0f);
-		// world.emplace<Sphere>(glm::vec3(1.0f, 0.0f, -10.0f), diffuse2, 5.0f);
-
-
 
 		m_renderer.Initialize();
 	}
