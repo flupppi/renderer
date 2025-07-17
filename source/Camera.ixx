@@ -132,6 +132,14 @@ namespace Engine {
         glm::vec3 getPosition() const {
             return position;
         }
+
+        void setPosition(glm::vec3 position) {
+            this->position = position;
+        }
+
+        void setFOV(float fov) {
+            verticalFOV = fov;
+        }
         void ToggleMode() {
             if (mode == CameraMode::FPS)
                 mode = CameraMode::Orbit;

@@ -375,7 +375,7 @@ namespace Engine {
 #pragma endregion
 #pragma region Scene Loading
 
-	void LoadSceneFromYaml(const std::filesystem::path& path, HitableList& world ) {
+	void LoadSceneFromYaml(const std::filesystem::path& path, HitableList& world, Camera& camera) {
 		YAML::Node scene = YAML::LoadFile(path.string());
 		std::println("🏞️ Loading Scene from File {}",path.string());
 
@@ -384,6 +384,34 @@ namespace Engine {
 			std::cerr << "⚠️  Invalid scene file: must contain 'materials' and 'objects'\n";
 			return;
 		}
+
+		// --- Load camera if present ---
+		if (scene["camera"]) {
+			const auto& camNode = scene["camera"];
+			if (camNode["mode"]) {
+				std::string modeStr = camNode["mode"].as<std::string>();
+				if (modeStr == "FPS") camera.ToggleMode(); // defaults to Orbit, so toggle if needed
+			}
+			if (camNode["position"]) {
+				auto pos = camNode["position"].as<std::vector<float>>();
+				camera = Camera(); // reset to default constructor first
+				camera.SetSpeed(camNode["speed"] ? camNode["speed"].as<float>() : 2.0f);
+				camera.Move(0, false, false, false, false, false, false); // ensure up-to-date vectors
+				camera.UpdateDirection(0, 0); // recalculate directions from yaw/pitch
+
+				if (pos.size() == 3) {
+					camera.Move(0, false, false, false, false, false, false); // update internal state
+					camera.setPosition(glm::vec3(pos[0], pos[1], pos[2]));
+				}
+			}
+			if (camNode["yaw"])   camera.UpdateDirection(camNode["yaw"].as<float>(), 0);
+			if (camNode["pitch"]) camera.UpdateDirection(0, camNode["pitch"].as<float>());
+			if (camNode["fov"])   camera.setFOV(camNode["fov"].as<float>());
+			if (camNode["orbit_distance"]) camera.SetDistance(camNode["orbit_distance"].as<float>());
+			if (camNode["orbit_angle"]) camera.Update(0, false, false, false, false); // apply angle logic
+			std::println("📷  Camera initialized from scene file");
+		}
+
 		std::unordered_map<std::string, std::shared_ptr<Material>> materials;
 
 		// --- Load Materials ---
@@ -517,7 +545,7 @@ namespace Engine {
 		m_input.ObserveKey(GLFW_KEY_LEFT_SHIFT);
 		m_input.ObserveKey(GLFW_KEY_LEFT_ALT);
 
-		LoadSceneFromYaml(m_scenePath, world);
+		LoadSceneFromYaml(m_scenePath, world, m_camera);
 
 		m_renderer.Initialize();
 	}
@@ -586,7 +614,7 @@ namespace Engine {
 
 			ImGui::Begin("Raytracing Stats");
 			ImGui::Text("Render Mode: %s", m_camera.DebugMode().c_str());
-			ImGui::SliderInt("Samples per Pixel", &samples, 1, 8);
+			ImGui::SliderInt("Samples per Pixel", &samples, 1, 50);
 
 			ImGui::Separator();
 
@@ -642,8 +670,14 @@ namespace Engine {
 		// Precompute denominators as floats:
 		float invW = 1.0f / float(m_imageWidth);
 		float invH = 1.0f / float(m_imageHeight);
-		#pragma omp parallel for
+
+		std::atomic<int> linesRemaining = m_imageHeight;
+		#pragma omp parallel for schedule(dynamic, 1)
 		for (int y = 0; y < m_imageHeight; ++y) {
+			int remaining = --linesRemaining;
+			if (omp_get_thread_num() == 0) {
+				std::clog << "\rScanlines remaining: " << remaining << ' ' << std::flush;
+			}
 			for (int x = 0; x < m_imageWidth; ++x) {
 				glm::vec3 col(0.0f);
 				// accumulate ns samples
@@ -675,6 +709,8 @@ namespace Engine {
 				m_rayTraceImage[index + 3] = 255;
 			}
 		}
+		std::clog << "\rDone.                 \n";
 	}
+
 #pragma endregion
 }

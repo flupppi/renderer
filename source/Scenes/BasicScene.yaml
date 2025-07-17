@@ -45,3 +45,13 @@ materials:
   - name: glassy
     type: glass
     ref_idx: 1.5
+
+camera:
+  mode: "FPS"               # or "Orbit"
+  position: [0.0, 1.5, 5.0]
+  yaw: -90.0
+  pitch: 0.0
+  fov: 45.0
+  speed: 2.5
+  orbit_distance: 10.0
+  orbit_angle: 0.0
