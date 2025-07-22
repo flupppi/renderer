@@ -1,57 +1,118 @@
-objects:
-  - name: "Ground"
-    type: sphere
-    position: [0.0, -100.5, -1.0]
-    radius: 100.0
-    material: diffuse_grey
-
-  - name: "Ball1"
-    type: sphere
-    position: [0.0, 0.0, -1.0]
-    radius: 0.5
-    material: green_diffuse
-
-  - name: "Ball2"
-    type: sphere
-    position: [2.0, 0.0, -1.0]
-    radius: 0.5
-    material: shiny_metal
-
-  - name: "Ball3"
-    type: sphere
-    position: [ -2.0, 0.0, -1.0 ]
-    radius: 0.3
-    material: green_diffuse
-
-  - name: "Ball4"
-    type: sphere
-    position: [ 1.0, 0.0, -30.0 ]
-    radius: 20.0
-    material: glassy
-
-
 materials:
+  - name: white
+    type: diffuse
+    albedo: [0.73, 0.73, 0.73]
+  - name: red
+    type: diffuse
+    albedo: [0.65, 0.05, 0.05]
+  - name: green
+    type: diffuse
+    albedo: [0.12, 0.45, 0.15]
   - name: shiny_metal
     type: metal
-    albedo: [0.5, 0.8, 0.8]
+    albedo: [0.7, 0.6, 0.5]
     fuzz: 0.05
-
   - name: green_diffuse
     type: diffuse
     albedo: [0.2, 0.5, 0.2]
-  - name: diffuse_grey
-    type: diffuse
-    albedo: [0.8, 0.8, 0.8]
-  - name: glassy
+  - name: emissive_light
+    type: emissive
+    emit: [20.0, 20.0, 20.0]
+  - name: glass
     type: glass
     ref_idx: 1.5
 
+objects:
+
+  - name: floor
+    type: cube
+    material: white
+    transform:
+      translate: [0.0, -0.01, 0.0]
+      scale: [15.0, 0.02, 15.0]
+
+  - name: back_wall
+    type: cube
+    material: white
+    transform:
+      translate: [0.0, 1.0, -7.51]
+      scale: [15.0, 4.0, 0.02]
+
+  - name: ceiling_light
+    type: cube
+    material: emissive_light
+    transform:
+      translate: [0.0, 4.8, 0.0]
+      scale: [2.0, 0.05, 2.0]
+
+  # Row 1 (Z = -3.5)
+  - name: cone
+    type: cone
+    material: green_diffuse
+    resolution: 12
+    radius: 0.4
+    height: 1.0
+    transform:
+      translate: [-4.0, 0.5, -3.5]
+
+  - name: uvsphere_low
+    type: uvsphere
+    material: shiny_metal
+    slices: 10
+    stacks: 5
+    transform:
+      translate: [0.0, 0.5, -3.5]
+      scale: [0.5, 0.5, 0.5]
+
+  - name: uvsphere_high
+    type: uvsphere
+    material: shiny_metal
+    slices: 20
+    stacks: 10
+    transform:
+      translate: [4.0, 0.5, -3.5]
+      scale: [0.5, 0.5, 0.5]
+
+  # Row 2 (Z = 0.0)
+  - name: triangle
+    type: triangle
+    material: red
+    a: [0.0, 0.0, 0.0]
+    b: [0.5, 0.0, 0.0]
+    c: [0.25, 1.0, 0.3]
+    transform:
+      translate: [-4.0, 0.0, 0.0]
+      scale: [2.0, 2.0, 2.0]
+
+  - name: sphere
+    type: sphere
+    material: green_diffuse
+    position: [0.0, 0.5, 0.0]
+    radius: 0.5
+
+  - name: sphere_glass
+    type: sphere
+    material: glass
+    position: [4.0, 0.5, 0.0]
+    radius: 0.5
+
+  # Row 3 (Z = 3.5)
+  - name: quad
+    type: quad
+    material: white
+    a: [-0.6, 0.0, -0.5]
+    b: [0.6, 0.0, -0.5]
+    c: [0.4, 1.0, 0.5]
+    d: [-0.4, 1.0, 0.5]
+    transform:
+      translate: [-4.0, 0.5, 3.5]
+      scale: [1.0, 1.0, 1.0]
+
+
 camera:
-  mode: "FPS"               # or "Orbit"
-  position: [0.0, 1.5, 5.0]
+  mode: "FPS"
+  position: [0.0, 7.5, 4.0]
   yaw: -90.0
-  pitch: 0.0
-  fov: 45.0
+  pitch: -60.0
+  fov: 70.0
   speed: 2.5
-  orbit_distance: 10.0
-  orbit_angle: 0.0

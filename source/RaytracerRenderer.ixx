@@ -22,6 +22,13 @@ namespace Engine {
 		void InitializeFullScreenQuad();
 		void RenderRayTraceTexture();
 		void UpdateTexture(const std::vector<uint8_t>& image, int width, int height);  // New
+		void UpdateTextureRow(std::span<const uint8_t> rowData, int x, int y, int width, int height) const
+		{
+			glBindTexture(GL_TEXTURE_2D, m_rayTraceTexture);
+			glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, rowData.data());
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
+
 		void ClearResources();
 
 
@@ -134,4 +141,6 @@ namespace Engine {
 		// Load a full-screen shader program
 		m_fullScreenShader = ShaderUtil::CreateShaderProgram("shaders/VFullScreenQuad.glsl", "shaders/FFullScreenQuad.glsl", nullptr);
 	}
+
+
 }

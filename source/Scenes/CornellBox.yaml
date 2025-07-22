@@ -1,0 +1,81 @@
+materials:
+  - name: white
+    type: diffuse
+    albedo: [0.73, 0.73, 0.73]
+  - name: red
+    type: diffuse
+    albedo: [0.65, 0.05, 0.05]
+  - name: green
+    type: diffuse
+    albedo: [0.12, 0.45, 0.15]
+  - name: shiny_metal
+    type: metal
+    albedo: [0.7, 0.6, 0.5]
+    fuzz: 0.00
+  - name: green_diffuse
+    type: diffuse
+    albedo: [0.2, 0.5, 0.2]
+
+objects:
+  # Walls (expanded to 3x2x3 volume)
+  - name: left_wall
+    type: cube
+    material: red
+    transform:
+      translate: [-1.51, 1.0, 0.0]
+      scale: [0.02, 2.0, 3.0]
+
+  - name: right_wall
+    type: cube
+    material: green
+    transform:
+      translate: [1.51, 1.0, 0.0]
+      scale: [0.02, 2.0, 3.0]
+
+  - name: back_wall
+    type: cube
+    material: white
+    transform:
+      translate: [0.0, 1.0, -1.51]
+      scale: [3.0, 2.0, 0.02]
+
+  - name: floor
+    type: cube
+    material: white
+    transform:
+      translate: [0.0, -0.01, 0.0]
+      scale: [3.0, 0.02, 3.0]
+
+  - name: ceiling
+    type: cube
+    material: white
+    transform:
+      translate: [0.0, 2.01, 0.0]
+      scale: [3.0, 0.02, 3.0]
+
+  # Boxes inside (repositioned)
+  - name: short_box
+    type: cube
+    material: green_diffuse
+    transform:
+      translate: [-0.8, 0.5, -0.8]
+      scale: [0.6, 1.0, 0.6]
+      rotate: [0, -18, 0]
+
+  - name: tall_box
+    type: cube
+    material: shiny_metal
+    transform:
+      translate: [1.0, 0.75, 0.7]
+      scale: [0.6, 1.5, 0.6]
+      rotate: [0, 15, 0]
+
+camera:
+  mode: "FPS"
+  position: [0.0, 1.0, 4.0]
+  yaw: -90.0
+  pitch: 0.0
+  fov: 40.0
+  speed: 2.5
+  orbit_distance: 10.0
+  orbit_angle: 0.0

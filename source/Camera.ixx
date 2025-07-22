@@ -190,6 +190,27 @@ namespace Engine {
             else
               return std::string("Mode");
         }
+        void SetYawPitch(float yawAngle, float pitchAngle) {
+            yaw = yawAngle;
+            pitch = pitchAngle;
+
+            // Clamp pitch
+            if (pitch > 89.0f) pitch = 89.0f;
+            if (pitch < -89.0f) pitch = -89.0f;
+
+            // Recalculate front
+            glm::vec3 newFront;
+            newFront.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+            newFront.y = sin(glm::radians(pitch));
+            newFront.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+            front = glm::normalize(newFront);
+
+            // Recalculate right and up
+            right = glm::normalize(glm::cross(front, glm::vec3(0.0f, 1.0f, 0.0f)));
+            up = glm::normalize(glm::cross(right, front));
+
+            updateImagePlane();
+        }
 
 
     private:

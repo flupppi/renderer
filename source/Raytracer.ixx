@@ -320,6 +320,42 @@ namespace Engine {
      * with other geometrical objects.
      */
 #pragma endregion
+#pragma region Acceleration Structures
+    class Interval {
+    public:
+        
+    };
+
+    class AABB {
+    public:
+        AABB() = default;
+        AABB(glm::vec3 min, glm::vec3 max): t0(min), t1(max) {}
+        void FromCenterExtents(glm::vec3 center, glm::vec3 extends) {}
+        void Render() {}
+        std::string ToString() const {
+            return "AABB[";
+        }
+        glm::vec3 t0;
+        glm::vec3 t1;
+    };
+
+    class OctreeNode  {
+    public:
+        OctreeNode() = default;
+    };
+    // Slabs Test for Ray Axis-Aligned Bounding Box Intersection according to Marrs et al. 2021
+    bool slabsBoxTest(glm::vec3 p0, glm::vec3 p1, glm::vec3 rayOrigin, glm::vec3 invRayDir, float rayTmin, float rayTmax) {
+        glm::vec3 tLower = (p0 - rayOrigin) * invRayDir;
+        glm::vec3 tUpper = (p1 - rayOrigin) * invRayDir;
+
+        glm::vec4 tMins = {glm::min(tLower, tUpper), rayTmin};
+        glm::vec4 tMaxes = {glm::max(tLower, tUpper), rayTmax};
+
+        float tBoxMin = glm::compMax(tMins);
+        float tBoxMax = glm::compMin(tMaxes);
+        return tBoxMin <= tBoxMax;
+    }
+#pragma endregion
 #pragma region Hitable Objects
 
     class Triangle : public Hitable {
@@ -399,41 +435,37 @@ namespace Engine {
             radius(radius) {
         }
 
-        bool hit(const Ray &r, float t_min, float t_max, HitRecord &rec) const override;
+        bool hit(const Ray &ray, float t_min, float t_max, HitRecord &rec) const override {
+            const glm::vec3 oc = ray.origin() - center;
+            float a = glm::dot(ray.direction(), ray.direction());
+            float b = 2.0f * glm::dot(oc, ray.B);
+            float c = glm::dot(oc, oc) - radius * radius;
+            float discriminant = b * b - 4 * a * c;
+            if (discriminant > 0.0f) {
+                float temp{(-b - sqrt(discriminant)) / (2.0f * a)};
+                if (temp < t_max && temp > t_min) {
+                    rec.t = temp;
+                    rec.p = ray.point_at_paramter(rec.t);
+                    rec.normal = (rec.p - center) / radius;
+                    rec.mat_ptr = mat;
+                    return true;
+                }
+                temp = {(-b + sqrt(discriminant)) / (2.0f * a)};
+                if (temp < t_max && temp > t_min) {
+                    rec.t = temp;
+                    rec.p = ray.point_at_paramter(rec.t);
+                    rec.normal = (rec.p - center) / radius;
+                    rec.mat_ptr = mat;
+                    return true;
+                }
+            }
+            return false;
+        }
 
         glm::vec3 center{};
         float radius;
         shared_ptr<Material> mat;
     };
-
-
-    bool Sphere::hit(const Ray &ray, float t_min, float t_max, HitRecord &rec) const {
-        const glm::vec3 oc = ray.origin() - center;
-        float a = glm::dot(ray.direction(), ray.direction());
-        float b = 2.0f * glm::dot(oc, ray.B);
-        float c = glm::dot(oc, oc) - radius * radius;
-        float discriminant = b * b - 4 * a * c;
-        if (discriminant > 0.0f) {
-            float temp{(-b - sqrt(discriminant)) / (2.0f * a)};
-            if (temp < t_max && temp > t_min) {
-                rec.t = temp;
-                rec.p = ray.point_at_paramter(rec.t);
-                rec.normal = (rec.p - center) / radius;
-                rec.mat_ptr = mat;
-                return true;
-            }
-            temp = {(-b + sqrt(discriminant)) / (2.0f * a)};
-            if (temp < t_max && temp > t_min) {
-                rec.t = temp;
-                rec.p = ray.point_at_paramter(rec.t);
-                rec.normal = (rec.p - center) / radius;
-                rec.mat_ptr = mat;
-                return true;
-            }
-        }
-        return false;
-    }
-
 
 
 
@@ -607,6 +639,35 @@ namespace Engine {
         }
     };
 
+    class Transform : public Hitable {
+    public:
+        Transform(std::unique_ptr<Hitable> object, glm::mat4 transform)
+            : m_object(std::move(object)), m_transform(transform) {
+            m_inverse = glm::inverse(transform);
+            m_inverse_transpose = glm::transpose(m_inverse);
+        }
+
+        bool hit(const Ray& r, float t_min, float t_max, HitRecord& rec) const override {
+            // Transform ray into object space
+            glm::vec4 o = m_inverse * glm::vec4(r.origin(), 1.0f);
+            glm::vec4 d = m_inverse * glm::vec4(r.direction(), 0.0f);
+            Ray transformed_ray{glm::vec3(o), glm::vec3(d)};
+
+            if (!m_object->hit(transformed_ray, t_min, t_max, rec)) return false;
+
+            // Transform hit point and normal back to world space
+            rec.p = glm::vec3(m_transform * glm::vec4(rec.p, 1.0f));
+            rec.normal = glm::normalize(glm::vec3(m_inverse_transpose * glm::vec4(rec.normal, 0.0f)));
+            return true;
+        }
+
+    private:
+        std::unique_ptr<Hitable> m_object;
+        glm::mat4 m_transform;
+        glm::mat4 m_inverse;
+        glm::mat4 m_inverse_transpose;
+    };
+
 #pragma endregion
 #pragma region Scene Loading
 
@@ -619,6 +680,8 @@ namespace Engine {
             std::cerr << "⚠️  Invalid scene file: must contain 'materials' and 'objects'\n";
             return;
         }
+
+
 
         // --- Load camera if present ---
         if (scene["camera"]) {
@@ -639,8 +702,12 @@ namespace Engine {
                     camera.setPosition(glm::vec3(pos[0], pos[1], pos[2]));
                 }
             }
-            if (camNode["yaw"]) camera.UpdateDirection(camNode["yaw"].as<float>(), 0);
-            if (camNode["pitch"]) camera.UpdateDirection(0, camNode["pitch"].as<float>());
+            if (camNode["yaw"] || camNode["pitch"]) {
+                float yaw = camNode["yaw"] ? camNode["yaw"].as<float>() : -90.0f;
+                float pitch = camNode["pitch"] ? camNode["pitch"].as<float>() : 0.0f;
+                camera.SetYawPitch(yaw, pitch);
+            }
+
             if (camNode["fov"]) camera.setFOV(camNode["fov"].as<float>());
             if (camNode["orbit_distance"]) camera.SetDistance(camNode["orbit_distance"].as<float>());
             if (camNode["orbit_angle"]) camera.Update(0, false, false, false, false); // apply angle logic
@@ -677,9 +744,25 @@ namespace Engine {
             auto name = obj["name"].as<std::string>();
             auto type = obj["type"].as<std::string>();
             auto materialName = obj["material"].as<std::string>();
-            auto pos = obj["position"].as<std::vector<float> >();
-            float radius = obj["radius"] ? obj["radius"].as<float>() : 1.0f;
+            glm::mat4 transform = glm::mat4(1.0f);
 
+            if (obj["transform"]) {
+                auto tf = obj["transform"];
+                if (tf["translate"]) {
+                    auto t = tf["translate"].as<std::vector<float>>();
+                    transform = glm::translate(transform, glm::vec3(t[0], t[1], t[2]));
+                }
+                if (tf["rotate"]) {
+                    auto r = tf["rotate"].as<std::vector<float>>();
+                    transform = glm::rotate(transform, glm::radians(r[0]), glm::vec3(1, 0, 0));
+                    transform = glm::rotate(transform, glm::radians(r[1]), glm::vec3(0, 1, 0));
+                    transform = glm::rotate(transform, glm::radians(r[2]), glm::vec3(0, 0, 1));
+                }
+                if (tf["scale"]) {
+                    auto s = tf["scale"].as<std::vector<float>>();
+                    transform = glm::scale(transform, glm::vec3(s[0], s[1], s[2]));
+                }
+            }
 
             auto it = materials.find(materialName);
             if (it == materials.end()) {
@@ -687,18 +770,63 @@ namespace Engine {
                 continue;
             }
             auto mat = it->second;
-            if (type == "sphere") {
-                world.emplace<Sphere>(
-                    glm::vec3(pos[0], pos[1], pos[2]),
-                    mat,
-                    radius
-                );
-            } else {
-                std::cerr << "⚠️  Unsupported object type: " << type << "\n";
+
+            if (type == "cube") {
+                auto instance = std::make_unique<Cube>(mat);
+                world.emplace<Transform>(std::move(instance), transform);
+            }
+            else if (type == "sphere") {
+                float radius = obj["radius"] ? obj["radius"].as<float>() : 1.0f;
+                auto position = obj["position"] ? obj["position"].as<std::vector<float>>() : std::vector<float>{0,0,0};
+                auto instance = std::make_unique<Sphere>(glm::vec3(position[0], position[1], position[2]), mat, radius);
+
+                // Only use Transform if scale/rotation is specified
+                if (obj["transform"]) {
+                    world.emplace<Transform>(std::move(instance), transform);
+                } else {
+                    world.emplace<Sphere>(glm::vec3(position[0], position[1], position[2]), mat, radius);
+                }
+            }
+            else if (type == "uvsphere") {
+                int slices = obj["slices"] ? obj["slices"].as<int>() : 16;
+                int stacks = obj["stacks"] ? obj["stacks"].as<int>() : 16;
+                auto instance = std::make_unique<UVSphere>(slices, stacks, mat);
+                world.emplace<Transform>(std::move(instance), transform);
+            }
+            else if (type == "cone") {
+                int resolution = obj["resolution"] ? obj["resolution"].as<int>() : 20;
+                float radius = obj["radius"] ? obj["radius"].as<float>() : 1.0f;
+                float height = obj["height"] ? obj["height"].as<float>() : 1.0f;
+                auto instance = std::make_unique<Cone>(resolution, radius, height, mat);
+                world.emplace<Transform>(std::move(instance), transform);
+            }else if (type == "quad") {
+                auto a = glm::vec3(obj["a"][0].as<float>(), obj["a"][1].as<float>(), obj["a"][2].as<float>());
+                auto b = glm::vec3(obj["b"][0].as<float>(), obj["b"][1].as<float>(), obj["b"][2].as<float>());
+                auto c = glm::vec3(obj["c"][0].as<float>(), obj["c"][1].as<float>(), obj["c"][2].as<float>());
+                auto d = glm::vec3(obj["d"][0].as<float>(), obj["d"][1].as<float>(), obj["d"][2].as<float>());
+                if (obj["transform"]) {
+                    auto instance = std::make_unique<Quadrilateral>(a, b, c, d, mat);
+                    world.emplace<Transform>(std::move(instance), transform);
+                } else {
+                    world.emplace<Quadrilateral>(a, b, c, d, mat);
+                }
+            }
+            else if (type == "triangle") {
+                auto a = glm::vec3(obj["a"][0].as<float>(), obj["a"][1].as<float>(), obj["a"][2].as<float>());
+                auto b = glm::vec3(obj["b"][0].as<float>(), obj["b"][1].as<float>(), obj["b"][2].as<float>());
+                auto c = glm::vec3(obj["c"][0].as<float>(), obj["c"][1].as<float>(), obj["c"][2].as<float>());
+                if (obj["transform"]) {
+                    auto instance = std::make_unique<Triangle>(a, b, c, mat);
+                    world.emplace<Transform>(std::move(instance), transform);
+                } else {
+                    world.emplace<Triangle>(a, b, c, mat);
+                }
             }
 
-
-            std::println("- {} ({}, mat={}, pos={}, r={}) ", name, type, materialName, pos, radius);
+            else {
+                std::cerr << "⚠️  Unsupported object type: " << type << "\n";
+            }
+            std::println("- {} ({}, mat={}, transform={}) ", name, type, materialName, transform);
         }
     }
 #pragma endregion
@@ -717,6 +845,13 @@ namespace Engine {
         void Update(double deltaTime) override;
 
         void RenderIMGui();
+
+        void ReloadScene() {
+            world = {}; // Clear the world by reassigning
+            LoadSceneFromYaml(m_scenePath, world, m_camera);
+            std::println("🔄 Scene reloaded.");
+        }
+
 
     private:
         RaytracerRenderer m_renderer;
@@ -782,6 +917,7 @@ namespace Engine {
         m_input.ObserveKey(GLFW_KEY_LEFT_SHIFT);
         m_input.ObserveKey(GLFW_KEY_LEFT_ALT);
         auto metal3 = make_shared<Metal>(glm::vec3(0.5f, 0.8f, 0.8f), 1.0f);
+        //
         // world.emplace<Triangle>(
         //     glm::vec3(0, 0, -1),
         //     glm::vec3(2, 0, -1),
@@ -800,10 +936,9 @@ namespace Engine {
         // world.emplace<Cube>(
         //     metal3
         //     );
-
-        //world.emplace<UVSphere>(10, 10,  metal3);
-
-        world.emplace<Cone>(20, 1, 1.5, metal3);
+        //
+        // world.emplace<UVSphere>(10, 10,  metal3);
+        // world.emplace<Cone>(20, 1, 1.5, metal3);
         LoadSceneFromYaml(m_scenePath, world, m_camera);
 
         m_renderer.Initialize();
@@ -831,15 +966,21 @@ namespace Engine {
         bool rotateRight = m_input.IsKeyDown(GLFW_KEY_RIGHT);
         bool zoomIn = m_input.IsKeyDown(GLFW_KEY_UP);
         bool zoomOut = m_input.IsKeyDown(GLFW_KEY_DOWN);
+        if (m_input.WasKeyPressed(GLFW_KEY_R)) {
+            ReloadScene();
+        }
         if (m_input.WasKeyPressed(GLFW_KEY_LEFT_ALT)) {
             m_camera.ToggleMode();
         }
+
+
         if (m_camera.GetCameraMode() == Camera::CameraMode::FPS) {
             if (m_input.IsRightMouseButtonDown())
                 m_camera.UpdateDirection(m_input.GetMouseDeltaX(), m_input.GetMouseDeltaY());
             else
                 m_camera.UpdateDirection(0, 0);
         }
+
 
         m_camera.HandleInput(deltaTime,
                              m_input.IsKeyDown(GLFW_KEY_W), m_input.IsKeyDown(GLFW_KEY_S),
@@ -874,7 +1015,9 @@ namespace Engine {
             ImGui::InputInt("Image height", &m_imageHeight);
             if (ImGui::Button("Export"))
                 GenerateRayTraceImage();
-
+            if (ImGui::Button("Reload Scene")) {
+                ReloadScene();
+            }
             int mode = static_cast<int>(m_renderMode);
             if (ImGui::Combo("Render Mode", &mode, renderModeNames, IM_ARRAYSIZE(renderModeNames))) {
                 m_renderMode = static_cast<RenderMode>(mode);
