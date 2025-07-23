@@ -15,7 +15,9 @@ materials:
   - name: green_diffuse
     type: diffuse
     albedo: [0.2, 0.5, 0.2]
-
+  - name: glass
+    type: glass
+    ref_idx: 1.5
 objects:
   # Walls (expanded to 3x2x3 volume)
   - name: left_wall
@@ -72,12 +74,13 @@ objects:
 
   - name: cone
     type: cone
-    material: green_diffuse
+    material: glass
     resolution: 12
     radius: 0.4
     height: 1.0
     transform:
-      translate: [ 0.0, 0.5, 0.0 ]
+      translate: [ 0.0, 2.0, 0.0 ]
+      rotate: [0, 0, -180]
 
   - name: sphere
     type: sphere

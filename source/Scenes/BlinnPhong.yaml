@@ -34,6 +34,12 @@ materials:
     specular: [0.1, 0.1, 0.1]
     shininess: 8
 
+  - name: checker_floor
+    type: checker
+    color1: [ 0.9, 0.9, 0.9 ]
+    color2: [ 0.2, 0.2, 0.2 ]
+    scale: 5.0
+
 objects:
   # Walls (expanded to 3x2x3 volume)
   - name: left_wall
@@ -66,7 +72,7 @@ objects:
 
   - name: ceiling
     type: cube
-    material: white
+    material: checker_floor
     transform:
       translate: [0.0, 2.01, 0.0]
       scale: [3.0, 0.02, 3.0]

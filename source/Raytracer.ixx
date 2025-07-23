@@ -27,7 +27,7 @@ import ShaderUtil;
 using namespace std;
 
 namespace Engine {
-    bool culling = false;
+    class Material;
 
 #pragma region Light
     class Light {
@@ -36,7 +36,6 @@ namespace Engine {
         glm::vec3 intensity;
     };
 #pragma endregion
-
 #pragma region Helper Functions
 
 
@@ -102,12 +101,52 @@ namespace Engine {
     }
 
 #pragma endregion
-#pragma region Material Definition
+#pragma region Acceleration Structures
+    class Interval {
+    public:
+
+    };
+
+
+#pragma endregion
+#pragma region Materials
     /**
-     * @brief A raytracer simulates the interaction of the light with the environment.
-     * We need to define materials that the light can interact with.
-     */
+ * @brief A raytracer simulates the interaction of the light with the environment.
+ * We need to define materials that the light can interact with.
+ */
     struct HitRecord;
+
+
+    /**
+     * @class HitRecord
+     * @brief Represents a record of a hit in ray tracing or collision detection.
+     *
+     * This class encapsulates the details of an interaction point including
+     * the position, normal direction at the hit, and other metadata to describe
+     * the event. We could also pass each of these individually to the methods, but since all of these will be required at most points it makes sense to keep them together.
+     */
+    struct HitRecord {
+        float t;
+        glm::vec3 p;
+        glm::vec3 normal;
+        shared_ptr<Material> mat_ptr;
+    };
+
+    /**
+     * @class Hitable
+     * @brief Represents an abstract interface for objects that can be "hit" in a ray tracing system.
+     *
+     * The Hitable class defines a framework for objects that can participate
+     * in ray-object intersection calculations. It is important since our material can only be applied on a surface that is also hitable.
+     */
+    class Hitable {
+    public:
+        virtual ~Hitable() = default;
+
+        virtual bool hit(const Ray &r, float t_min, float t_max, HitRecord &rec) const = 0;
+        virtual bool boundingBox(AABB &box) const = 0;
+    };
+
     /**
      * @class Material
      * @brief The material base class represents the properties and behavior of a material in the rendering system.
@@ -124,45 +163,6 @@ namespace Engine {
          */
         virtual bool scatter(const Ray &r_in, const HitRecord &rec, glm::vec3 &attenuation, Ray &scattered) const = 0;
     };
-
-    /**
-     * @class HitRecord
-     * @brief Represents a record of a hit in ray tracing or collision detection.
-     *
-     * This class encapsulates the details of an interaction point including
-     * the position, normal direction at the hit, and other metadata to describe
-     * the event. We could also pass each of these individually to the methods, but since all of these will be required at most points it makes sense to keep them together.
-     */
-    struct HitRecord {
-        float t;
-        glm::vec3 p;
-        glm::vec3 normal;
-        shared_ptr<Material> mat_ptr;
-    };
-#pragma region Acceleration Structures
-    class Interval {
-    public:
-
-    };
-
-
-#pragma endregion
-    /**
-     * @class Hitable
-     * @brief Represents an abstract interface for objects that can be "hit" in a ray tracing system.
-     *
-     * The Hitable class defines a framework for objects that can participate
-     * in ray-object intersection calculations. It is important since our material can only be applied on a surface that is also hitable.
-     */
-    class Hitable {
-    public:
-        virtual ~Hitable() = default;
-
-        virtual bool hit(const Ray &r, float t_min, float t_max, HitRecord &rec) const = 0;
-        virtual bool boundingBox(AABB &box) const = 0;
-    };
-
-
     /**
      * @brief Now next we actually define the materials.
      *
@@ -365,7 +365,6 @@ namespace Engine {
 
 
 #pragma endregion
-
 #pragma region Hitable Objects
     class DebugAABB : public Hitable {
     public:
@@ -786,7 +785,6 @@ namespace Engine {
     };
 
 #pragma endregion
-
 #pragma region Raytracer Renderer
 	export class RaytracerRenderer
 	{
@@ -961,7 +959,6 @@ namespace Engine {
 	}
 
 #pragma endregion
-
 #pragma region Scene Loading
 
     void LoadSceneFromYaml(const std::filesystem::path &path, HitableList &world, Camera &camera) {
@@ -1381,9 +1378,11 @@ namespace Engine {
 
             }
 
+
+
             Ray scattered{};
             glm::vec3 attenuation{};
-            if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
+            if (depth < 2 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
                 return attenuation * color(scattered, depth + 1);
             } else {
                 return {0.0f, 0.0f, 0.0f};
