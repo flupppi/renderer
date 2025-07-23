@@ -1,0 +1,113 @@
+materials:
+  - name: white
+    type: diffuse
+    albedo: [0.73, 0.73, 0.73]
+  - name: red
+    type: diffuse
+    albedo: [0.65, 0.05, 0.05]
+  - name: green
+    type: diffuse
+    albedo: [0.12, 0.45, 0.15]
+  - name: shiny_metal
+    type: metal
+    albedo: [0.7, 0.6, 0.5]
+    fuzz: 0.00
+  - name: green_diffuse
+    type: diffuse
+    albedo: [0.2, 0.5, 0.2]
+  - name: glass
+    type: glass
+    ref_idx: 1.5
+  - name: light_emissive
+    type: emissive
+    emit: [ 4.0, 4.0, 4.0 ]
+
+objects:
+  # Left wall (red)
+  - name: left_wall
+    type: quad
+    material: red
+    a: [-1.5, 0.0, -1.5]
+    b: [-1.5, 0.0,  1.5]
+    c: [-1.5, 2.0,  1.5]
+    d: [-1.5, 2.0, -1.5]
+
+  # Right wall (green)
+  - name: right_wall
+    type: quad
+    material: green
+    a: [1.5, 0.0,  1.5]
+    b: [1.5, 0.0, -1.5]
+    c: [1.5, 2.0, -1.5]
+    d: [1.5, 2.0,  1.5]
+
+  # Back wall (white)
+  - name: back_wall
+    type: quad
+    material: white
+    a: [-1.5, 0.0, -1.5]
+    b: [ 1.5, 0.0, -1.5]
+    c: [ 1.5, 2.0, -1.5]
+    d: [-1.5, 2.0, -1.5]
+
+  # Floor (white)
+  - name: floor
+    type: quad
+    material: white
+    a: [-1.5, 0.0,  1.5]
+    b: [ 1.5, 0.0,  1.5]
+    c: [ 1.5, 0.0, -1.5]
+    d: [-1.5, 0.0, -1.5]
+
+  # Ceiling (white)
+  - name: ceiling
+    type: quad
+    material: white
+    a: [-1.5, 2.0, -1.5]
+    b: [ 1.5, 2.0, -1.5]
+    c: [ 1.5, 2.0,  1.5]
+    d: [-1.5, 2.0,  1.5]
+
+  # Emissive light panel (thin square at center of ceiling)
+  - name: ceiling_light
+    type: quad
+    material: light_emissive
+    a: [-0.5, 1.99, -0.5]
+    b: [ 0.5, 1.99, -0.5]
+    c: [ 0.5, 1.99,  0.5]
+    d: [-0.5, 1.99,  0.5]
+
+  # Box 1 (short, green diffuse)
+  - name: short_box
+    type: cube
+    material: green_diffuse
+    transform:
+      translate: [-0.8, 0.5, -0.8]
+      scale: [0.6, 1.0, 0.6]
+      rotate: [0, -18, 0]
+
+  # Box 2 (tall, shiny metal)
+  - name: tall_box
+    type: cube
+    material: shiny_metal
+    transform:
+      translate: [1.0, 0.75, 0.7]
+      scale: [0.6, 1.5, 0.6]
+      rotate: [0, 15, 0]
+
+  # Sphere (center, metal)
+  - name: sphere
+    type: sphere
+    material: shiny_metal
+    position: [ 0.0, 0.5, 0.0 ]
+    radius: 0.5
+
+camera:
+  mode: "FPS"
+  position: [0.0, 1.0, 4.0]
+  yaw: -90.0
+  pitch: 0.0
+  fov: 40.0
+  speed: 2.5
+  orbit_distance: 10.0
+  orbit_angle: 0.0
