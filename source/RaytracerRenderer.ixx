@@ -11,7 +11,10 @@ module;
 export module RaytracerRenderer;
 import Quad;
 import ShaderUtil;
+
+import Geometry;
 import std;
+
 namespace Engine {
 
 	export class RaytracerRenderer
@@ -28,6 +31,45 @@ namespace Engine {
 			glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, rowData.data());
 			glBindTexture(GL_TEXTURE_2D, 0);
 		}
+		void InitializeAABBRenderer() {
+			glGenVertexArrays(1, &m_bboxVAO);
+			glGenBuffers(1, &m_bboxVBO);
+
+			glBindVertexArray(m_bboxVAO);
+			glBindBuffer(GL_ARRAY_BUFFER, m_bboxVBO);
+			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+			glEnableVertexAttribArray(0);
+			glBindVertexArray(0);
+		}
+
+		void RenderBoundingBox(const AABB& box, glm::mat4 mvp) const {
+			glm::vec3 min = box.t0;
+			glm::vec3 max = box.t1;
+
+			glm::vec3 corners[] = {
+				{min.x, min.y, min.z}, {max.x, min.y, min.z},
+				{max.x, max.y, min.z}, {min.x, max.y, min.z},
+				{min.x, min.y, max.z}, {max.x, min.y, max.z},
+				{max.x, max.y, max.z}, {min.x, max.y, max.z}
+			};
+
+			GLuint indices[] = {
+				0, 1, 1, 2, 2, 3, 3, 0,
+				4, 5, 5, 6, 6, 7, 7, 4,
+				0, 4, 1, 5, 2, 6, 3, 7
+			};
+			glLineWidth(2);
+			glm::vec3 lineVertices[24];
+			for (int i = 0; i < 24; ++i)
+				lineVertices[i] = corners[indices[i]];
+			glBindVertexArray(m_bboxVAO);
+			glBindBuffer(GL_ARRAY_BUFFER, m_bboxVBO);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(lineVertices), lineVertices, GL_DYNAMIC_DRAW);
+			glUseProgram(m_bbShader);
+			glUniformMatrix4fv(glGetUniformLocation(m_bbShader, "transformation"), 1, GL_FALSE, glm::value_ptr(mvp));
+			glDrawArrays(GL_LINES, 0, 24);
+			glBindVertexArray(0);
+		}
 
 		void ClearResources();
 
@@ -36,8 +78,11 @@ namespace Engine {
 		void LoadShaders();
 		GLuint m_rayTraceTexture{ 0 };  // Texture ID for the ray-traced image
 		GLuint m_fullScreenShader{ 0 };
+		GLuint m_bbShader{ 0 };
 		GLuint m_fullScreenVAO{ 0 };
 		GLuint m_fullScreenVBO{ 0 };
+		GLuint m_bboxVAO = 0;
+		GLuint m_bboxVBO = 0;
 
 
 	};
@@ -61,7 +106,7 @@ namespace Engine {
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		InitializeFullScreenQuad();
-
+		InitializeAABBRenderer();
 	}
 	void RaytracerRenderer::InitializeFullScreenQuad()
 	{
@@ -140,6 +185,8 @@ namespace Engine {
 	{
 		// Load a full-screen shader program
 		m_fullScreenShader = ShaderUtil::CreateShaderProgram("shaders/VFullScreenQuad.glsl", "shaders/FFullScreenQuad.glsl", nullptr);
+		m_bbShader =  ShaderUtil::CreateShaderProgram("shaders/VJoint.glsl", "shaders/FJoint.glsl", nullptr);
+
 	}
 
 

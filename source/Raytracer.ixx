@@ -17,11 +17,16 @@ import Camera;
 import Quad;
 import InputSystem;
 import RaytracerRenderer;
+import Geometry;
+import Ray;
 
 using namespace std;
 
 namespace Engine {
     bool culling = false;
+
+
+
 #pragma region Helper Functions
 
 
@@ -36,6 +41,7 @@ namespace Engine {
     enum RenderMode {
         diffuse,
         normals,
+        aabb_debug,
     };
 
     /**
@@ -47,7 +53,7 @@ namespace Engine {
      * It acts as a mapping resource to associate rendering modes with their
      * descriptive or user-friendly names for display or reference purposes.
      */
-    static const char *renderModeNames[] = {"Diffuse", "Normals"};
+    static const char *renderModeNames[] = {"Diffuse", "Normals", "AABB Debug"};
 
     /**
      * @brief Generates a random floating-point number between 0 and 1.
@@ -122,7 +128,14 @@ namespace Engine {
         glm::vec3 normal;
         shared_ptr<Material> mat_ptr;
     };
+#pragma region Acceleration Structures
+    class Interval {
+    public:
 
+    };
+
+
+#pragma endregion
     /**
      * @class Hitable
      * @brief Represents an abstract interface for objects that can be "hit" in a ray tracing system.
@@ -135,6 +148,7 @@ namespace Engine {
         virtual ~Hitable() = default;
 
         virtual bool hit(const Ray &r, float t_min, float t_max, HitRecord &rec) const = 0;
+        virtual bool boundingBox(AABB &box) const = 0;
     };
 
 
@@ -320,43 +334,32 @@ namespace Engine {
      * with other geometrical objects.
      */
 #pragma endregion
-#pragma region Acceleration Structures
-    class Interval {
-    public:
-        
-    };
 
-    class AABB {
-    public:
-        AABB() = default;
-        AABB(glm::vec3 min, glm::vec3 max): t0(min), t1(max) {}
-        void FromCenterExtents(glm::vec3 center, glm::vec3 extends) {}
-        void Render() {}
-        std::string ToString() const {
-            return "AABB[";
-        }
-        glm::vec3 t0;
-        glm::vec3 t1;
-    };
-
-    class OctreeNode  {
-    public:
-        OctreeNode() = default;
-    };
-    // Slabs Test for Ray Axis-Aligned Bounding Box Intersection according to Marrs et al. 2021
-    bool slabsBoxTest(glm::vec3 p0, glm::vec3 p1, glm::vec3 rayOrigin, glm::vec3 invRayDir, float rayTmin, float rayTmax) {
-        glm::vec3 tLower = (p0 - rayOrigin) * invRayDir;
-        glm::vec3 tUpper = (p1 - rayOrigin) * invRayDir;
-
-        glm::vec4 tMins = {glm::min(tLower, tUpper), rayTmin};
-        glm::vec4 tMaxes = {glm::max(tLower, tUpper), rayTmax};
-
-        float tBoxMin = glm::compMax(tMins);
-        float tBoxMax = glm::compMin(tMaxes);
-        return tBoxMin <= tBoxMax;
-    }
-#pragma endregion
 #pragma region Hitable Objects
+    class DebugAABB : public Hitable {
+    public:
+        explicit DebugAABB(const AABB& box) : box(box) {}
+
+        bool hit(const Ray& r, float t_min, float t_max, HitRecord& rec) const override {
+            // Ray-AABB intersection returns true if we hit the box
+            if (slabsBoxTest(box.t0, box.t1, r.origin(), 1.0f / r.direction(), t_min, t_max)) {
+                rec.t = t_min;
+                rec.p = r.point_at_paramter(rec.t);
+                rec.normal = glm::vec3(1, 0, 0);  // dummy normal
+                rec.mat_ptr = std::make_shared<Lambertian>(glm::vec3(1, 0, 0));
+                return true;
+            }
+            return false;
+        }
+
+        bool boundingBox(AABB& out_box) const override {
+            out_box = box;
+            return true;
+        }
+
+    private:
+        AABB box;
+    };
 
     class Triangle : public Hitable {
     public:
@@ -365,7 +368,13 @@ namespace Engine {
             const glm::vec3& v2,
             std::shared_ptr<Material> mat):
             v0(v0), v1(v1),v2(v2),mat(std::move(mat)){}
-        bool hit(const Ray &ray, float t_min, float t_max, HitRecord &rec) const;
+        bool hit(const Ray &ray, float t_min, float t_max, HitRecord &rec) const override;
+        bool boundingBox(AABB& box) const override {
+            glm::vec3 min = glm::min(glm::min(v0, v1), v2);
+            glm::vec3 max = glm::max(glm::max(v0, v1), v2);
+            box = AABB(min, max);
+            return true;
+        }
 
     private:
         glm::vec3 v0, v1, v2;
@@ -422,6 +431,14 @@ namespace Engine {
             }
             return false;
         }
+        bool boundingBox(AABB& box) const override {
+            AABB box1, box2;
+            if (!tri1->boundingBox(box1) || !tri2->boundingBox(box2))
+                return false;
+            box = AABB(glm::min(box1.t0, box2.t0), glm::max(box1.t1, box2.t1));
+            return true;
+        }
+
 
     private:
         std::unique_ptr<Triangle> tri1;
@@ -462,6 +479,13 @@ namespace Engine {
             return false;
         }
 
+        bool boundingBox(AABB& box) const override {
+            glm::vec3 offset(radius, radius, radius);
+            box = AABB(center - offset, center + offset);
+            return true;
+        }
+
+
         glm::vec3 center{};
         float radius;
         shared_ptr<Material> mat;
@@ -476,25 +500,44 @@ namespace Engine {
             objects_.emplace_back(std::make_unique<T>(std::forward<Args>(args)...));
         }
 
-        bool hit(const Ray &r, float t_min, float t_max, HitRecord &rec) const override;
+        bool hit(const Ray &ray, float t_min, float t_max, HitRecord &rec) const override {
+            HitRecord temp_rec{};
+            bool hit_anything = false;
+            float closest_so_far = t_max;
+            for (auto const &obj: objects_) {
+                AABB box;
 
+                if (obj->boundingBox(box) && box.hit(ray, t_min, closest_so_far)) {
+                    if (obj->hit(ray, t_min, closest_so_far, temp_rec)) {
+                        hit_anything = true;
+                        closest_so_far = temp_rec.t;
+                        rec = temp_rec;
+                    }
+                }
+
+            }
+            return hit_anything;
+        }
+
+        bool boundingBox(AABB& box) const override {
+            if (objects_.empty()) return false;
+
+            AABB tempBox;
+            bool first = true;
+            for (const auto& obj : objects_) {
+                if (!obj->boundingBox(tempBox))
+                    return false;
+                box = first ? tempBox : AABB(glm::min(box.t0, tempBox.t0), glm::max(box.t1, tempBox.t1));
+                first = false;
+            }
+            return true;
+        }
+        const std::vector<std::unique_ptr<Hitable>>& getObjects() const { return objects_; }
     private:
         vector<unique_ptr<Hitable> > objects_;
     };
 
-    bool HitableList::hit(const Ray &ray, float t_min, float t_max, HitRecord &rec) const {
-        HitRecord temp_rec{};
-        bool hit_anything = false;
-        float closest_so_far = t_max;
-        for (auto const &obj: objects_) {
-            if (obj->hit(ray, t_min, closest_so_far, temp_rec)) {
-                hit_anything = true;
-                closest_so_far = temp_rec.t;
-                rec = temp_rec;
-            }
-        }
-        return hit_anything;
-    }
+
 
     class UVSphere final : public Hitable {
     public:
@@ -551,6 +594,10 @@ namespace Engine {
         bool hit(const Ray& r, float t_min, float t_max, HitRecord& rec) const override {
             return surfaceMesh.hit(r, t_min, t_max, rec);
         }
+        bool boundingBox(AABB& box) const override {
+            return surfaceMesh.boundingBox(box);
+        }
+
     private:
         HitableList surfaceMesh;
 
@@ -596,6 +643,9 @@ namespace Engine {
         bool hit(const Ray& r, float t_min, float t_max, HitRecord& rec) const override {
             return surfaceMesh.hit(r, t_min, t_max, rec);
         }
+        bool boundingBox(AABB& box) const override {
+            return surfaceMesh.boundingBox(box);
+        }
     private:
         HitableList surfaceMesh;
 
@@ -616,6 +666,9 @@ namespace Engine {
 
         bool hit(const Ray& r, float t_min, float t_max, HitRecord& rec) const override {
             return faces.hit(r, t_min, t_max, rec);
+        }
+        bool boundingBox(AABB& box) const override {
+            return faces.boundingBox(box);
         }
 
     private:
@@ -660,6 +713,29 @@ namespace Engine {
             rec.normal = glm::normalize(glm::vec3(m_inverse_transpose * glm::vec4(rec.normal, 0.0f)));
             return true;
         }
+        bool boundingBox(AABB& box) const override {
+            AABB childBox;
+            if (!m_object->boundingBox(childBox)) return false;
+
+            glm::vec3 t0 = childBox.t0;
+            glm::vec3 t1 = childBox.t1;
+
+            glm::vec3 corners[8] = {
+                {t0.x, t0.y, t0.z}, {t1.x, t0.y, t0.z}, {t0.x, t1.y, t0.z}, {t1.x, t1.y, t0.z},
+                {t0.x, t0.y, t1.z}, {t1.x, t0.y, t1.z}, {t0.x, t1.y, t1.z}, {t1.x, t1.y, t1.z},
+            };
+
+            glm::vec3 minPt(FLT_MAX), maxPt(-FLT_MAX);
+            for (auto& corner : corners) {
+                glm::vec3 transformed = glm::vec3(m_transform * glm::vec4(corner, 1.0f));
+                minPt = glm::min(minPt, transformed);
+                maxPt = glm::max(maxPt, transformed);
+            }
+
+            box = AABB(minPt, maxPt);
+            return true;
+        }
+
 
     private:
         std::unique_ptr<Hitable> m_object;
@@ -828,6 +904,7 @@ namespace Engine {
             }
             std::println("- {} ({}, mat={}, transform={}) ", name, type, materialName, transform);
         }
+
     }
 #pragma endregion
     export class Raytracer : public GameInterface {
@@ -847,11 +924,21 @@ namespace Engine {
         void RenderIMGui();
 
         void ReloadScene() {
-            world = {}; // Clear the world by reassigning
+            world = {};
+            aabb_debug_overlay = {}; // <--- Clear AABB overlay too
             LoadSceneFromYaml(m_scenePath, world, m_camera);
+            if (m_renderMode == RenderMode::aabb_debug)
+                AddAABBDebugBoxes(world, aabb_debug_overlay);
             std::println("🔄 Scene reloaded.");
         }
-
+        void AddAABBDebugBoxes(const HitableList& world, HitableList& overlay) {
+            AABB box;
+            for (const auto& obj : world.getObjects()) {
+                if (obj->boundingBox(box)) {
+                    overlay.emplace<DebugAABB>(box);
+                }
+            }
+        }
 
     private:
         RaytracerRenderer m_renderer;
@@ -861,6 +948,8 @@ namespace Engine {
         glm::vec3 color(const Ray &r, int depth);
 
         HitableList world{};
+        HitableList aabb_debug_overlay;
+
         std::filesystem::path m_scenePath;
 
         RenderMode m_renderMode = RenderMode::diffuse;
@@ -876,6 +965,7 @@ namespace Engine {
         void GenerateRayTraceImage(); // Ray tracing function
         // Define camera properties
     };
+
 
 #pragma region Program Setup
 
@@ -940,6 +1030,8 @@ namespace Engine {
         // world.emplace<UVSphere>(10, 10,  metal3);
         // world.emplace<Cone>(20, 1, 1.5, metal3);
         LoadSceneFromYaml(m_scenePath, world, m_camera);
+        if (m_renderMode == RenderMode::aabb_debug)
+            AddAABBDebugBoxes(world,  aabb_debug_overlay);
 
         m_renderer.Initialize();
     }
@@ -954,6 +1046,23 @@ namespace Engine {
         glm::mat4 mvp = Projection * View * Model;
         // Render the ray-traced texture as a full-screen quad
         m_renderer.RenderRayTraceTexture();
+
+        if (m_renderMode == RenderMode::aabb_debug) {
+            glDisable(GL_DEPTH_TEST);
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+            for (const auto& obj : aabb_debug_overlay.getObjects()) {
+                AABB box;
+                if (obj->boundingBox(box)) {
+                    m_renderer.RenderBoundingBox(box, mvp);
+                }
+            }
+
+
+        }
+        glEnable(GL_DEPTH_TEST);
+
         RenderIMGui();
     }
 
@@ -1033,6 +1142,10 @@ namespace Engine {
 #pragma region Ray Tracing
     glm::vec3 Raytracer::color(const Ray &r, int depth) {
         HitRecord rec{};
+        // if (m_renderMode == RenderMode::aabb_debug) {
+        //     if (aabb_debug_overlay.hit(r, 0.001f, FLT_MAX, rec))
+        //         return rec.mat_ptr ? glm::vec3(1.0f, 0.0f, 0.0f) : glm::vec3(1.0f);
+        // }
         if (world.hit(r, 0.001f, numeric_limits<float>::infinity(), rec)) {
             Ray scattered{};
             glm::vec3 attenuation{};

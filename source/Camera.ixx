@@ -1,18 +1,14 @@
 ﻿module;
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <GLFW/glfw3.h>
+
+#include "glm/gtc/type_ptr.inl"
+
 export module Camera;
+import Ray;
 import std;
 namespace Engine {
-    export struct Ray {
-        glm::vec3 A;
-        glm::vec3 B;
-        Ray(){}
-        Ray(const glm::vec3& a, const glm::vec3& b){A = a; B = b;}
-        glm::vec3 origin() const {return A;}
-        glm::vec3 direction() const {return B;}
-        glm::vec3 point_at_paramter(float t) const {return A + t * B;}
-    };
 
     export class Camera {
     public:
@@ -96,6 +92,10 @@ namespace Engine {
                 if (cameraDistance < 1.0f)
                     cameraDistance = 1.0f;
 
+                float camX = cameraDistance * sin(cameraAngle);
+                float camZ = cameraDistance * cos(cameraAngle);
+                position = glm::vec3(camX, 3.0f, camZ); // 👈 Sync with view matrix
+
             }
         }
 
@@ -105,20 +105,17 @@ namespace Engine {
             if (mode == CameraMode::FPS) {
                 return glm::lookAt(position, position + front, up);
             }
-            else if (mode == CameraMode::Orbit) {
-                float camX = cameraDistance * sin(cameraAngle);
-                float camZ = cameraDistance * cos(cameraAngle);
-                glm::vec3 cameraPosition(camX, 3.0f, camZ);
-                return glm::lookAt(cameraPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+            if (mode == CameraMode::Orbit) {
+                return glm::lookAt(position, glm::vec3(0.0f, 0.0f, 0.0f), up);
             }
+
             return glm::mat4(1.0f); // Identity matrix as fallbacks
         }
 
         // Get the projection matrix
         glm::mat4 GetProjectionMatrix(float aspectRatio) const {
-            return glm::perspective(glm::radians(45.0f), aspectRatio, 0.1f, 100.0f);
+            return glm::perspective(glm::radians(verticalFOV), aspectRatio, 0.1f, 100.0f);
         }
-
         // Set the distance for the orbiting camera
         void SetDistance(float distance) { cameraDistance = distance; }
 
@@ -190,6 +187,7 @@ namespace Engine {
             else
               return std::string("Mode");
         }
+
         void SetYawPitch(float yawAngle, float pitchAngle) {
             yaw = yawAngle;
             pitch = pitchAngle;
