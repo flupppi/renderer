@@ -102,10 +102,6 @@ namespace Engine {
 
 #pragma endregion
 #pragma region Acceleration Structures
-    class Interval {
-    public:
-
-    };
 
 
 #pragma endregion
@@ -143,7 +139,7 @@ namespace Engine {
     public:
         virtual ~Hitable() = default;
 
-        virtual bool hit(const Ray &r, float t_min, float t_max, HitRecord &rec) const = 0;
+        virtual bool hit(const Ray &r, Interval ray_t, HitRecord &rec) const = 0;
         virtual bool boundingBox(AABB &box) const = 0;
     };
 
@@ -370,10 +366,10 @@ namespace Engine {
     public:
         explicit DebugAABB(const AABB& box) : box(box) {}
 
-        bool hit(const Ray& r, float t_min, float t_max, HitRecord& rec) const override {
+        bool hit(const Ray& r, Interval ray_t, HitRecord& rec) const override {
             // Ray-AABB intersection returns true if we hit the box
-            if (slabsBoxTest(box.t0, box.t1, r.origin(), 1.0f / r.direction(), t_min, t_max)) {
-                rec.t = t_min;
+            if (slabsBoxTest(box.t0, box.t1, r.origin(), 1.0f / r.direction(), ray_t.min, ray_t.max)) {
+                rec.t = ray_t.min;
                 rec.p = r.point_at_paramter(rec.t);
                 rec.normal = glm::vec3(1, 0, 0);  // dummy normal
                 rec.mat_ptr = std::make_shared<Lambertian>(glm::vec3(1, 0, 0));
@@ -398,7 +394,7 @@ namespace Engine {
             const glm::vec3& v2,
             std::shared_ptr<Material> mat):
             v0(v0), v1(v1),v2(v2),mat(std::move(mat)){}
-        bool hit(const Ray &ray, float t_min, float t_max, HitRecord &rec) const override;
+        bool hit(const Ray &ray, Interval ray_t, HitRecord &rec) const override;
         bool boundingBox(AABB& box) const override {
             glm::vec3 min = glm::min(glm::min(v0, v1), v2);
             glm::vec3 max = glm::max(glm::max(v0, v1), v2);
@@ -411,7 +407,7 @@ namespace Engine {
         std::shared_ptr<Material> mat;
 
     };
-    bool Triangle::hit(const Ray &ray, float t_min, float t_max, HitRecord &rec) const {
+    bool Triangle::hit(const Ray &ray, Interval ray_t, HitRecord &rec) const {
         // RAY - TRIANGLE Intersection with Möller-Trumbore Algorithm: https://doi.org/10.1080/10867651.1997.10487468
         const float EPSILON = 1e-6f;
         glm::vec3 edge1 = v1 - v0;
@@ -434,7 +430,7 @@ namespace Engine {
         if (v < 0.0f || u + v > 1.0f) return false;
 
         float t = glm::dot(edge2, qvec) * inv_det;
-        if (t < t_min || t > t_max) return false;
+        if (!ray_t.contains(t)) return false;
 
         rec.t = t;
         rec.p = ray.point_at_paramter(t);
@@ -451,10 +447,10 @@ namespace Engine {
             tri2 = std::make_unique<Triangle>(a, c, d, mat);
         }
 
-        bool hit(const Ray& r, float t_min, float t_max, HitRecord& rec) const override {
+        bool hit(const Ray& r, Interval ray_t, HitRecord& rec) const override {
             HitRecord temp;
-            bool hit1 = tri1->hit(r, t_min, t_max, temp);
-            bool hit2 = tri2->hit(r, t_min, hit1 ? temp.t : t_max, temp);
+            bool hit1 = tri1->hit(r, ray_t, temp);
+            bool hit2 = tri2->hit(r, Interval(ray_t.min, hit1 ? temp.t : ray_t.max), temp);
             if (hit1 || hit2) {
                 rec = temp;
                 return true;
@@ -491,33 +487,32 @@ namespace Engine {
         Sphere(const glm::vec3 &center, shared_ptr<Material> mat, float radius) : center(center), mat(std::move(mat)),
             radius(radius) {
         }
-
-        bool hit(const Ray &ray, float t_min, float t_max, HitRecord &rec) const override {
-            const glm::vec3 oc = ray.origin() - center;
+        bool hit(const Ray &ray, Interval ray_t, HitRecord &rec) const override {
+            glm::vec3 oc = ray.origin() - center;
             float a = glm::dot(ray.direction(), ray.direction());
-            float b = 2.0f * glm::dot(oc, ray.B);
+            float h = glm::dot(ray.direction(), oc);
             float c = glm::dot(oc, oc) - radius * radius;
-            float discriminant = b * b - 4 * a * c;
-            if (discriminant > 0.0f) {
-                float temp{(-b - sqrt(discriminant)) / (2.0f * a)};
-                if (temp < t_max && temp > t_min) {
-                    rec.t = temp;
-                    rec.p = ray.point_at_paramter(rec.t);
-                    rec.normal = (rec.p - center) / radius;
-                    rec.mat_ptr = mat;
-                    return true;
-                }
-                temp = {(-b + sqrt(discriminant)) / (2.0f * a)};
-                if (temp < t_max && temp > t_min) {
-                    rec.t = temp;
-                    rec.p = ray.point_at_paramter(rec.t);
-                    rec.normal = (rec.p - center) / radius;
-                    rec.mat_ptr = mat;
-                    return true;
-                }
+            float discriminant = h * h - a * c;
+
+            if (discriminant < 0) return false;
+
+            float sqrtd = std::sqrt(discriminant);
+
+            // First root
+            float root = (-h - sqrtd) / a;
+            if (!ray_t.surrounds(root)) {
+                root = (-h + sqrtd) / a;
+                if (!ray_t.surrounds(root))
+                    return false;
             }
-            return false;
+
+            rec.t = root;
+            rec.p = ray.point_at_paramter(root);
+            rec.normal = (rec.p - center) / radius;
+            rec.mat_ptr = mat;
+            return true;
         }
+
 
         bool boundingBox(AABB& box) const override {
             glm::vec3 offset(radius, radius, radius);
@@ -540,15 +535,15 @@ namespace Engine {
             objects_.emplace_back(std::make_unique<T>(std::forward<Args>(args)...));
         }
 
-        bool hit(const Ray &ray, float t_min, float t_max, HitRecord &rec) const override {
+        bool hit(const Ray &ray, Interval ray_t, HitRecord &rec) const override {
             HitRecord temp_rec{};
             bool hit_anything = false;
-            float closest_so_far = t_max;
+            float closest_so_far = ray_t.max;
             for (auto const &obj: objects_) {
                 //AABB box;
 
                 //if (obj->boundingBox(box) && box.hit(ray, t_min, closest_so_far)) {
-                    if (obj->hit(ray, t_min, closest_so_far, temp_rec)) {
+                    if (obj->hit(ray, Interval(ray_t.min, closest_so_far), temp_rec)) {
                         hit_anything = true;
                         closest_so_far = temp_rec.t;
                         rec = temp_rec;
@@ -631,8 +626,8 @@ namespace Engine {
                 }
             }
         }
-        bool hit(const Ray& r, float t_min, float t_max, HitRecord& rec) const override {
-            return surfaceMesh.hit(r, t_min, t_max, rec);
+        bool hit(const Ray& r, Interval ray_t, HitRecord& rec) const override {
+            return surfaceMesh.hit(r, ray_t, rec);
         }
         bool boundingBox(AABB& box) const override {
             return surfaceMesh.boundingBox(box);
@@ -680,8 +675,8 @@ namespace Engine {
 
 
         }
-        bool hit(const Ray& r, float t_min, float t_max, HitRecord& rec) const override {
-            return surfaceMesh.hit(r, t_min, t_max, rec);
+        bool hit(const Ray& r, Interval ray_t, HitRecord& rec) const override {
+            return surfaceMesh.hit(r, ray_t, rec);
         }
         bool boundingBox(AABB& box) const override {
             return surfaceMesh.boundingBox(box);
@@ -704,8 +699,8 @@ namespace Engine {
 
         }
 
-        bool hit(const Ray& r, float t_min, float t_max, HitRecord& rec) const override {
-            return faces.hit(r, t_min, t_max, rec);
+        bool hit(const Ray& r, Interval ray_t, HitRecord& rec) const override {
+            return faces.hit(r, ray_t, rec);
         }
         bool boundingBox(AABB& box) const override {
             return faces.boundingBox(box);
@@ -740,13 +735,13 @@ namespace Engine {
             m_inverse_transpose = glm::transpose(m_inverse);
         }
 
-        bool hit(const Ray& r, float t_min, float t_max, HitRecord& rec) const override {
+        bool hit(const Ray& r, Interval ray_t, HitRecord& rec) const override {
             // Transform ray into object space
             glm::vec4 o = m_inverse * glm::vec4(r.origin(), 1.0f);
             glm::vec4 d = m_inverse * glm::vec4(r.direction(), 0.0f);
             Ray transformed_ray{glm::vec3(o), glm::vec3(d)};
 
-            if (!m_object->hit(transformed_ray, t_min, t_max, rec)) return false;
+            if (!m_object->hit(transformed_ray, ray_t, rec)) return false;
 
             // Transform hit point and normal back to world space
             rec.p = glm::vec3(m_transform * glm::vec4(rec.p, 1.0f));
@@ -1228,29 +1223,6 @@ namespace Engine {
 
         m_input.ObserveKey(GLFW_KEY_LEFT_SHIFT);
         m_input.ObserveKey(GLFW_KEY_LEFT_ALT);
-        auto metal3 = make_shared<Metal>(glm::vec3(0.5f, 0.8f, 0.8f), 1.0f);
-        //
-        // world.emplace<Triangle>(
-        //     glm::vec3(0, 0, -1),
-        //     glm::vec3(2, 0, -1),
-        //     glm::vec3(0, 2, -1),
-        //     metal3
-        // );
-        //
-        // world.emplace<Quadrilateral>(
-        //     glm::vec3(-1, 0, 0), // a
-        //     glm::vec3( 0, 0, 0), // b
-        //     glm::vec3( 0, 1, 0), // c
-        //     glm::vec3(-1, 1, 0), // d
-        //     metal3
-        // );
-        //
-        // world.emplace<Cube>(
-        //     metal3
-        //     );
-        //
-        // world.emplace<UVSphere>(10, 10,  metal3);
-        // world.emplace<Cone>(20, 1, 1.5, metal3);
         LoadSceneFromYaml(m_scenePath, world, m_camera);
         if (m_renderMode == RenderMode::aabb_debug)
             AddAABBDebugBoxes(world,  aabb_debug_overlay);
@@ -1344,7 +1316,7 @@ namespace Engine {
 
             ImGui::InputInt("Image width", &m_imageWidth);
             ImGui::InputInt("Image height", &m_imageHeight);
-            if (ImGui::Button("Export"))
+            if (ImGui::Button("Render Scene"))
                 GenerateRayTraceImage();
             if (ImGui::Button("Reload Scene")) {
                 ReloadScene();
@@ -1362,10 +1334,19 @@ namespace Engine {
     }
 #pragma endregion
 #pragma region Ray Tracing
+
+
+
+    glm::vec3 skyGradient(const Ray &r) {
+        glm::vec3 unit_direction = glm::normalize(r.direction());
+        float t = 0.5f * (unit_direction.y + 1.0f);
+        return (1.0f - t) * glm::vec3(1.0f, 1.0f, 1.0f) + t * glm::vec3(0.5f, 0.7f, 1.0f);
+    }
+
     glm::vec3 Raytracer::color(const Ray &r, int depth) {
         HitRecord rec{};
 
-        if (world.hit(r, 0.001f, numeric_limits<float>::infinity(), rec)) {
+        if (world.hit(r, Interval(0.001f, numeric_limits<float>::infinity()), rec)) {
             if (m_renderMode == RenderMode::blinn_phong) {
                 auto mat = std::dynamic_pointer_cast<BlinnPhongMaterial>(rec.mat_ptr);
                 if (mat) {
@@ -1375,9 +1356,7 @@ namespace Engine {
                 else {
                     return glm::vec3(1.0f, 0.0f, 1.0f); // Magenta = warning
                 }
-
             }
-
 
 
             Ray scattered{};
@@ -1388,22 +1367,20 @@ namespace Engine {
                 return {0.0f, 0.0f, 0.0f};
             }
         } else {
-            glm::vec3 unit_direction = glm::normalize(r.direction());
-            float t = 0.5f * (unit_direction.y + 1.0f);
-            return (1.0f - t) * glm::vec3(1.0f, 1.0f, 1.0f) + t * glm::vec3(0.5f, 0.7f, 1.0f);
+            return {0.0f, 0.0f, 0.0f};
+            //return skyGradient(r);
         }
     }
 
     glm::vec3 Raytracer::colorModeNormal(const Ray &r) {
         HitRecord rec{};
-        if (world.hit(r, 0.001f, numeric_limits<float>::infinity(), rec)) {
+        if (world.hit(r, Interval(0.001f, numeric_limits<float>::infinity()), rec)) {
             return 0.5f * (rec.normal + glm::vec3(1.0f));
         } else {
-            glm::vec3 unit_direction = glm::normalize(r.direction());
-            float t = 0.5f * (unit_direction.y + 1.0f);
-            return (1.0f - t) * glm::vec3(1.0f, 1.0f, 1.0f) + t * glm::vec3(0.5f, 0.7f, 1.0f);
+            return skyGradient(r);
         }
     }
+
 
     void Raytracer::GenerateRayTraceImage() {
         m_rayTraceImage.resize(m_imageWidth * m_imageHeight * 4); // RGBA
@@ -1420,7 +1397,7 @@ namespace Engine {
                 std::clog << "\rScanlines remaining: " << remaining << ' ' << std::flush;
             }
             for (int x = 0; x < m_imageWidth; ++x) {
-                glm::vec3 col(0.0f);
+                glm::vec3 col {0.0f};
                 // accumulate ns samples
                 for (int s = 0; s < samples; ++s) {
                     // jittered sample in [0,1)

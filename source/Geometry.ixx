@@ -44,4 +44,39 @@ namespace Engine {
         OctreeNode() = default;
     };
 
+
+    export class Interval {
+    public:
+        float min, max;
+
+        constexpr Interval()
+            : min(std::numeric_limits<float>::infinity()), max(-std::numeric_limits<float>::infinity()) {}
+
+        constexpr Interval(float min, float max)
+            : min(min), max(max) {}
+
+        float size() const {
+            return max - min;
+        }
+
+        bool contains(float x) const {
+            return min <= x && x <= max;
+        }
+
+        bool surrounds(float x) const {
+            return min < x && x < max;
+        }
+        Interval expand(float delta) const {
+            auto padding = delta/2;
+            return Interval(min - padding, max + padding);
+        }
+
+        static const Interval empty;
+        static const Interval universe;
+    };
+
+    inline const Interval Interval::empty    = Interval(+std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity());
+    inline const Interval Interval::universe = Interval(-std::numeric_limits<float>::infinity(), +std::numeric_limits<float>::infinity());
+
+
 }
