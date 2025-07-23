@@ -29,7 +29,13 @@ using namespace std;
 namespace Engine {
     bool culling = false;
 
-
+#pragma region Light
+    class Light {
+        public:
+        glm::vec3 direction;
+        glm::vec3 intensity;
+    };
+#pragma endregion
 
 #pragma region Helper Functions
 
@@ -46,6 +52,7 @@ namespace Engine {
         diffuse,
         normals,
         aabb_debug,
+        blinn_phong,
     };
 
     /**
@@ -57,7 +64,7 @@ namespace Engine {
      * It acts as a mapping resource to associate rendering modes with their
      * descriptive or user-friendly names for display or reference purposes.
      */
-    static const char *renderModeNames[] = {"Diffuse", "Normals", "AABB Debug"};
+    static const char *renderModeNames[] = {"Diffuse", "Normals", "AABB Debug", "Blinn-Phong Shading"};
 
     /**
      * @brief Generates a random floating-point number between 0 and 1.
@@ -321,22 +328,42 @@ namespace Engine {
         float ref_idx;
     };
 
+
     /**
      * @brief  Now that we defined all three materials we can apply it to a hitable object.
      * In this case we use the sphere as a simple object. Later on we will need to define these material interactions also for triangles and other surface to make them generic material models for all kinds of light interactions.
      */
+    class BlinnPhongMaterial final : public Material {
+    public:
+        glm::vec3 ambient;
+        glm::vec3 diffuse;
+        glm::vec3 specular;
+        float shininess;
+
+        BlinnPhongMaterial(glm::vec3 a, glm::vec3 d, glm::vec3 s, float sh)
+            : ambient(a), diffuse(d), specular(s), shininess(sh) {}
+
+        bool scatter(const Ray &r_in, const HitRecord &rec, glm::vec3 &attenuation, Ray &scattered) const override {
+            return false;  // skip recursion
+        }
+
+        glm::vec3 shade(const Ray& r_in, const HitRecord& rec, const Light& light) const {
+            glm::vec3 lightDir = glm::normalize(-light.direction);
+            glm::vec3 viewDir = glm::normalize(-r_in.direction());
+            glm::vec3 h = glm::normalize(viewDir + lightDir);
+
+            float diff = std::max(glm::dot(rec.normal, lightDir), 0.0f);
+            float spec = std::pow(std::max(glm::dot(rec.normal, h), 0.0f), shininess);
+
+            glm::vec3 ambientTerm = ambient;
+            glm::vec3 diffuseTerm = diffuse * diff;
+            glm::vec3 specularTerm = specular * spec;
+
+            return ambientTerm + light.intensity * (diffuseTerm + specularTerm);
+        }
+    };
 
 
-    /**
-     * @class Sphere
-     * @brief Represents a 3D sphere in a geometric space.
-     *
-     * This class provides functionalities to define and manipulate a sphere
-     * in three-dimensional space. It manages properties such as radius and
-     * spatial position and offers methods for performing calculations related
-     * to the sphere, including volume, surface area, and intersection tests
-     * with other geometrical objects.
-     */
 #pragma endregion
 
 #pragma region Hitable Objects
@@ -449,6 +476,16 @@ namespace Engine {
         std::unique_ptr<Triangle> tri2;
     };
 
+    /**
+     * @class Sphere
+     * @brief Represents a 3D sphere in a geometric space.
+     *
+     * This class provides functionalities to define and manipulate a sphere
+     * in three-dimensional space. It manages properties such as radius and
+     * spatial position and offers methods for performing calculations related
+     * to the sphere, including volume, surface area, and intersection tests
+     * with other geometrical objects.
+     */
 
     class Sphere final : public Hitable {
     public:
@@ -509,14 +546,14 @@ namespace Engine {
             bool hit_anything = false;
             float closest_so_far = t_max;
             for (auto const &obj: objects_) {
-                AABB box;
+                //AABB box;
 
-                if (obj->boundingBox(box) && box.hit(ray, t_min, closest_so_far)) {
+                //if (obj->boundingBox(box) && box.hit(ray, t_min, closest_so_far)) {
                     if (obj->hit(ray, t_min, closest_so_far, temp_rec)) {
                         hit_anything = true;
                         closest_so_far = temp_rec.t;
                         rec = temp_rec;
-                    }
+                 //   }
                 }
 
             }
@@ -750,7 +787,7 @@ namespace Engine {
 
 #pragma endregion
 
-
+#pragma region Raytracer Renderer
 	export class RaytracerRenderer
 	{
 
@@ -923,7 +960,7 @@ namespace Engine {
 
 	}
 
-
+#pragma endregion
 
 #pragma region Scene Loading
 
@@ -989,7 +1026,15 @@ namespace Engine {
             } else if (type == "glass") {
                 auto ref_idx = matNode["ref_idx"].as<float>();
                 materials[name] = std::make_shared<Dielectric>(ref_idx);
-            } else {
+            } else if (type == "blinn_phong") {
+                auto ambient = glm::vec3(matNode["ambient"][0].as<float>(), matNode["ambient"][1].as<float>(), matNode["ambient"][2].as<float>());
+                auto diffuse = glm::vec3(matNode["diffuse"][0].as<float>(), matNode["diffuse"][1].as<float>(), matNode["diffuse"][2].as<float>());
+                auto specular = glm::vec3(matNode["specular"][0].as<float>(), matNode["specular"][1].as<float>(), matNode["specular"][2].as<float>());
+                auto shininess = matNode["shininess"].as<float>();
+                materials[name] = std::make_shared<BlinnPhongMaterial>(ambient, diffuse, specular, shininess);
+            }
+
+            else {
                 std::cerr << "⚠️  Unknown material type: " << type << "\n";
             }
         }
@@ -1322,11 +1367,20 @@ namespace Engine {
 #pragma region Ray Tracing
     glm::vec3 Raytracer::color(const Ray &r, int depth) {
         HitRecord rec{};
-        // if (m_renderMode == RenderMode::aabb_debug) {
-        //     if (aabb_debug_overlay.hit(r, 0.001f, FLT_MAX, rec))
-        //         return rec.mat_ptr ? glm::vec3(1.0f, 0.0f, 0.0f) : glm::vec3(1.0f);
-        // }
+
         if (world.hit(r, 0.001f, numeric_limits<float>::infinity(), rec)) {
+            if (m_renderMode == RenderMode::blinn_phong) {
+                auto mat = std::dynamic_pointer_cast<BlinnPhongMaterial>(rec.mat_ptr);
+                if (mat) {
+                    Light light = {/*direction=*/glm::vec3(-1,-1,-1), /*intensity=*/glm::vec3(1)};
+                    return mat->shade(r, rec, light);
+                }
+                else {
+                    return glm::vec3(1.0f, 0.0f, 1.0f); // Magenta = warning
+                }
+
+            }
+
             Ray scattered{};
             glm::vec3 attenuation{};
             if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {

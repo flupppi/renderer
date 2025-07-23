@@ -1,20 +1,38 @@
 materials:
   - name: white
-    type: diffuse
-    albedo: [0.73, 0.73, 0.73]
+    type: blinn_phong
+    ambient:  [0.1, 0.1, 0.1]
+    diffuse:  [0.73, 0.73, 0.73]
+    specular: [0.3, 0.3, 0.3]
+    shininess: 16
+
   - name: red
-    type: diffuse
-    albedo: [0.65, 0.05, 0.05]
+    type: blinn_phong
+    ambient:  [0.1, 0.02, 0.02]
+    diffuse:  [0.65, 0.05, 0.05]
+    specular: [0.2, 0.2, 0.2]
+    shininess: 8
+
   - name: green
-    type: diffuse
-    albedo: [0.12, 0.45, 0.15]
+    type: blinn_phong
+    ambient:  [0.05, 0.1, 0.05]
+    diffuse:  [0.12, 0.45, 0.15]
+    specular: [0.2, 0.2, 0.2]
+    shininess: 8
+
   - name: shiny_metal
-    type: metal
-    albedo: [0.7, 0.6, 0.5]
-    fuzz: 0.00
+    type: blinn_phong
+    ambient:  [0.1, 0.1, 0.1]
+    diffuse:  [0.7, 0.6, 0.5]
+    specular: [0.9, 0.9, 0.9]
+    shininess: 64
+
   - name: green_diffuse
-    type: diffuse
-    albedo: [0.2, 0.5, 0.2]
+    type: blinn_phong
+    ambient:  [0.05, 0.1, 0.05]
+    diffuse:  [0.2, 0.5, 0.2]
+    specular: [0.1, 0.1, 0.1]
+    shininess: 8
 
 objects:
   # Walls (expanded to 3x2x3 volume)
