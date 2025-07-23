@@ -158,6 +158,25 @@ namespace Engine {
          * @brief the scatter function takes a ray that hits a surface and computes a scattered ray combined with additional data in the hit record.
          */
         virtual bool scatter(const Ray &r_in, const HitRecord &rec, glm::vec3 &attenuation, Ray &scattered) const = 0;
+        virtual glm::vec3 emitted() const {
+            return glm::vec3{0,0,0};
+        }
+    };
+
+    class DiffuseLight : public Material {
+    public:
+        DiffuseLight(const glm::vec3& emit) : color(emit) {}
+
+        bool scatter(const Ray &r_in, const HitRecord &rec, glm::vec3 &attenuation, Ray &scattered) const override{
+            return false;
+        }
+
+        glm::vec3 emitted() const override {
+            return color;
+        }
+
+    private:
+        glm::vec3 color;
     };
     /**
      * @brief Now next we actually define the materials.
@@ -1024,7 +1043,15 @@ namespace Engine {
                 auto specular = glm::vec3(matNode["specular"][0].as<float>(), matNode["specular"][1].as<float>(), matNode["specular"][2].as<float>());
                 auto shininess = matNode["shininess"].as<float>();
                 materials[name] = std::make_shared<BlinnPhongMaterial>(ambient, diffuse, specular, shininess);
+            }else if (type == "emissive") {
+                auto emit = matNode["emit"].as<std::vector<float>>();
+                if (emit.size() != 3) {
+                    std::cerr << "⚠️  Emissive material '" << name << "' must define a 3-component 'emit' vector\n";
+                    continue;
+                }
+                materials[name] = std::make_shared<DiffuseLight>(glm::vec3(emit[0], emit[1], emit[2]));
             }
+
 
             else {
                 std::cerr << "⚠️  Unknown material type: " << type << "\n";
@@ -1178,6 +1205,9 @@ namespace Engine {
         vector<uint8_t> m_rayTraceImage;
         int m_imageWidth{800};
         int m_imageHeight{600};
+	    glm::vec3 backgroundColor {0,0,0};
+	    int maxDepth = 10;
+	    bool useSkyGradient = false;
 
         void GenerateRayTraceImage(); // Ray tracing function
         // Define camera properties
@@ -1311,7 +1341,11 @@ namespace Engine {
             ImGui::Begin("Raytracing Stats");
             ImGui::Text("Render Mode: %s", m_camera.DebugMode().c_str());
             ImGui::SliderInt("Samples per Pixel", &samples, 1, 50);
-
+            ImGui::SliderInt("Max Depth", &maxDepth, 1, 50);
+            ImGui::Checkbox("Use Sky Gradient", &useSkyGradient);
+            if (!useSkyGradient) {
+                ImGui::ColorPicker3("Background Color", glm::value_ptr(backgroundColor));
+            }
             ImGui::Separator();
 
             ImGui::InputInt("Image width", &m_imageWidth);
@@ -1344,9 +1378,21 @@ namespace Engine {
     }
 
     glm::vec3 Raytracer::color(const Ray &r, int depth) {
+        // If we've exceeded the ray bounce limit, no more light is gathered.
+        if (depth <= 0)
+            return {0.0f, 0.0f, 0.0f};
         HitRecord rec{};
 
-        if (world.hit(r, Interval(0.001f, numeric_limits<float>::infinity()), rec)) {
+        if (!world.hit(r, Interval(0.001f, numeric_limits<float>::infinity()), rec)) {
+            if (useSkyGradient)
+                return skyGradient(r);
+            else
+                return backgroundColor;
+        }
+
+
+
+
             if (m_renderMode == RenderMode::blinn_phong) {
                 auto mat = std::dynamic_pointer_cast<BlinnPhongMaterial>(rec.mat_ptr);
                 if (mat) {
@@ -1359,17 +1405,16 @@ namespace Engine {
             }
 
 
-            Ray scattered{};
-            glm::vec3 attenuation{};
-            if (depth < 2 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
-                return attenuation * color(scattered, depth + 1);
-            } else {
-                return {0.0f, 0.0f, 0.0f};
-            }
-        } else {
-            return {0.0f, 0.0f, 0.0f};
-            //return skyGradient(r);
-        }
+        Ray scattered{};
+        glm::vec3 attenuation{};
+        glm::vec3 color_from_emission = rec.mat_ptr->emitted();
+
+        if (!rec.mat_ptr->scatter(r, rec, attenuation, scattered))
+            return color_from_emission;
+
+        glm::vec3 color_from_scatter =  attenuation * color(scattered, depth - 1);
+        return color_from_emission + color_from_scatter;
+
     }
 
     glm::vec3 Raytracer::colorModeNormal(const Ray &r) {
@@ -1410,10 +1455,10 @@ namespace Engine {
                             col += colorModeNormal(ray);
                             break;
                         case diffuse:
-                            col += color(ray, 0);
+                            col += color(ray, maxDepth);
                             break;
                         default:
-                            col += color(ray, 0);
+                            col += color(ray, maxDepth);
                     }
                 }
                 // average & gamma-correct (gamma=2.0)

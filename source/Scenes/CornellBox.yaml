@@ -18,6 +18,9 @@ materials:
   - name: glass
     type: glass
     ref_idx: 1.5
+  - name: light_emissive
+    type: emissive
+    emit: [ 4.0, 4.0, 4.0 ]
 objects:
   # Walls (expanded to 3x2x3 volume)
   - name: left_wall
@@ -74,7 +77,7 @@ objects:
 
   - name: cone
     type: cone
-    material: glass
+    material: light_emissive
     resolution: 12
     radius: 0.4
     height: 1.0
