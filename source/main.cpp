@@ -289,8 +289,5 @@ int main(int argc, char* argv[])
 	{
 		std::cerr << "range error\n";
 	}
-	catch (...)
-	{
-		std::cerr << "unknown exception thrown\n";
-	}
+
 }

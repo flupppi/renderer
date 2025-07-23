@@ -33,7 +33,7 @@ namespace Engine {
 
 #pragma region Light
     class Light {
-        public:
+    public:
         glm::vec3 direction;
         glm::vec3 intensity;
     };
@@ -113,18 +113,23 @@ namespace Engine {
  * We need to define materials that the light can interact with.
  */
     struct HitRecord;
+
     class TextureBase {
     public:
         virtual ~TextureBase() = default;
 
-        virtual glm::vec3 value(float u, float v, const glm::vec3& p) const = 0;
+        virtual glm::vec3 value(float u, float v, const glm::vec3 &p) const = 0;
     };
+
     class SolidColor : public TextureBase {
     public:
-        SolidColor(const glm::vec3& albedo) : albedo(albedo) {}
-        SolidColor(float red, float green, float blue) : SolidColor(glm::vec3(red,green,blue)) {}
+        SolidColor(const glm::vec3 &albedo) : albedo(albedo) {
+        }
 
-        glm::vec3 value(float u, float v, const glm::vec3& p) const override {
+        SolidColor(float red, float green, float blue) : SolidColor(glm::vec3(red, green, blue)) {
+        }
+
+        glm::vec3 value(float u, float v, const glm::vec3 &p) const override {
             return albedo;
         }
 
@@ -133,15 +138,16 @@ namespace Engine {
     };
 
     class CheckerTexture : public TextureBase {
-
     public:
         CheckerTexture(float scale, shared_ptr<TextureBase> even, shared_ptr<TextureBase> odd)
-          : inv_scale(1.0 / scale), even(even), odd(odd) {}
+            : inv_scale(1.0 / scale), even(even), odd(odd) {
+        }
 
-        CheckerTexture(float scale, const glm::vec3& c1, const glm::vec3& c2)
-          : CheckerTexture(scale, make_shared<SolidColor>(c1), make_shared<SolidColor>(c2)) {}
+        CheckerTexture(float scale, const glm::vec3 &c1, const glm::vec3 &c2)
+            : CheckerTexture(scale, make_shared<SolidColor>(c1), make_shared<SolidColor>(c2)) {
+        }
 
-        glm::vec3 value(float u, float v, const glm::vec3& p) const override {
+        glm::vec3 value(float u, float v, const glm::vec3 &p) const override {
             auto xInteger = int(std::floor(inv_scale * p.x));
             auto yInteger = int(std::floor(inv_scale * p.y));
             auto zInteger = int(std::floor(inv_scale * p.z));
@@ -156,7 +162,6 @@ namespace Engine {
         shared_ptr<TextureBase> even;
         shared_ptr<TextureBase> odd;
     };
-
 
 
     /**
@@ -175,7 +180,8 @@ namespace Engine {
         glm::vec3 normal;
         shared_ptr<Material> mat_ptr;
         bool front_face;
-        void set_face_normal(const Ray& r, const glm::vec3& outward_normal) {
+
+        void set_face_normal(const Ray &r, const glm::vec3 &outward_normal) {
             // Sets the hit record normal vector.
             // NOTE: the parameter `outward_normal` is assumed to have unit length.
 
@@ -196,6 +202,7 @@ namespace Engine {
         virtual ~Hitable() = default;
 
         virtual bool hit(const Ray &r, Interval ray_t, HitRecord &rec) const = 0;
+
         virtual bool boundingBox(AABB &box) const = 0;
     };
 
@@ -214,16 +221,18 @@ namespace Engine {
          * @brief the scatter function takes a ray that hits a surface and computes a scattered ray combined with additional data in the hit record.
          */
         virtual bool scatter(const Ray &r_in, const HitRecord &rec, glm::vec3 &attenuation, Ray &scattered) const = 0;
+
         virtual glm::vec3 emitted() const {
-            return glm::vec3{0,0,0};
+            return glm::vec3{0, 0, 0};
         }
     };
 
     class DiffuseLight : public Material {
     public:
-        DiffuseLight(const glm::vec3& emit) : color(emit) {}
+        DiffuseLight(const glm::vec3 &emit) : color(emit) {
+        }
 
-        bool scatter(const Ray &r_in, const HitRecord &rec, glm::vec3 &attenuation, Ray &scattered) const override{
+        bool scatter(const Ray &r_in, const HitRecord &rec, glm::vec3 &attenuation, Ray &scattered) const override {
             return false;
         }
 
@@ -234,6 +243,7 @@ namespace Engine {
     private:
         glm::vec3 color;
     };
+
     /**
      * @brief Now next we actually define the materials.
      *
@@ -253,9 +263,11 @@ namespace Engine {
      */
     class Lambertian final : public Material {
     public:
+        explicit Lambertian(const glm::vec3 &a): tex(make_shared<SolidColor>(a)) {
+        }
 
-        explicit Lambertian(const glm::vec3 &a): tex(make_shared<SolidColor>(a)) {}
-        explicit Lambertian(shared_ptr<TextureBase> tex) : tex(tex) {}
+        explicit Lambertian(shared_ptr<TextureBase> tex) : tex(tex) {
+        }
 
         bool scatter(const Ray &r_in, const HitRecord &rec, glm::vec3 &attenuation, Ray &scattered) const override {
             glm::vec3 target = rec.p + rec.normal + random_in_unit_sphere();
@@ -411,18 +423,28 @@ namespace Engine {
         glm::vec3 diffuse;
         glm::vec3 specular;
         float shininess;
+        float reflectivity;
 
-        BlinnPhongMaterial(glm::vec3 a, glm::vec3 d, glm::vec3 s, float sh)
-            : ambient(a), diffuse(d), specular(s), shininess(sh) {}
+        BlinnPhongMaterial(glm::vec3 a, glm::vec3 d, glm::vec3 s, float sh, float reflect = 0.0f)
+            : ambient(a), diffuse(d), specular(s), shininess(sh), reflectivity(reflect) {
+        }
 
         bool scatter(const Ray &r_in, const HitRecord &rec, glm::vec3 &attenuation, Ray &scattered) const override {
-            return false;  // skip recursion
+            return false; // skip recursion
         }
-        glm::vec3 shade(const Ray& r_in, const HitRecord& rec, const std::vector<Light>& lights, const Hitable& world) const {
+
+        glm::vec3 shade(
+            const Ray &r_in,
+            const HitRecord &rec,
+            const std::vector<Light> &lights,
+            const Hitable &world,
+            std::function<glm::vec3(const Ray &, int)> traceRay,
+            int depth
+        ) const {
             glm::vec3 viewDir = glm::normalize(-r_in.direction());
             glm::vec3 result = ambient;
 
-            for (const auto& light : lights) {
+            for (const auto &light: lights) {
                 glm::vec3 lightDir = glm::normalize(-light.direction);
                 glm::vec3 h = glm::normalize(viewDir + lightDir);
 
@@ -444,10 +466,19 @@ namespace Engine {
                     result += light.intensity * (diffuseTerm + specularTerm);
                 }
             }
+            // Reflective component
+            if (reflectivity > 0.0f && depth > 0) {
+                glm::vec3 reflectDir = reflect(glm::normalize(r_in.direction()), rec.normal);
+                glm::vec3 reflectOrigin = rec.p + 0.001f * rec.normal;
+                Ray reflectRay(reflectOrigin, reflectDir);
+
+                glm::vec3 reflectedColor = traceRay(reflectRay, depth - 1);
+                result = glm::mix(result, reflectedColor, reflectivity);
+            }
+
 
             return result;
         }
-
     };
 
 
@@ -455,21 +486,22 @@ namespace Engine {
 #pragma region Hitable Objects
     class DebugAABB : public Hitable {
     public:
-        explicit DebugAABB(const AABB& box) : box(box) {}
+        explicit DebugAABB(const AABB &box) : box(box) {
+        }
 
-        bool hit(const Ray& r, Interval ray_t, HitRecord& rec) const override {
+        bool hit(const Ray &r, Interval ray_t, HitRecord &rec) const override {
             // Ray-AABB intersection returns true if we hit the box
             if (slabsBoxTest(box.t0, box.t1, r.origin(), 1.0f / r.direction(), ray_t.min, ray_t.max)) {
                 rec.t = ray_t.min;
                 rec.p = r.point_at_paramter(rec.t);
-                rec.normal = glm::vec3(1, 0, 0);  // dummy normal
+                rec.normal = glm::vec3(1, 0, 0); // dummy normal
                 rec.mat_ptr = std::make_shared<Lambertian>(glm::vec3(1, 0, 0));
                 return true;
             }
             return false;
         }
 
-        bool boundingBox(AABB& out_box) const override {
+        bool boundingBox(AABB &out_box) const override {
             out_box = box;
             return true;
         }
@@ -480,13 +512,15 @@ namespace Engine {
 
     class Triangle : public Hitable {
     public:
-        Triangle(const glm::vec3& v0,
-            const glm::vec3& v1,
-            const glm::vec3& v2,
-            std::shared_ptr<Material> mat):
-            v0(v0), v1(v1),v2(v2),mat(std::move(mat)){}
+        Triangle(const glm::vec3 &v0,
+                 const glm::vec3 &v1,
+                 const glm::vec3 &v2,
+                 std::shared_ptr<Material> mat): v0(v0), v1(v1), v2(v2), mat(std::move(mat)) {
+        }
+
         bool hit(const Ray &ray, Interval ray_t, HitRecord &rec) const override;
-        bool boundingBox(AABB& box) const override {
+
+        bool boundingBox(AABB &box) const override {
             glm::vec3 min = glm::min(glm::min(v0, v1), v2);
             glm::vec3 max = glm::max(glm::max(v0, v1), v2);
             box = AABB(min, max);
@@ -496,8 +530,8 @@ namespace Engine {
     private:
         glm::vec3 v0, v1, v2;
         std::shared_ptr<Material> mat;
-
     };
+
     bool Triangle::hit(const Ray &ray, Interval ray_t, HitRecord &rec) const {
         // RAY - TRIANGLE Intersection with Möller-Trumbore Algorithm: https://doi.org/10.1080/10867651.1997.10487468
         const float EPSILON = 1e-6f;
@@ -533,12 +567,13 @@ namespace Engine {
 
     class Quadrilateral final : public Hitable {
     public:
-        Quadrilateral(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, const glm::vec3& d, std::shared_ptr<Material> mat) {
+        Quadrilateral(const glm::vec3 &a, const glm::vec3 &b, const glm::vec3 &c, const glm::vec3 &d,
+                      std::shared_ptr<Material> mat) {
             tri1 = std::make_unique<Triangle>(a, b, c, mat);
             tri2 = std::make_unique<Triangle>(a, c, d, mat);
         }
 
-        bool hit(const Ray& r, Interval ray_t, HitRecord& rec) const override {
+        bool hit(const Ray &r, Interval ray_t, HitRecord &rec) const override {
             HitRecord temp;
             bool hit1 = tri1->hit(r, ray_t, temp);
             bool hit2 = tri2->hit(r, Interval(ray_t.min, hit1 ? temp.t : ray_t.max), temp);
@@ -548,14 +583,14 @@ namespace Engine {
             }
             return false;
         }
-        bool boundingBox(AABB& box) const override {
+
+        bool boundingBox(AABB &box) const override {
             AABB box1, box2;
             if (!tri1->boundingBox(box1) || !tri2->boundingBox(box2))
                 return false;
             box = AABB(glm::min(box1.t0, box2.t0), glm::max(box1.t1, box2.t1));
             return true;
         }
-
 
     private:
         std::unique_ptr<Triangle> tri1;
@@ -578,6 +613,7 @@ namespace Engine {
         Sphere(const glm::vec3 &center, shared_ptr<Material> mat, float radius) : center(center), mat(std::move(mat)),
             radius(radius) {
         }
+
         bool hit(const Ray &ray, Interval ray_t, HitRecord &rec) const override {
             glm::vec3 oc = ray.origin() - center;
             float a = glm::dot(ray.direction(), ray.direction());
@@ -600,20 +636,21 @@ namespace Engine {
             rec.t = root;
             rec.p = ray.point_at_paramter(root);
             glm::vec3 normal = (rec.p - center) / radius;
-            rec.set_face_normal(ray, normal );
+            rec.set_face_normal(ray, normal);
             get_sphere_uv(normal, rec.u, rec.v);
             rec.mat_ptr = mat;
             return true;
         }
-        static void get_sphere_uv(const glm::vec3& p, float& u, float& v) {
+
+        static void get_sphere_uv(const glm::vec3 &p, float &u, float &v) {
             auto theta = std::acos(-p.y);
             auto phi = std::atan2(-p.z, p.x) + glm::pi<float>();
 
-            u = phi / (2*glm::pi<float>());
+            u = phi / (2 * glm::pi<float>());
             v = theta / glm::pi<float>();
         }
 
-        bool boundingBox(AABB& box) const override {
+        bool boundingBox(AABB &box) const override {
             glm::vec3 offset(radius, radius, radius);
             box = AABB(center - offset, center + offset);
             return true;
@@ -624,7 +661,6 @@ namespace Engine {
         float radius;
         shared_ptr<Material> mat;
     };
-
 
 
     class HitableList : public Hitable {
@@ -642,23 +678,22 @@ namespace Engine {
                 //AABB box;
 
                 //if (obj->boundingBox(box) && box.hit(ray, t_min, closest_so_far)) {
-                    if (obj->hit(ray, Interval(ray_t.min, closest_so_far), temp_rec)) {
-                        hit_anything = true;
-                        closest_so_far = temp_rec.t;
-                        rec = temp_rec;
-                 //   }
+                if (obj->hit(ray, Interval(ray_t.min, closest_so_far), temp_rec)) {
+                    hit_anything = true;
+                    closest_so_far = temp_rec.t;
+                    rec = temp_rec;
+                    //   }
                 }
-
             }
             return hit_anything;
         }
 
-        bool boundingBox(AABB& box) const override {
+        bool boundingBox(AABB &box) const override {
             if (objects_.empty()) return false;
 
             AABB tempBox;
             bool first = true;
-            for (const auto& obj : objects_) {
+            for (const auto &obj: objects_) {
                 if (!obj->boundingBox(tempBox))
                     return false;
                 box = first ? tempBox : AABB(glm::min(box.t0, tempBox.t0), glm::max(box.t1, tempBox.t1));
@@ -666,24 +701,24 @@ namespace Engine {
             }
             return true;
         }
-        const std::vector<std::unique_ptr<Hitable>>& getObjects() const { return objects_; }
+
+        const std::vector<std::unique_ptr<Hitable> > &getObjects() const { return objects_; }
+
     private:
         vector<unique_ptr<Hitable> > objects_;
     };
 
 
-
     class UVSphere final : public Hitable {
     public:
-        explicit UVSphere(int n_slices, int n_stacks, shared_ptr<Material> mat)
-        {
+        explicit UVSphere(int n_slices, int n_stacks, shared_ptr<Material> mat) {
             std::vector<glm::vec3> vertices;
             // add top vertex
             auto v0 = glm::vec3(0.0f, 1.0f, 0.0f);
             vertices.emplace_back(v0);
 
             // generate vertices per stack / slice
-            for (int i = 0; i < n_stacks -1; i++) {
+            for (int i = 0; i < n_stacks - 1; i++) {
                 auto phi = M_PI * double(i + 1) / double(n_stacks);
                 for (int j = 0; j < n_slices; j++) {
                     auto theta = 2.0f * M_PI * double(j) / double(n_slices);
@@ -698,8 +733,7 @@ namespace Engine {
             auto v1 = vertices.emplace_back(glm::vec3(0, -1, 0));
 
             // add top / bottom triangles
-            for (int i = 0; i < n_slices; ++i)
-            {
+            for (int i = 0; i < n_slices; ++i) {
                 auto i0 = i + 1;
                 auto i1 = (i + 1) % n_slices + 1;
                 surfaceMesh.emplace<Triangle>(v0, vertices[i1], vertices[i0], mat);
@@ -710,38 +744,35 @@ namespace Engine {
             }
 
             // add quads per stack / slice
-            for (int j = 0; j < n_stacks - 2; j++)
-            {
+            for (int j = 0; j < n_stacks - 2; j++) {
                 auto j0 = j * n_slices + 1;
                 auto j1 = (j + 1) * n_slices + 1;
-                for (int i = 0; i < n_slices; i++)
-                {
+                for (int i = 0; i < n_slices; i++) {
                     auto i0 = j0 + i;
                     auto i1 = j0 + (i + 1) % n_slices;
                     auto i2 = j1 + (i + 1) % n_slices;
                     auto i3 = j1 + i;
                     surfaceMesh.emplace<Quadrilateral>(vertices[i0], vertices[i1],
-                                  vertices[i2], vertices[i3], mat);
+                                                       vertices[i2], vertices[i3], mat);
                 }
             }
         }
-        bool hit(const Ray& r, Interval ray_t, HitRecord& rec) const override {
+
+        bool hit(const Ray &r, Interval ray_t, HitRecord &rec) const override {
             return surfaceMesh.hit(r, ray_t, rec);
         }
-        bool boundingBox(AABB& box) const override {
+
+        bool boundingBox(AABB &box) const override {
             return surfaceMesh.boundingBox(box);
         }
 
     private:
         HitableList surfaceMesh;
-
-
     };
 
     class Cone final : public Hitable {
     public:
-        explicit Cone(int resolution, float radius, float height, shared_ptr<Material> mat)
-        {
+        explicit Cone(int resolution, float radius, float height, shared_ptr<Material> mat) {
             std::vector<glm::vec3> vertices;
             std::vector<glm::vec3> base_vertices;
             // add vertices subdividing a circle
@@ -771,44 +802,43 @@ namespace Engine {
                 int j = (i + 1) % resolution;
                 surfaceMesh.emplace<Triangle>(base_center, base_vertices[j], base_vertices[i], mat);
             }
-
-
         }
-        bool hit(const Ray& r, Interval ray_t, HitRecord& rec) const override {
+
+        bool hit(const Ray &r, Interval ray_t, HitRecord &rec) const override {
             return surfaceMesh.hit(r, ray_t, rec);
         }
-        bool boundingBox(AABB& box) const override {
+
+        bool boundingBox(AABB &box) const override {
             return surfaceMesh.boundingBox(box);
         }
+
     private:
         HitableList surfaceMesh;
-
-
     };
 
     class Cube final : public Hitable {
     public:
         explicit Cube(std::shared_ptr<Material> mat) {
-            addFace({ 0, 0, 1}, mat);  // front
-            addFace({ 0, 0,-1}, mat);  // back
-            addFace({ 0, 1, 0}, mat);  // top
-            addFace({ 0,-1, 0}, mat);  // bottom
-            addFace({ 1, 0, 0}, mat);  // right
-            addFace({-1, 0, 0}, mat);  // left
-
+            addFace({0, 0, 1}, mat); // front
+            addFace({0, 0, -1}, mat); // back
+            addFace({0, 1, 0}, mat); // top
+            addFace({0, -1, 0}, mat); // bottom
+            addFace({1, 0, 0}, mat); // right
+            addFace({-1, 0, 0}, mat); // left
         }
 
-        bool hit(const Ray& r, Interval ray_t, HitRecord& rec) const override {
+        bool hit(const Ray &r, Interval ray_t, HitRecord &rec) const override {
             return faces.hit(r, ray_t, rec);
         }
-        bool boundingBox(AABB& box) const override {
+
+        bool boundingBox(AABB &box) const override {
             return faces.boundingBox(box);
         }
 
     private:
         HitableList faces;
 
-        void addFace(const glm::vec3& normal, std::shared_ptr<Material> mat) {
+        void addFace(const glm::vec3 &normal, std::shared_ptr<Material> mat) {
             // Right-handed system: build a quad with normal and two tangent vectors
             glm::vec3 up = (std::abs(normal.y) > 0.99f) ? glm::vec3(0, 0, 1) : glm::vec3(0, 1, 0);
             glm::vec3 tangent = glm::normalize(glm::cross(normal, up));
@@ -817,8 +847,8 @@ namespace Engine {
             glm::vec3 center = 0.5f * normal;
 
             glm::vec3 p1 = center + 0.5f * (-tangent - bitangent);
-            glm::vec3 p2 = center + 0.5f * ( tangent - bitangent);
-            glm::vec3 p3 = center + 0.5f * ( tangent + bitangent);
+            glm::vec3 p2 = center + 0.5f * (tangent - bitangent);
+            glm::vec3 p3 = center + 0.5f * (tangent + bitangent);
             glm::vec3 p4 = center + 0.5f * (-tangent + bitangent);
 
             faces.emplace<Triangle>(p3, p2, p1, mat);
@@ -834,7 +864,7 @@ namespace Engine {
             m_inverse_transpose = glm::transpose(m_inverse);
         }
 
-        bool hit(const Ray& r, Interval ray_t, HitRecord& rec) const override {
+        bool hit(const Ray &r, Interval ray_t, HitRecord &rec) const override {
             // Transform ray into object space
             glm::vec4 o = m_inverse * glm::vec4(r.origin(), 1.0f);
             glm::vec4 d = m_inverse * glm::vec4(r.direction(), 0.0f);
@@ -847,7 +877,8 @@ namespace Engine {
             rec.normal = glm::normalize(glm::vec3(m_inverse_transpose * glm::vec4(rec.normal, 0.0f)));
             return true;
         }
-        bool boundingBox(AABB& box) const override {
+
+        bool boundingBox(AABB &box) const override {
             AABB childBox;
             if (!m_object->boundingBox(childBox)) return false;
 
@@ -860,7 +891,7 @@ namespace Engine {
             };
 
             glm::vec3 minPt(FLT_MAX), maxPt(-FLT_MAX);
-            for (auto& corner : corners) {
+            for (auto &corner: corners) {
                 glm::vec3 transformed = glm::vec3(m_transform * glm::vec4(corner, 1.0f));
                 minPt = glm::min(minPt, transformed);
                 maxPt = glm::max(maxPt, transformed);
@@ -869,7 +900,6 @@ namespace Engine {
             box = AABB(minPt, maxPt);
             return true;
         }
-
 
     private:
         std::unique_ptr<Hitable> m_object;
@@ -880,211 +910,210 @@ namespace Engine {
 
 #pragma endregion
 #pragma region Raytracer Renderer
-	export class RaytracerRenderer
-	{
+    export class RaytracerRenderer {
+    public:
+        void Initialize(int width, int height);
 
-	public:
-		void Initialize(int width, int height);
-		void InitializeFullScreenQuad();
-		void RenderRayTraceTexture();
-		void UpdateTexture(const std::vector<uint8_t>& image, int width, int height);  // New
-		void UpdateTextureRow(std::span<const uint8_t> rowData, int x, int y, int width, int height) const
-		{
-			glBindTexture(GL_TEXTURE_2D, m_rayTraceTexture);
-			glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, rowData.data());
-			glBindTexture(GL_TEXTURE_2D, 0);
-		}
-		void InitializeAABBRenderer() {
-			glGenVertexArrays(1, &m_bboxVAO);
-			glGenBuffers(1, &m_bboxVBO);
+        void InitializeFullScreenQuad();
 
-			glBindVertexArray(m_bboxVAO);
-			glBindBuffer(GL_ARRAY_BUFFER, m_bboxVBO);
-			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
-			glEnableVertexAttribArray(0);
-			glBindVertexArray(0);
-		}
+        void RenderRayTraceTexture();
 
-		void RenderBoundingBox(const AABB& box, glm::mat4 mvp) const {
-			glm::vec3 min = box.t0;
-			glm::vec3 max = box.t1;
+        void UpdateTexture(const std::vector<uint8_t> &image, int width, int height); // New
+        void UpdateTextureRow(std::span<const uint8_t> rowData, int x, int y, int width, int height) const {
+            glBindTexture(GL_TEXTURE_2D, m_rayTraceTexture);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, rowData.data());
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
 
-			glm::vec3 corners[] = {
-				{min.x, min.y, min.z}, {max.x, min.y, min.z},
-				{max.x, max.y, min.z}, {min.x, max.y, min.z},
-				{min.x, min.y, max.z}, {max.x, min.y, max.z},
-				{max.x, max.y, max.z}, {min.x, max.y, max.z}
-			};
+        void InitializeAABBRenderer() {
+            glGenVertexArrays(1, &m_bboxVAO);
+            glGenBuffers(1, &m_bboxVBO);
 
-			GLuint indices[] = {
-				0, 1, 1, 2, 2, 3, 3, 0,
-				4, 5, 5, 6, 6, 7, 7, 4,
-				0, 4, 1, 5, 2, 6, 3, 7
-			};
-			glLineWidth(2);
-			glm::vec3 lineVertices[24];
-			for (int i = 0; i < 24; ++i)
-				lineVertices[i] = corners[indices[i]];
-			glBindVertexArray(m_bboxVAO);
-			glBindBuffer(GL_ARRAY_BUFFER, m_bboxVBO);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(lineVertices), lineVertices, GL_DYNAMIC_DRAW);
-			glUseProgram(m_bbShader);
-			glUniformMatrix4fv(glGetUniformLocation(m_bbShader, "transformation"), 1, GL_FALSE, glm::value_ptr(mvp));
-			glDrawArrays(GL_LINES, 0, 24);
-			glBindVertexArray(0);
-		}
+            glBindVertexArray(m_bboxVAO);
+            glBindBuffer(GL_ARRAY_BUFFER, m_bboxVBO);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void *) 0);
+            glEnableVertexAttribArray(0);
+            glBindVertexArray(0);
+        }
 
-		void ClearResources();
+        void RenderBoundingBox(const AABB &box, glm::mat4 mvp) const {
+            glm::vec3 min = box.t0;
+            glm::vec3 max = box.t1;
 
+            glm::vec3 corners[] = {
+                {min.x, min.y, min.z}, {max.x, min.y, min.z},
+                {max.x, max.y, min.z}, {min.x, max.y, min.z},
+                {min.x, min.y, max.z}, {max.x, min.y, max.z},
+                {max.x, max.y, max.z}, {min.x, max.y, max.z}
+            };
 
-	private:
-	    int m_width=800, m_height=600;
-		void LoadShaders();
-		GLuint m_rayTraceTexture{ 0 };  // Texture ID for the ray-traced image
-		GLuint m_fullScreenShader{ 0 };
-		GLuint m_bbShader{ 0 };
-		GLuint m_fullScreenVAO{ 0 };
-		GLuint m_fullScreenVBO{ 0 };
-		GLuint m_bboxVAO = 0;
-		GLuint m_bboxVBO = 0;
+            GLuint indices[] = {
+                0, 1, 1, 2, 2, 3, 3, 0,
+                4, 5, 5, 6, 6, 7, 7, 4,
+                0, 4, 1, 5, 2, 6, 3, 7
+            };
+            glLineWidth(2);
+            glm::vec3 lineVertices[24];
+            for (int i = 0; i < 24; ++i)
+                lineVertices[i] = corners[indices[i]];
+            glBindVertexArray(m_bboxVAO);
+            glBindBuffer(GL_ARRAY_BUFFER, m_bboxVBO);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(lineVertices), lineVertices, GL_DYNAMIC_DRAW);
+            glUseProgram(m_bbShader);
+            glUniformMatrix4fv(glGetUniformLocation(m_bbShader, "transformation"), 1, GL_FALSE, glm::value_ptr(mvp));
+            glDrawArrays(GL_LINES, 0, 24);
+            glBindVertexArray(0);
+        }
 
+        void ClearResources();
 
-	};
-//************************************
-	// Load and Initialize all Index and Vertex buffer Objects, Shaders, Vertex Array Objects and Textures that are needed for rendering the Model.
-	//************************************
-	void RaytracerRenderer::Initialize(int width, int height)
-	{
-	    m_width = width;
-	    m_height = height;
-		LoadShaders();
-		// Unbind Buffers
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glBindVertexArray(0);
-		glEnableVertexAttribArray(0);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-		// Initialize ray trace texture
-		glGenTextures(1, &m_rayTraceTexture);
-		glBindTexture(GL_TEXTURE_2D, m_rayTraceTexture);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_width,m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);  // Placeholder size
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glBindTexture(GL_TEXTURE_2D, 0);
+    private:
+        int m_width = 800, m_height = 600;
 
-		InitializeFullScreenQuad();
-		InitializeAABBRenderer();
-	}
-	void RaytracerRenderer::InitializeFullScreenQuad()
-	{
-		// Define vertices for a full-screen quad with position and texture coordinates
-		float quadVertices[] = {
-			// Positions   // TexCoords
-			-1.0f,  1.0f,   0.0f, 1.0f,  // Top-left
-			-1.0f, -1.0f,   0.0f, 0.0f,  // Bottom-left
-			 1.0f, -1.0f,   1.0f, 0.0f,  // Bottom-right
+        void LoadShaders();
 
-			-1.0f,  1.0f,   0.0f, 1.0f,  // Top-left
-			 1.0f, -1.0f,   1.0f, 0.0f,  // Bottom-right
-			 1.0f,  1.0f,   1.0f, 1.0f   // Top-right
-		};
+        GLuint m_rayTraceTexture{0}; // Texture ID for the ray-traced image
+        GLuint m_fullScreenShader{0};
+        GLuint m_bbShader{0};
+        GLuint m_fullScreenVAO{0};
+        GLuint m_fullScreenVBO{0};
+        GLuint m_bboxVAO = 0;
+        GLuint m_bboxVBO = 0;
+    };
 
-		// Generate and bind VAO/VBO
-		glGenVertexArrays(1, &m_fullScreenVAO);
-		glGenBuffers(1, &m_fullScreenVBO);
+    //************************************
+    // Load and Initialize all Index and Vertex buffer Objects, Shaders, Vertex Array Objects and Textures that are needed for rendering the Model.
+    //************************************
+    void RaytracerRenderer::Initialize(int width, int height) {
+        m_width = width;
+        m_height = height;
+        LoadShaders();
+        // Unbind Buffers
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        // Initialize ray trace texture
+        glGenTextures(1, &m_rayTraceTexture);
+        glBindTexture(GL_TEXTURE_2D, m_rayTraceTexture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_width, m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        // Placeholder size
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glBindTexture(GL_TEXTURE_2D, 0);
 
-		glBindVertexArray(m_fullScreenVAO);
+        InitializeFullScreenQuad();
+        InitializeAABBRenderer();
+    }
 
-		glBindBuffer(GL_ARRAY_BUFFER, m_fullScreenVBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+    void RaytracerRenderer::InitializeFullScreenQuad() {
+        // Define vertices for a full-screen quad with position and texture coordinates
+        float quadVertices[] = {
+            // Positions   // TexCoords
+            -1.0f, 1.0f, 0.0f, 1.0f, // Top-left
+            -1.0f, -1.0f, 0.0f, 0.0f, // Bottom-left
+            1.0f, -1.0f, 1.0f, 0.0f, // Bottom-right
 
-		// Position attribute
-		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-		glEnableVertexAttribArray(0);
+            -1.0f, 1.0f, 0.0f, 1.0f, // Top-left
+            1.0f, -1.0f, 1.0f, 0.0f, // Bottom-right
+            1.0f, 1.0f, 1.0f, 1.0f // Top-right
+        };
 
-		// Texture coordinate attribute
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-		glEnableVertexAttribArray(1);
+        // Generate and bind VAO/VBO
+        glGenVertexArrays(1, &m_fullScreenVAO);
+        glGenBuffers(1, &m_fullScreenVBO);
 
-		// Unbind VAO and VBO
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glBindVertexArray(0);
-	}
+        glBindVertexArray(m_fullScreenVAO);
 
-	void RaytracerRenderer::UpdateTexture(const std::vector<uint8_t>& image, int width, int height)
-	{
-	    glBindTexture(GL_TEXTURE_2D, m_rayTraceTexture);
+        glBindBuffer(GL_ARRAY_BUFFER, m_fullScreenVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
 
-	    if (m_width != width || m_height != height) {
-	        m_width = width;
-	        m_height = height;
-	        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_width,m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);  // Placeholder size
+        // Position attribute
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *) 0);
+        glEnableVertexAttribArray(0);
 
-	    }
+        // Texture coordinate attribute
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *) (2 * sizeof(float)));
+        glEnableVertexAttribArray(1);
 
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, image.data());
-		glBindTexture(GL_TEXTURE_2D, 0);
-	}
+        // Unbind VAO and VBO
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
 
-	void RaytracerRenderer::RenderRayTraceTexture()
-	{
+    void RaytracerRenderer::UpdateTexture(const std::vector<uint8_t> &image, int width, int height) {
+        glBindTexture(GL_TEXTURE_2D, m_rayTraceTexture);
 
-		glUseProgram(m_fullScreenShader);
+        if (m_width != width || m_height != height) {
+            m_width = width;
+            m_height = height;
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_width, m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+            // Placeholder size
+        }
 
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, m_rayTraceTexture);
-		glUniform1i(glGetUniformLocation(m_fullScreenShader, "rayTraceTexture"), 0);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, image.data());
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+    void RaytracerRenderer::RenderRayTraceTexture() {
+        glUseProgram(m_fullScreenShader);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, m_rayTraceTexture);
+        glUniform1i(glGetUniformLocation(m_fullScreenShader, "rayTraceTexture"), 0);
 
 
-		glBindVertexArray(m_fullScreenVAO);  // Full-screen quad VAO
-		glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindVertexArray(m_fullScreenVAO); // Full-screen quad VAO
+        glDrawArrays(GL_TRIANGLES, 0, 6);
 
-		glBindVertexArray(0);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glUseProgram(0);
-	}
-	//************************************
-	// Delete Buffers, VAOs and Shaders
-	//************************************
-	void RaytracerRenderer::ClearResources()
-	{
-		// Cleanup full-screen quad resources
-		glDeleteVertexArrays(1, &m_fullScreenVAO);
-		glDeleteBuffers(1, &m_fullScreenVBO);
-		glDeleteProgram(m_fullScreenShader);
-	}
-	//************************************
-	// Load the shader programs from their glsl files using the ShaderUtil.
-	//************************************
-	void RaytracerRenderer::LoadShaders()
-	{
-		// Load a full-screen shader program
-		m_fullScreenShader = ShaderUtil::CreateShaderProgram("shaders/VFullScreenQuad.glsl", "shaders/FFullScreenQuad.glsl", nullptr);
-		m_bbShader =  ShaderUtil::CreateShaderProgram("shaders/VJoint.glsl", "shaders/FJoint.glsl", nullptr);
+        glBindVertexArray(0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glUseProgram(0);
+    }
 
-	}
+    //************************************
+    // Delete Buffers, VAOs and Shaders
+    //************************************
+    void RaytracerRenderer::ClearResources() {
+        // Cleanup full-screen quad resources
+        glDeleteVertexArrays(1, &m_fullScreenVAO);
+        glDeleteBuffers(1, &m_fullScreenVBO);
+        glDeleteProgram(m_fullScreenShader);
+    }
+
+    //************************************
+    // Load the shader programs from their glsl files using the ShaderUtil.
+    //************************************
+    void RaytracerRenderer::LoadShaders() {
+        // Load a full-screen shader program
+        m_fullScreenShader = ShaderUtil::CreateShaderProgram("shaders/VFullScreenQuad.glsl",
+                                                             "shaders/FFullScreenQuad.glsl", nullptr);
+        m_bbShader = ShaderUtil::CreateShaderProgram("shaders/VJoint.glsl", "shaders/FJoint.glsl", nullptr);
+    }
 
 #pragma endregion
 #pragma region Scene Loading
-    std::shared_ptr<Engine::TextureBase> parseTexture(const YAML::Node& node) {
-	    using namespace Engine;
-	    if (node.IsSequence() && node.size() == 3) {
-	        // Treat as solid color
-	        return std::make_shared<SolidColor>(glm::vec3(node[0].as<float>(), node[1].as<float>(), node[2].as<float>()));
-	    }
+    std::shared_ptr<Engine::TextureBase> parseTexture(const YAML::Node &node) {
+        using namespace Engine;
+        if (node.IsSequence() && node.size() == 3) {
+            // Treat as solid color
+            return std::make_shared<SolidColor>(
+                glm::vec3(node[0].as<float>(), node[1].as<float>(), node[2].as<float>()));
+        }
 
-	    if (node["checker"]) {
-	        const auto& checker = node["checker"];
-	        float scale = checker["scale"] ? checker["scale"].as<float>() : 1.0f;
+        if (node["checker"]) {
+            const auto &checker = node["checker"];
+            float scale = checker["scale"] ? checker["scale"].as<float>() : 1.0f;
 
-	        // Recursively parse even and odd nodes
-	        auto even = parseTexture(checker["even"]);
-	        auto odd = parseTexture(checker["odd"]);
-	        return std::make_shared<CheckerTexture>(scale, even, odd);
-	    }
+            // Recursively parse even and odd nodes
+            auto even = parseTexture(checker["even"]);
+            auto odd = parseTexture(checker["odd"]);
+            return std::make_shared<CheckerTexture>(scale, even, odd);
+        }
 
-	    std::cerr << "⚠️ Unknown texture format\n";
-	    return std::make_shared<SolidColor>(glm::vec3(1.0f, 0.0f, 1.0f)); // magenta warning
-	}
+        std::cerr << "⚠️ Unknown texture format\n";
+        return std::make_shared<SolidColor>(glm::vec3(1.0f, 0.0f, 1.0f)); // magenta warning
+    }
 
     void LoadSceneFromYaml(const std::filesystem::path &path, HitableList &world, Camera &camera) {
         YAML::Node scene = YAML::LoadFile(path.string());
@@ -1095,7 +1124,6 @@ namespace Engine {
             std::cerr << "⚠️  Invalid scene file: must contain 'materials' and 'objects'\n";
             return;
         }
-
 
 
         // --- Load camera if present ---
@@ -1147,7 +1175,6 @@ namespace Engine {
                 } else {
                     std::cerr << "⚠️ Diffuse material '" << name << "' missing 'albedo' or 'texture'\n";
                 }
-
             } else if (type == "metal") {
                 auto albedo = matNode["albedo"].as<std::vector<float> >();
                 auto fuzz = matNode["fuzz"].as<float>();
@@ -1157,22 +1184,23 @@ namespace Engine {
                 auto ref_idx = matNode["ref_idx"].as<float>();
                 materials[name] = std::make_shared<Dielectric>(ref_idx);
             } else if (type == "blinn_phong") {
-                auto ambient = glm::vec3(matNode["ambient"][0].as<float>(), matNode["ambient"][1].as<float>(), matNode["ambient"][2].as<float>());
-                auto diffuse = glm::vec3(matNode["diffuse"][0].as<float>(), matNode["diffuse"][1].as<float>(), matNode["diffuse"][2].as<float>());
-                auto specular = glm::vec3(matNode["specular"][0].as<float>(), matNode["specular"][1].as<float>(), matNode["specular"][2].as<float>());
+                auto ambient = glm::vec3(matNode["ambient"][0].as<float>(), matNode["ambient"][1].as<float>(),
+                                         matNode["ambient"][2].as<float>());
+                auto diffuse = glm::vec3(matNode["diffuse"][0].as<float>(), matNode["diffuse"][1].as<float>(),
+                                         matNode["diffuse"][2].as<float>());
+                auto specular = glm::vec3(matNode["specular"][0].as<float>(), matNode["specular"][1].as<float>(),
+                                          matNode["specular"][2].as<float>());
                 auto shininess = matNode["shininess"].as<float>();
-                materials[name] = std::make_shared<BlinnPhongMaterial>(ambient, diffuse, specular, shininess);
-            }else if (type == "emissive") {
-                auto emit = matNode["emit"].as<std::vector<float>>();
+                auto reflectivity = matNode["reflectivity"] ? matNode["reflectivity"].as<float>() : 0.0f;
+                materials[name] = std::make_shared<BlinnPhongMaterial>(ambient, diffuse, specular, shininess, reflectivity);
+            } else if (type == "emissive") {
+                auto emit = matNode["emit"].as<std::vector<float> >();
                 if (emit.size() != 3) {
                     std::cerr << "⚠️  Emissive material '" << name << "' must define a 3-component 'emit' vector\n";
                     continue;
                 }
                 materials[name] = std::make_shared<DiffuseLight>(glm::vec3(emit[0], emit[1], emit[2]));
-            }
-
-
-            else {
+            } else {
                 std::cerr << "⚠️  Unknown material type: " << type << "\n";
             }
         }
@@ -1188,17 +1216,17 @@ namespace Engine {
             if (obj["transform"]) {
                 auto tf = obj["transform"];
                 if (tf["translate"]) {
-                    auto t = tf["translate"].as<std::vector<float>>();
+                    auto t = tf["translate"].as<std::vector<float> >();
                     transform = glm::translate(transform, glm::vec3(t[0], t[1], t[2]));
                 }
                 if (tf["rotate"]) {
-                    auto r = tf["rotate"].as<std::vector<float>>();
+                    auto r = tf["rotate"].as<std::vector<float> >();
                     transform = glm::rotate(transform, glm::radians(r[0]), glm::vec3(1, 0, 0));
                     transform = glm::rotate(transform, glm::radians(r[1]), glm::vec3(0, 1, 0));
                     transform = glm::rotate(transform, glm::radians(r[2]), glm::vec3(0, 0, 1));
                 }
                 if (tf["scale"]) {
-                    auto s = tf["scale"].as<std::vector<float>>();
+                    auto s = tf["scale"].as<std::vector<float> >();
                     transform = glm::scale(transform, glm::vec3(s[0], s[1], s[2]));
                 }
             }
@@ -1213,10 +1241,11 @@ namespace Engine {
             if (type == "cube") {
                 auto instance = std::make_unique<Cube>(mat);
                 world.emplace<Transform>(std::move(instance), transform);
-            }
-            else if (type == "sphere") {
+            } else if (type == "sphere") {
                 float radius = obj["radius"] ? obj["radius"].as<float>() : 1.0f;
-                auto position = obj["position"] ? obj["position"].as<std::vector<float>>() : std::vector<float>{0,0,0};
+                auto position = obj["position"]
+                                    ? obj["position"].as<std::vector<float> >()
+                                    : std::vector<float>{0, 0, 0};
                 auto instance = std::make_unique<Sphere>(glm::vec3(position[0], position[1], position[2]), mat, radius);
 
                 // Only use Transform if scale/rotation is specified
@@ -1225,20 +1254,18 @@ namespace Engine {
                 } else {
                     world.emplace<Sphere>(glm::vec3(position[0], position[1], position[2]), mat, radius);
                 }
-            }
-            else if (type == "uvsphere") {
+            } else if (type == "uvsphere") {
                 int slices = obj["slices"] ? obj["slices"].as<int>() : 16;
                 int stacks = obj["stacks"] ? obj["stacks"].as<int>() : 16;
                 auto instance = std::make_unique<UVSphere>(slices, stacks, mat);
                 world.emplace<Transform>(std::move(instance), transform);
-            }
-            else if (type == "cone") {
+            } else if (type == "cone") {
                 int resolution = obj["resolution"] ? obj["resolution"].as<int>() : 20;
                 float radius = obj["radius"] ? obj["radius"].as<float>() : 1.0f;
                 float height = obj["height"] ? obj["height"].as<float>() : 1.0f;
                 auto instance = std::make_unique<Cone>(resolution, radius, height, mat);
                 world.emplace<Transform>(std::move(instance), transform);
-            }else if (type == "quad") {
+            } else if (type == "quad") {
                 auto a = glm::vec3(obj["a"][0].as<float>(), obj["a"][1].as<float>(), obj["a"][2].as<float>());
                 auto b = glm::vec3(obj["b"][0].as<float>(), obj["b"][1].as<float>(), obj["b"][2].as<float>());
                 auto c = glm::vec3(obj["c"][0].as<float>(), obj["c"][1].as<float>(), obj["c"][2].as<float>());
@@ -1249,8 +1276,7 @@ namespace Engine {
                 } else {
                     world.emplace<Quadrilateral>(a, b, c, d, mat);
                 }
-            }
-            else if (type == "triangle") {
+            } else if (type == "triangle") {
                 auto a = glm::vec3(obj["a"][0].as<float>(), obj["a"][1].as<float>(), obj["a"][2].as<float>());
                 auto b = glm::vec3(obj["b"][0].as<float>(), obj["b"][1].as<float>(), obj["b"][2].as<float>());
                 auto c = glm::vec3(obj["c"][0].as<float>(), obj["c"][1].as<float>(), obj["c"][2].as<float>());
@@ -1260,15 +1286,13 @@ namespace Engine {
                 } else {
                     world.emplace<Triangle>(a, b, c, mat);
                 }
-            }
-
-            else {
+            } else {
                 std::cerr << "⚠️  Unsupported object type: " << type << "\n";
             }
             std::println("- {} ({}, mat={}, transform={}) ", name, type, materialName, transform);
         }
-
     }
+
 #pragma endregion
     export class Raytracer : public GameInterface {
     public:
@@ -1286,16 +1310,16 @@ namespace Engine {
 
         void RenderIMGui();
 
-	    void SetRenderResolution(const int width,  const int height) {
-	        if (m_imageWidth != width || m_imageHeight != height) {
-	            m_imageWidth = width;
-	            m_imageHeight = height;
-	            m_rayTraceImage.resize(m_imageWidth * m_imageHeight * 4);  // Resize internal buffer
-	            m_renderer.UpdateTexture(m_rayTraceImage, width, height);                    // Notify renderer too
-	            m_camera.aspectRatio = static_cast<float>(width) / height; // Keep camera aspect up-to-date
-	            m_camera.updateImagePlane();
-	        }
-	    }
+        void SetRenderResolution(const int width, const int height) {
+            if (m_imageWidth != width || m_imageHeight != height) {
+                m_imageWidth = width;
+                m_imageHeight = height;
+                m_rayTraceImage.resize(m_imageWidth * m_imageHeight * 4); // Resize internal buffer
+                m_renderer.UpdateTexture(m_rayTraceImage, width, height); // Notify renderer too
+                m_camera.aspectRatio = static_cast<float>(width) / height; // Keep camera aspect up-to-date
+                m_camera.updateImagePlane();
+            }
+        }
 
 
         void ReloadScene() {
@@ -1306,27 +1330,29 @@ namespace Engine {
                 AddAABBDebugBoxes(world, aabb_debug_overlay);
             std::println("🔄 Scene reloaded.");
         }
-        void AddAABBDebugBoxes(const HitableList& world, HitableList& overlay) {
+
+        void AddAABBDebugBoxes(const HitableList &world, HitableList &overlay) {
             AABB box;
-            for (const auto& obj : world.getObjects()) {
+            for (const auto &obj: world.getObjects()) {
                 if (obj->boundingBox(box)) {
                     overlay.emplace<DebugAABB>(box);
                 }
             }
         }
-	    void SaveImageToFile(const std::string& filename) {
+
+        void SaveImageToFile(const std::string &filename) {
             if (m_rayTraceImage.empty()) {
                 std::cerr << "❌ No image data to save!\n";
                 return;
             }
             stbi_flip_vertically_on_write(true);
-            if (stbi_write_png(filename.c_str(), m_imageWidth, m_imageHeight, 4, m_rayTraceImage.data(), m_imageWidth * 4)) {
+            if (stbi_write_png(filename.c_str(), m_imageWidth, m_imageHeight, 4, m_rayTraceImage.data(),
+                               m_imageWidth * 4)) {
                 std::println("✅ Saved image to '{}'", filename);
             } else {
                 std::cerr << "❌ Failed to save image to file!\n";
             }
         }
-
 
     private:
         RaytracerRenderer m_renderer;
@@ -1349,9 +1375,9 @@ namespace Engine {
         vector<uint8_t> m_rayTraceImage;
         int m_imageWidth{800};
         int m_imageHeight{600};
-	    glm::vec3 backgroundColor {0,0,0};
-	    int maxDepth = 10;
-	    bool useSkyGradient = false;
+        glm::vec3 backgroundColor{0, 0, 0};
+        int maxDepth = 10;
+        bool useSkyGradient = false;
 
         void GenerateRayTraceImage(); // Ray tracing function
         // Define camera properties
@@ -1399,7 +1425,7 @@ namespace Engine {
         m_input.ObserveKey(GLFW_KEY_LEFT_ALT);
         LoadSceneFromYaml(m_scenePath, world, m_camera);
         if (m_renderMode == RenderMode::aabb_debug)
-            AddAABBDebugBoxes(world,  aabb_debug_overlay);
+            AddAABBDebugBoxes(world, aabb_debug_overlay);
 
         m_renderer.Initialize(800, 600);
     }
@@ -1420,14 +1446,12 @@ namespace Engine {
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-            for (const auto& obj : aabb_debug_overlay.getObjects()) {
+            for (const auto &obj: aabb_debug_overlay.getObjects()) {
                 AABB box;
                 if (obj->boundingBox(box)) {
                     m_renderer.RenderBoundingBox(box, mvp);
                 }
             }
-
-
         }
         glEnable(GL_DEPTH_TEST);
 
@@ -1493,7 +1517,7 @@ namespace Engine {
             }
             ImGui::Separator();
 
-            ImGui::Text("Resolution %d x %d", m_imageWidth, m_imageHeight );
+            ImGui::Text("Resolution %d x %d", m_imageWidth, m_imageHeight);
             static char filename[128] = "Checker_Textures_50_20.png";
             ImGui::InputText("Output Filename", filename, IM_ARRAYSIZE(filename));
             if (ImGui::Button("Render & Save")) {
@@ -1522,7 +1546,6 @@ namespace Engine {
 #pragma region Ray Tracing
 
 
-
     glm::vec3 skyGradient(const Ray &r) {
         glm::vec3 unit_direction = glm::normalize(r.direction());
         float t = 0.5f * (unit_direction.y + 1.0f);
@@ -1543,21 +1566,25 @@ namespace Engine {
         }
 
 
+        if (m_renderMode == RenderMode::blinn_phong) {
+            auto mat = std::dynamic_pointer_cast<BlinnPhongMaterial>(rec.mat_ptr);
+            if (mat) {
+                std::vector<Light> lights = {
+                    Light{glm::normalize(glm::vec3(-0.2f, -1.0f, -0.1f)), glm::vec3(1.2f)}, // top-left
+                    Light{glm::normalize(glm::vec3( 0.2f, -1.0f, -0.1f)), glm::vec3(1.0f)}  // top-right
+                };
+                // main area-light direction with higher intensity                };
+                auto traceRay = [this](const Ray& r, int depth) -> glm::vec3 {
+                    return this->color(r, depth);
+                };
+
+                return mat->shade(r, rec, lights, world, traceRay, depth);
 
 
-            if (m_renderMode == RenderMode::blinn_phong) {
-                auto mat = std::dynamic_pointer_cast<BlinnPhongMaterial>(rec.mat_ptr);
-                if (mat) {
-                    std::vector<Light> lights = {
-                        Light{glm::vec3(-1, -1, -1), glm::vec3(1.0f)},
-                        Light{glm::vec3(-0.2, -0, -2), glm::vec3(0.7f)}
-                    };
-                    return mat->shade(r, rec, lights, world);
-                }
-                else {
-                    return glm::vec3(1.0f, 0.0f, 1.0f); // Magenta = warning
-                }
+            } else {
+                return glm::vec3(1.0f, 0.0f, 1.0f); // Magenta = warning
             }
+        }
 
 
         Ray scattered{};
@@ -1567,9 +1594,8 @@ namespace Engine {
         if (!rec.mat_ptr->scatter(r, rec, attenuation, scattered))
             return color_from_emission;
 
-        glm::vec3 color_from_scatter =  attenuation * color(scattered, depth - 1);
+        glm::vec3 color_from_scatter = attenuation * color(scattered, depth - 1);
         return color_from_emission + color_from_scatter;
-
     }
 
     glm::vec3 Raytracer::colorModeNormal(const Ray &r) {
@@ -1597,7 +1623,7 @@ namespace Engine {
                 std::clog << "\rScanlines remaining: " << remaining << ' ' << std::flush;
             }
             for (int x = 0; x < m_imageWidth; ++x) {
-                glm::vec3 col {0.0f};
+                glm::vec3 col{0.0f};
                 // accumulate ns samples
                 for (int s = 0; s < samples; ++s) {
                     // jittered sample in [0,1)
