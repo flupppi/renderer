@@ -418,36 +418,36 @@ namespace Engine {
         bool scatter(const Ray &r_in, const HitRecord &rec, glm::vec3 &attenuation, Ray &scattered) const override {
             return false;  // skip recursion
         }
-
-        glm::vec3 shade(const Ray& r_in, const HitRecord& rec, const Light& light, const Hitable& world) const{
-            glm::vec3 lightDir = glm::normalize(-light.direction);
+        glm::vec3 shade(const Ray& r_in, const HitRecord& rec, const std::vector<Light>& lights, const Hitable& world) const {
             glm::vec3 viewDir = glm::normalize(-r_in.direction());
-            glm::vec3 h = glm::normalize(viewDir + lightDir);
+            glm::vec3 result = ambient;
 
-            // Shadow ray (with offset to avoid acne)
-            glm::vec3 shadowOrigin = rec.p + 0.001f * rec.normal;
-            Ray shadowRay{shadowOrigin, lightDir};
+            for (const auto& light : lights) {
+                glm::vec3 lightDir = glm::normalize(-light.direction);
+                glm::vec3 h = glm::normalize(viewDir + lightDir);
 
-            HitRecord shadowHit;
-            Interval shadowRange{0.001f, std::numeric_limits<float>::infinity()};
+                // Shadow ray
+                glm::vec3 shadowOrigin = rec.p + 0.001f * rec.normal;
+                Ray shadowRay{shadowOrigin, lightDir};
 
-            // Check if something blocks the light
-            bool inShadow = world.hit(shadowRay, shadowRange, shadowHit);
+                HitRecord shadowHit;
+                Interval shadowRange{0.001f, std::numeric_limits<float>::infinity()};
+                bool inShadow = world.hit(shadowRay, shadowRange, shadowHit);
 
-            glm::vec3 ambientTerm = ambient;
-            if (inShadow) {
-                return ambientTerm; // Only ambient light
+                if (!inShadow) {
+                    float diff = std::max(glm::dot(rec.normal, lightDir), 0.0f);
+                    float spec = std::pow(std::max(glm::dot(rec.normal, h), 0.0f), shininess);
+
+                    glm::vec3 diffuseTerm = diffuse * diff;
+                    glm::vec3 specularTerm = specular * spec;
+
+                    result += light.intensity * (diffuseTerm + specularTerm);
+                }
             }
 
-            // Normal lighting calculation
-            float diff = std::max(glm::dot(rec.normal, lightDir), 0.0f);
-            float spec = std::pow(std::max(glm::dot(rec.normal, h), 0.0f), shininess);
-
-            glm::vec3 diffuseTerm = diffuse * diff;
-            glm::vec3 specularTerm = specular * spec;
-
-            return ambientTerm + light.intensity * (diffuseTerm + specularTerm);
+            return result;
         }
+
     };
 
 
@@ -1548,8 +1548,11 @@ namespace Engine {
             if (m_renderMode == RenderMode::blinn_phong) {
                 auto mat = std::dynamic_pointer_cast<BlinnPhongMaterial>(rec.mat_ptr);
                 if (mat) {
-                    Light light = {/*direction=*/glm::vec3(-1,-1,-1), /*intensity=*/glm::vec3(1)};
-                    return mat->shade(r, rec, light, world);
+                    std::vector<Light> lights = {
+                        Light{glm::vec3(-1, -1, -1), glm::vec3(1.0f)},
+                        Light{glm::vec3(-0.2, -0, -2), glm::vec3(0.7f)}
+                    };
+                    return mat->shade(r, rec, lights, world);
                 }
                 else {
                     return glm::vec3(1.0f, 0.0f, 1.0f); // Magenta = warning
