@@ -113,6 +113,50 @@ namespace Engine {
  * We need to define materials that the light can interact with.
  */
     struct HitRecord;
+    class TextureBase {
+    public:
+        virtual ~TextureBase() = default;
+
+        virtual glm::vec3 value(float u, float v, const glm::vec3& p) const = 0;
+    };
+    class SolidColor : public TextureBase {
+    public:
+        SolidColor(const glm::vec3& albedo) : albedo(albedo) {}
+        SolidColor(float red, float green, float blue) : SolidColor(glm::vec3(red,green,blue)) {}
+
+        glm::vec3 value(float u, float v, const glm::vec3& p) const override {
+            return albedo;
+        }
+
+    private:
+        glm::vec3 albedo;
+    };
+
+    class CheckerTexture : public TextureBase {
+
+    public:
+        CheckerTexture(float scale, shared_ptr<TextureBase> even, shared_ptr<TextureBase> odd)
+          : inv_scale(1.0 / scale), even(even), odd(odd) {}
+
+        CheckerTexture(float scale, const glm::vec3& c1, const glm::vec3& c2)
+          : CheckerTexture(scale, make_shared<SolidColor>(c1), make_shared<SolidColor>(c2)) {}
+
+        glm::vec3 value(float u, float v, const glm::vec3& p) const override {
+            auto xInteger = int(std::floor(inv_scale * p.x));
+            auto yInteger = int(std::floor(inv_scale * p.y));
+            auto zInteger = int(std::floor(inv_scale * p.z));
+
+            bool isEven = (xInteger + yInteger + zInteger) % 2 == 0;
+
+            return isEven ? even->value(u, v, p) : odd->value(u, v, p);
+        }
+
+    private:
+        double inv_scale;
+        shared_ptr<TextureBase> even;
+        shared_ptr<TextureBase> odd;
+    };
+
 
 
     /**
@@ -125,9 +169,19 @@ namespace Engine {
      */
     struct HitRecord {
         float t;
+        float u;
+        float v;
         glm::vec3 p;
         glm::vec3 normal;
         shared_ptr<Material> mat_ptr;
+        bool front_face;
+        void set_face_normal(const Ray& r, const glm::vec3& outward_normal) {
+            // Sets the hit record normal vector.
+            // NOTE: the parameter `outward_normal` is assumed to have unit length.
+
+            front_face = dot(r.direction(), outward_normal) < 0;
+            normal = front_face ? outward_normal : -outward_normal;
+        }
     };
 
     /**
@@ -199,17 +253,18 @@ namespace Engine {
      */
     class Lambertian final : public Material {
     public:
-        explicit Lambertian(const glm::vec3 &a): albedo(a) {
-        }
+
+        explicit Lambertian(const glm::vec3 &a): tex(make_shared<SolidColor>(a)) {}
+        explicit Lambertian(shared_ptr<TextureBase> tex) : tex(tex) {}
 
         bool scatter(const Ray &r_in, const HitRecord &rec, glm::vec3 &attenuation, Ray &scattered) const override {
             glm::vec3 target = rec.p + rec.normal + random_in_unit_sphere();
             scattered = Ray(rec.p, target - rec.p);
-            attenuation = albedo;
+            attenuation = tex->value(rec.u, rec.v, rec.p);
             return true;
         }
 
-        glm::vec3 albedo;
+        shared_ptr<TextureBase> tex;
     };
 
 
@@ -364,15 +419,30 @@ namespace Engine {
             return false;  // skip recursion
         }
 
-        glm::vec3 shade(const Ray& r_in, const HitRecord& rec, const Light& light) const {
+        glm::vec3 shade(const Ray& r_in, const HitRecord& rec, const Light& light, const Hitable& world) const{
             glm::vec3 lightDir = glm::normalize(-light.direction);
             glm::vec3 viewDir = glm::normalize(-r_in.direction());
             glm::vec3 h = glm::normalize(viewDir + lightDir);
 
+            // Shadow ray (with offset to avoid acne)
+            glm::vec3 shadowOrigin = rec.p + 0.001f * rec.normal;
+            Ray shadowRay{shadowOrigin, lightDir};
+
+            HitRecord shadowHit;
+            Interval shadowRange{0.001f, std::numeric_limits<float>::infinity()};
+
+            // Check if something blocks the light
+            bool inShadow = world.hit(shadowRay, shadowRange, shadowHit);
+
+            glm::vec3 ambientTerm = ambient;
+            if (inShadow) {
+                return ambientTerm; // Only ambient light
+            }
+
+            // Normal lighting calculation
             float diff = std::max(glm::dot(rec.normal, lightDir), 0.0f);
             float spec = std::pow(std::max(glm::dot(rec.normal, h), 0.0f), shininess);
 
-            glm::vec3 ambientTerm = ambient;
             glm::vec3 diffuseTerm = diffuse * diff;
             glm::vec3 specularTerm = specular * spec;
 
@@ -529,11 +599,19 @@ namespace Engine {
 
             rec.t = root;
             rec.p = ray.point_at_paramter(root);
-            rec.normal = (rec.p - center) / radius;
+            glm::vec3 normal = (rec.p - center) / radius;
+            rec.set_face_normal(ray, normal );
+            get_sphere_uv(normal, rec.u, rec.v);
             rec.mat_ptr = mat;
             return true;
         }
+        static void get_sphere_uv(const glm::vec3& p, float& u, float& v) {
+            auto theta = std::acos(-p.y);
+            auto phi = std::atan2(-p.z, p.x) + glm::pi<float>();
 
+            u = phi / (2*glm::pi<float>());
+            v = theta / glm::pi<float>();
+        }
 
         bool boundingBox(AABB& box) const override {
             glm::vec3 offset(radius, radius, radius);
@@ -806,7 +884,7 @@ namespace Engine {
 	{
 
 	public:
-		void Initialize();
+		void Initialize(int width, int height);
 		void InitializeFullScreenQuad();
 		void RenderRayTraceTexture();
 		void UpdateTexture(const std::vector<uint8_t>& image, int width, int height);  // New
@@ -860,6 +938,7 @@ namespace Engine {
 
 
 	private:
+	    int m_width=800, m_height=600;
 		void LoadShaders();
 		GLuint m_rayTraceTexture{ 0 };  // Texture ID for the ray-traced image
 		GLuint m_fullScreenShader{ 0 };
@@ -874,8 +953,10 @@ namespace Engine {
 //************************************
 	// Load and Initialize all Index and Vertex buffer Objects, Shaders, Vertex Array Objects and Textures that are needed for rendering the Model.
 	//************************************
-	void RaytracerRenderer::Initialize()
+	void RaytracerRenderer::Initialize(int width, int height)
 	{
+	    m_width = width;
+	    m_height = height;
 		LoadShaders();
 		// Unbind Buffers
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -885,7 +966,7 @@ namespace Engine {
 		// Initialize ray trace texture
 		glGenTextures(1, &m_rayTraceTexture);
 		glBindTexture(GL_TEXTURE_2D, m_rayTraceTexture);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 800,600, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);  // Placeholder size
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_width,m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);  // Placeholder size
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glBindTexture(GL_TEXTURE_2D, 0);
@@ -931,8 +1012,16 @@ namespace Engine {
 
 	void RaytracerRenderer::UpdateTexture(const std::vector<uint8_t>& image, int width, int height)
 	{
-		glBindTexture(GL_TEXTURE_2D, m_rayTraceTexture);
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, image.data());
+	    glBindTexture(GL_TEXTURE_2D, m_rayTraceTexture);
+
+	    if (m_width != width || m_height != height) {
+	        m_width = width;
+	        m_height = height;
+	        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_width,m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);  // Placeholder size
+
+	    }
+
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, image.data());
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
@@ -976,6 +1065,26 @@ namespace Engine {
 
 #pragma endregion
 #pragma region Scene Loading
+    std::shared_ptr<Engine::TextureBase> parseTexture(const YAML::Node& node) {
+	    using namespace Engine;
+	    if (node.IsSequence() && node.size() == 3) {
+	        // Treat as solid color
+	        return std::make_shared<SolidColor>(glm::vec3(node[0].as<float>(), node[1].as<float>(), node[2].as<float>()));
+	    }
+
+	    if (node["checker"]) {
+	        const auto& checker = node["checker"];
+	        float scale = checker["scale"] ? checker["scale"].as<float>() : 1.0f;
+
+	        // Recursively parse even and odd nodes
+	        auto even = parseTexture(checker["even"]);
+	        auto odd = parseTexture(checker["odd"]);
+	        return std::make_shared<CheckerTexture>(scale, even, odd);
+	    }
+
+	    std::cerr << "⚠️ Unknown texture format\n";
+	    return std::make_shared<SolidColor>(glm::vec3(1.0f, 0.0f, 1.0f)); // magenta warning
+	}
 
     void LoadSceneFromYaml(const std::filesystem::path &path, HitableList &world, Camera &camera) {
         YAML::Node scene = YAML::LoadFile(path.string());
@@ -1028,9 +1137,17 @@ namespace Engine {
             auto type = matNode["type"].as<std::string>();
 
             if (type == "diffuse") {
-                auto albedo = matNode["albedo"].as<std::vector<float> >();
-                materials[name] = std::make_shared<Lambertian>(
-                    glm::vec3(albedo[0], albedo[1], albedo[2]));
+                if (matNode["texture"]) {
+                    auto tex = parseTexture(matNode["texture"]);
+                    materials[name] = std::make_shared<Lambertian>(tex);
+                } else if (matNode["albedo"]) {
+                    auto albedo = matNode["albedo"].as<std::vector<float> >();
+                    materials[name] = std::make_shared<Lambertian>(
+                        glm::vec3(albedo[0], albedo[1], albedo[2]));
+                } else {
+                    std::cerr << "⚠️ Diffuse material '" << name << "' missing 'albedo' or 'texture'\n";
+                }
+
             } else if (type == "metal") {
                 auto albedo = matNode["albedo"].as<std::vector<float> >();
                 auto fuzz = matNode["fuzz"].as<float>();
@@ -1169,6 +1286,18 @@ namespace Engine {
 
         void RenderIMGui();
 
+	    void SetRenderResolution(const int width,  const int height) {
+	        if (m_imageWidth != width || m_imageHeight != height) {
+	            m_imageWidth = width;
+	            m_imageHeight = height;
+	            m_rayTraceImage.resize(m_imageWidth * m_imageHeight * 4);  // Resize internal buffer
+	            m_renderer.UpdateTexture(m_rayTraceImage, width, height);                    // Notify renderer too
+	            m_camera.aspectRatio = static_cast<float>(width) / height; // Keep camera aspect up-to-date
+	            m_camera.updateImagePlane();
+	        }
+	    }
+
+
         void ReloadScene() {
             world = {};
             aabb_debug_overlay = {}; // <--- Clear AABB overlay too
@@ -1272,7 +1401,7 @@ namespace Engine {
         if (m_renderMode == RenderMode::aabb_debug)
             AddAABBDebugBoxes(world,  aabb_debug_overlay);
 
-        m_renderer.Initialize();
+        m_renderer.Initialize(800, 600);
     }
 
     //************************************
@@ -1343,6 +1472,7 @@ namespace Engine {
         //GenerateRayTraceImage();
 
         // Update the GPU texture with the new image
+
         m_renderer.UpdateTexture(m_rayTraceImage, m_imageWidth, m_imageHeight);
     }
 
@@ -1363,9 +1493,8 @@ namespace Engine {
             }
             ImGui::Separator();
 
-            ImGui::InputInt("Image width", &m_imageWidth);
-            ImGui::InputInt("Image height", &m_imageHeight);
-            static char filename[128] = "render.png";
+            ImGui::Text("Resolution %d x %d", m_imageWidth, m_imageHeight );
+            static char filename[128] = "Checker_Textures_50_20.png";
             ImGui::InputText("Output Filename", filename, IM_ARRAYSIZE(filename));
             if (ImGui::Button("Render & Save")) {
                 GenerateRayTraceImage();
@@ -1420,7 +1549,7 @@ namespace Engine {
                 auto mat = std::dynamic_pointer_cast<BlinnPhongMaterial>(rec.mat_ptr);
                 if (mat) {
                     Light light = {/*direction=*/glm::vec3(-1,-1,-1), /*intensity=*/glm::vec3(1)};
-                    return mat->shade(r, rec, light);
+                    return mat->shade(r, rec, light, world);
                 }
                 else {
                     return glm::vec3(1.0f, 0.0f, 1.0f); // Magenta = warning

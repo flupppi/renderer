@@ -210,6 +210,7 @@ namespace Engine {
             updateImagePlane();
         }
 
+        float aspectRatio;
 
     private:
         CameraMode mode;
@@ -225,7 +226,6 @@ namespace Engine {
 
         // optical parameters
         float verticalFOV = 45.0f;      // in degrees
-        float aspectRatio;              // passes in or set externally
         float focalLength   = 1.0f;     // distance from projection point to image plane
         // (optional, for depth‐of‐field)
         float aperture      = 0.0f;

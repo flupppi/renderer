@@ -177,10 +177,14 @@ void RunCoreloop(GLFWwindow* window)
 	{
 		glfwPollEvents();
 
-		gUsedInterface->Update(timeDifference);
 		int screenWidth, screenHeight;
 		glfwGetFramebufferSize(window, &screenWidth, &screenHeight);
 		float aspectRatio = (float)screenWidth / (float)screenHeight;
+
+		gUsedInterface->Update(timeDifference);
+		gUsedInterface->SetRenderResolution(screenWidth, screenHeight);
+
+
 		glViewport(0, 0, screenWidth, screenHeight);
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LEQUAL);

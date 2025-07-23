@@ -164,10 +164,10 @@ namespace Engine {    // Base Vertex Structure
 		void Draw(Shader& shader);
 
 		std::vector<Face> ExtractFaces() const;
-		
+
 
 	private:
-		// render data 
+		// render data
 		unsigned int VBO, EBO;
 
 		// initializes all the buffer objects/arrays

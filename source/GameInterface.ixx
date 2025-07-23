@@ -21,6 +21,8 @@ namespace Engine {
 		virtual void Update(double deltaTime) {};
 		virtual void Render(float aspectRatio) {};
 
+		virtual void SetRenderResolution(int width, int height) {};
+
 		virtual void ClearResources() {};
 
 		std::string mode = "Application";
