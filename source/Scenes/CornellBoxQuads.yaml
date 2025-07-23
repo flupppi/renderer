@@ -23,23 +23,23 @@ materials:
     emit: [ 4.0, 4.0, 4.0 ]
 
 objects:
-  # Left wall (red)
-  - name: left_wall
-    type: quad
-    material: red
-    a: [-1.5, 0.0, -1.5]
-    b: [-1.5, 0.0,  1.5]
-    c: [-1.5, 2.0,  1.5]
-    d: [-1.5, 2.0, -1.5]
-
   # Right wall (green)
   - name: right_wall
     type: quad
     material: green
-    a: [1.5, 0.0,  1.5]
-    b: [1.5, 0.0, -1.5]
-    c: [1.5, 2.0, -1.5]
-    d: [1.5, 2.0,  1.5]
+    a: [1.5, 0.0, -1.5]
+    b: [1.5, 0.0,  1.5]
+    c: [1.5, 2.0,  1.5]
+    d: [1.5, 2.0, -1.5]
+
+  # Left wall (red)
+  - name: Left_wall
+    type: quad
+    material: red
+    a: [-1.5, 0.0,  1.5]
+    b: [-1.5, 0.0, -1.5]
+    c: [-1.5, 2.0, -1.5]
+    d: [-1.5, 2.0,  1.5]
 
   # Back wall (white)
   - name: back_wall

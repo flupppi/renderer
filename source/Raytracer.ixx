@@ -14,6 +14,8 @@ module;
 #include <omp.h>
 #include <yaml-cpp/yaml.h>
 
+#include "stb_image_write.h"
+
 export module Raytracer;
 import std;
 import GameInterface;
@@ -1183,6 +1185,19 @@ namespace Engine {
                 }
             }
         }
+	    void SaveImageToFile(const std::string& filename) {
+            if (m_rayTraceImage.empty()) {
+                std::cerr << "❌ No image data to save!\n";
+                return;
+            }
+            stbi_flip_vertically_on_write(true);
+            if (stbi_write_png(filename.c_str(), m_imageWidth, m_imageHeight, 4, m_rayTraceImage.data(), m_imageWidth * 4)) {
+                std::println("✅ Saved image to '{}'", filename);
+            } else {
+                std::cerr << "❌ Failed to save image to file!\n";
+            }
+        }
+
 
     private:
         RaytracerRenderer m_renderer;
@@ -1350,6 +1365,14 @@ namespace Engine {
 
             ImGui::InputInt("Image width", &m_imageWidth);
             ImGui::InputInt("Image height", &m_imageHeight);
+            static char filename[128] = "render.png";
+            ImGui::InputText("Output Filename", filename, IM_ARRAYSIZE(filename));
+            if (ImGui::Button("Render & Save")) {
+                GenerateRayTraceImage();
+                SaveImageToFile(filename);
+            }
+
+
             if (ImGui::Button("Render Scene"))
                 GenerateRayTraceImage();
             if (ImGui::Button("Reload Scene")) {
