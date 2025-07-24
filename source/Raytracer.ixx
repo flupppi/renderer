@@ -221,7 +221,9 @@ namespace Engine {
          * @brief the scatter function takes a ray that hits a surface and computes a scattered ray combined with additional data in the hit record.
          */
         virtual bool scatter(const Ray &r_in, const HitRecord &rec, glm::vec3 &attenuation, Ray &scattered) const = 0;
-
+        virtual double scattering_pdf(const Ray& r_in, const HitRecord& rec, const Ray& scattered) const {
+            return 0;
+        }
         virtual glm::vec3 emitted() const {
             return glm::vec3{0, 0, 0};
         }
@@ -274,6 +276,10 @@ namespace Engine {
             scattered = Ray(rec.p, target - rec.p);
             attenuation = tex->value(rec.u, rec.v, rec.p);
             return true;
+        }
+        double scattering_pdf(const Ray& r_in, const HitRecord& rec, const Ray& scattered) const override {
+            auto cos_theta = glm::dot(rec.normal, glm::normalize(scattered.direction()));
+            return cos_theta < 0 ? 0 : cos_theta/glm::pi<double>();
         }
 
         shared_ptr<TextureBase> tex;
@@ -1340,7 +1346,11 @@ namespace Engine {
                 }
             }
         }
-
+        glm::vec3 sample_square_stratified(int s_i, int s_j) const {
+            float dx = ((float(s_i) + rand01()) * recip_sqrt_spp) - 0.5f;
+            float dy = ((float(s_j) + rand01()) * recip_sqrt_spp) - 0.5f;
+            return glm::vec3(dx, dy, 0.0f);
+        }
         void SaveImageToFile(const std::string &filename) {
             if (m_rayTraceImage.empty()) {
                 std::cerr << "❌ No image data to save!\n";
@@ -1369,7 +1379,9 @@ namespace Engine {
 
         RenderMode m_renderMode = RenderMode::diffuse;
         int samples = 1;
-
+        int    sqrt_spp;             // Square root of number of samples per pixel
+        double recip_sqrt_spp;       // 1 / sqrt_spp
+        double pixel_samples_scale;  // Color scale factor for a sum of pixel samples
         glm::vec3 colorModeNormal(const Ray &r);
 
         // Image buffer for ray tracing output
@@ -1424,12 +1436,14 @@ namespace Engine {
 
         m_input.ObserveKey(GLFW_KEY_LEFT_SHIFT);
         m_input.ObserveKey(GLFW_KEY_LEFT_ALT);
+
         LoadSceneFromYaml(m_scenePath, world, m_camera);
         if (m_renderMode == RenderMode::aabb_debug)
             AddAABBDebugBoxes(world, aabb_debug_overlay);
 
         m_renderer.Initialize(800, 600);
     }
+
 
     //************************************
     // Calculate mvp matrix, calculate and render joint transforms and calculate and render skin using the boneModelMatrices.
@@ -1497,7 +1511,9 @@ namespace Engine {
         //GenerateRayTraceImage();
 
         // Update the GPU texture with the new image
-
+        sqrt_spp = int(std::sqrt(samples));
+        pixel_samples_scale = 1.0 / (sqrt_spp * sqrt_spp);
+        recip_sqrt_spp = 1.0 / sqrt_spp;
         m_renderer.UpdateTexture(m_rayTraceImage, m_imageWidth, m_imageHeight);
     }
 
@@ -1625,27 +1641,33 @@ namespace Engine {
             }
             for (int x = 0; x < m_imageWidth; ++x) {
                 glm::vec3 col{0.0f};
-                // accumulate ns samples
-                for (int s = 0; s < samples; ++s) {
-                    // jittered sample in [0,1)
-                    float u = (x + rand01()) * invW;
-                    float v = (y + rand01()) * invH;
+                for (int s_j = 0; s_j < sqrt_spp; ++s_j) {
+                    for (int s_i = 0; s_i < sqrt_spp; ++s_i) {
+                        // Stratified sub-pixel sample offset in [-0.5, +0.5]
+                        glm::vec3 offset = sample_square_stratified(s_i, s_j);
 
-                    Ray ray = m_camera.getRay(u, v);
-                    switch (m_renderMode) {
-                        case normals:
-                            col += colorModeNormal(ray);
-                            break;
-                        case diffuse:
-                            col += color(ray, maxDepth);
-                            break;
-                        default:
-                            col += color(ray, maxDepth);
+                        // Sample location in image space [0, imageWidth] × [0, imageHeight]
+                        float u = (x + offset.x + 0.5f) * invW;
+                        float v = (y + offset.y + 0.5f) * invH;
+
+
+                        Ray ray = m_camera.getRay(u, v);
+                        switch (m_renderMode) {
+                            case normals:
+                                col += colorModeNormal(ray);
+                                break;
+                            case diffuse:
+                                col += color(ray, maxDepth);
+                                break;
+                            default:
+                                col += color(ray, maxDepth);
+                        }
                     }
                 }
                 // average & gamma-correct (gamma=2.0)
                 col /= float(samples);
-                col = glm::sqrt(col);
+                float gamma = 2.2;
+                col = glm::pow(col, glm::vec3(1.0f / gamma));
 
                 int index = (y * m_imageWidth + x) * 4;
                 m_rayTraceImage[index + 0] = uint8_t(glm::clamp(col.r, 0.0f, 1.0f) * 255);
