@@ -12,15 +12,25 @@ materials:
     type: metal
     albedo: [0.7, 0.6, 0.5]
     fuzz: 0.00
+  - name: fuzzy_metal
+    type: metal
+    albedo: [0.6, 0.2, 0.8]
+    fuzz: 0.05
   - name: green_diffuse
     type: diffuse
     albedo: [0.2, 0.5, 0.2]
   - name: glass
     type: glass
     ref_idx: 1.5
+  - name: water
+    type: glass
+    ref_idx: 2.5
   - name: light_emissive
     type: emissive
     emit: [ 4.0, 4.0, 4.0 ]
+  - name: low_emissive
+    type: emissive
+    emit: [ 1.4, 1.4, 1.4 ]
   - name: floor_checker
     type: diffuse
     texture:
@@ -93,6 +103,59 @@ objects:
     b: [ 0.5, 1.99, -0.5]
     c: [ 0.5, 1.99,  0.5]
     d: [-0.5, 1.99,  0.5]
+  # Dim light triangle on left wall
+  - name: wall_light_triangle
+    type: triangle
+    material: water
+    a: [-1.3, 1.2,  0.3]
+    b: [-1.0, 1.0,  0.7]
+    c: [-1.0, 1.4,  0.6]
+    transform:
+      translate: [0.25, 0.25, -1.4]
+
+
+
+
+  # Box 2 (tall, shiny metal)
+  - name: tall_box
+    type: cube
+    material: fuzzy_metal
+    transform:
+      translate: [1.0, 0.6, 0.8]
+      scale: [0.4, 1.2, 0.5]
+      rotate: [0, 15, 0]
+
+  # Sphere (center, metal)
+  - name: glass_sphere
+    type: sphere
+    material: glass
+    position: [ 0.0, 0.4, 0.8 ]
+    radius: 0.4
+  # Glass sphere (floating)
+  - name: checker_sphere
+    type: sphere
+    material: ball_checker
+    position: [0.6, 1.3, -0.3]
+    radius: 0.2
+
+
+  # Mirror metal sphere near wall
+  - name: metal_sphere
+    type: sphere
+    material: shiny_metal
+    position: [0.9, 0.3, -0.6]
+    radius: 0.3
+
+  # Checker-textured UV sphere
+  - name: metal_uvsphere
+    type: uvsphere
+    material: shiny_metal
+    transform:
+      translate: [-0.7, 0.6, 1.6]
+      scale: [0.1, 0.1, 0.1]
+      rotate: [0, -30, -25]
+    slices: 6
+    stacks: 5
 
   # Box 1 (short, green diffuse)
   - name: short_box
@@ -103,21 +166,28 @@ objects:
       scale: [0.6, 1.0, 0.6]
       rotate: [0, -18, 0]
 
-  # Box 2 (tall, shiny metal)
-  - name: tall_box
-    type: cube
-    material: shiny_metal
-    transform:
-      translate: [1.0, 0.75, 0.6]
-      scale: [0.6, 1.5, 0.6]
-      rotate: [0, 15, 0]
 
-  # Sphere (center, metal)
-  - name: sphere
-    type: sphere
-    material: glass
-    position: [ 0.0, 0.5, 0.0 ]
-    radius: 0.5
+  # Small cube under light to receive direct light
+  - name: light_receiver_cube
+    type: cube
+    material: white
+    transform:
+      translate: [0.5, 1.6, 0]
+      scale: [0.3, 0.2, 0.3]
+      rotate: [30, -20, 1]
+
+  # Cone for geometric variety
+  - name: small_cone
+    type: cone
+    material: green_diffuse
+    resolution: 7
+    radius: 0.2
+    height: 0.6
+    transform:
+      translate: [-1, 1.5, 0.8]
+      rotate: [45, 0, -60]
+
+
 
 camera:
   mode: "FPS"

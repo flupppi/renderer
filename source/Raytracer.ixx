@@ -1255,6 +1255,7 @@ namespace Engine {
                     world.emplace<Sphere>(glm::vec3(position[0], position[1], position[2]), mat, radius);
                 }
             } else if (type == "uvsphere") {
+
                 int slices = obj["slices"] ? obj["slices"].as<int>() : 16;
                 int stacks = obj["stacks"] ? obj["stacks"].as<int>() : 16;
                 auto instance = std::make_unique<UVSphere>(slices, stacks, mat);
@@ -1509,7 +1510,7 @@ namespace Engine {
         {
             ImGui::Begin("Raytracing Stats");
             ImGui::Text("Render Mode: %s", m_camera.DebugMode().c_str());
-            ImGui::SliderInt("Samples per Pixel", &samples, 1, 50);
+            ImGui::SliderInt("Samples per Pixel", &samples, 1, 1000);
             ImGui::SliderInt("Max Depth", &maxDepth, 1, 50);
             ImGui::Checkbox("Use Sky Gradient", &useSkyGradient);
             if (!useSkyGradient) {
