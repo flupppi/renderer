@@ -227,6 +227,7 @@ std::unique_ptr<GameInterface> CreateGameInterface(const cxxopts::ParseResult& r
 	}
 	else if (mode == "Raytracer") {
 		return std::make_unique<Raytracer>();
+
 	}
 	else if (mode == "SemanticVisualization") {
 		return std::make_unique<SemanticVisualization>(true);

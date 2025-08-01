@@ -1,11 +1,9 @@
 cmake_minimum_required(VERSION 4.0.0)
 
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD ON)
+set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD d0edc3af-4c50-42ea-a356-e2862fe7a444)
 set(CMAKE_CXX_MODULE_STD 1)
 
 project(CXXOpenGL VERSION 0.1.0 LANGUAGES CXX)
@@ -28,11 +26,12 @@ message(STATUS "TINYGLTF_INCLUDE_DIRS = ${TINYGLTF_INCLUDE_DIRS}")
 
 # --- MyModules (C++23 Modules) ---
 add_library(MyModules STATIC)
+target_compile_features(MyModules PUBLIC cxx_std_23)
+
 if(MSVC)
-    target_compile_options(MyModules PRIVATE
-            /utf-8 /experimental:module /std:c++latest /Zi
-    )
+    target_compile_options(MyModules PRIVATE /utf-8 /experimental:module /std:c++latest /Zi)
 endif()
+
 
 # Automatically find all module sources
 file(GLOB_RECURSE MODULE_SOURCES CONFIGURE_DEPENDS
@@ -74,6 +73,10 @@ set(SOURCE_FILES
         tiny_gltf_impl.cpp
 )
 add_executable(CXXOpenGL ${SOURCE_FILES})
+target_compile_features(CXXOpenGL PUBLIC cxx_std_23)
+if(MSVC)
+    target_compile_options(CXXOpenGL PRIVATE /utf-8 /experimental:module /std:c++latest /Zi)
+endif()
 target_link_libraries(CXXOpenGL PRIVATE MyModules)
 target_include_directories(CXXOpenGL PRIVATE
     "${LUA_INCLUDE_DIR}"
@@ -95,6 +98,9 @@ add_custom_command(
 
 # --- Tests ---
 add_executable(raytracer_tests tests/test_raytracer.cpp)
+if(MSVC)
+    target_compile_options(raytracer_tests PRIVATE /utf-8 /experimental:module /std:c++latest /Zi)
+endif()
 target_link_libraries(raytracer_tests PRIVATE Catch2::Catch2WithMain glm::glm MyModules)
 enable_testing()
 include(CTest)
