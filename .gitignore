@@ -1,7 +1,7 @@
 *.drawio.bkp
 .vs/
 .idea/
-
+source/CMakeUserPresets.json
 # Ignore the packages folder
 source/packages/
 
