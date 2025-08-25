@@ -1,0 +1,3 @@
+[submodule "paper/Semantic-Abstraction-Paper"]
+	path = paper/Semantic-Abstraction-Paper
+	url = git@github.com:flupppi/Semantic-Abstraction-Paper.git
